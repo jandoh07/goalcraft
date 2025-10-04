@@ -17,7 +17,6 @@ import {
   Settings,
   Goal,
   ChartLine,
-  Sun,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -68,7 +67,8 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                   <SidebarMenuButton
                     size="lg"
                     isActive={isActive}
-                    className="data-[active=true]:bg-blue-700 data-[active=true]:text-white hover:bg-blue-50 w-[95%] rounded-lg mx-auto"
+                    // className="data-[active=true]:bg-blue-700 data-[active=true]:text-white hover:bg-blue-50 w-[95%] rounded-lg mx-auto"
+                    className="w-[95%] rounded-lg mx-auto"
                   >
                     <Link
                       href={item.href}
@@ -92,14 +92,11 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex-1 flex flex-col relative">
+        <main className="flex-1 flex flex-col">
           <div className="flex items-center p-4">
             <SidebarTrigger />
           </div>
           <div className="flex-1 p-6 bg-white">{children}</div>
-          <div className="absolute top-3 right-3">
-            <Sun strokeWidth={1} className="size-6" />
-          </div>
         </main>
       </div>
     </SidebarProvider>

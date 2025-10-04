@@ -15,6 +15,18 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/web-app-manifest-192x192.png",
         sizes: "192x192",
         type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/web-app-manifest-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/web-app-manifest-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
         purpose: "maskable",
       },
       {
@@ -22,6 +34,22 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
+      },
+    ],
+    screenshots: [
+      {
+        src: "/mobile-screenshot-xr-414x896.png",
+        sizes: "414x896",
+        type: "image/png",
+        label: "iPhone XR",
+        form_factor: "narrow",
+      },
+      {
+        src: "/desktop-screenshot-1280x720.png",
+        sizes: "1280x720",
+        type: "image/png",
+        label: "Desktop",
+        form_factor: "wide",
       },
     ],
   };
