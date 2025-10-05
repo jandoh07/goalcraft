@@ -11,13 +11,7 @@ import {
   SidebarTrigger,
 } from "../ui/sidebar";
 import Image from "next/image";
-import {
-  CircleUserRound,
-  ListTodo,
-  Settings,
-  Goal,
-  ChartLine,
-} from "lucide-react";
+import { CircleUserRound, ListTodo, Goal, ChartLine } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -40,12 +34,6 @@ const sidebarItems = [
     icon: ChartLine,
     href: "/analytics",
   },
-  {
-    id: 4,
-    label: "Settings",
-    icon: Settings,
-    href: "/settings",
-  },
 ];
 
 const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
@@ -67,12 +55,11 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                   <SidebarMenuButton
                     size="lg"
                     isActive={isActive}
-                    // className="data-[active=true]:bg-blue-700 data-[active=true]:text-white hover:bg-blue-50 w-[95%] rounded-lg mx-auto"
                     className="w-[95%] rounded-lg mx-auto"
                   >
                     <Link
                       href={item.href}
-                      className="flex flex-row items-center gap-2 pl-2"
+                      className="flex flex-row items-center gap-2 pl-2 w-full"
                     >
                       <IconComponent className="size-6" />
                       <span className="font-semibold">{item.label}</span>
@@ -83,20 +70,23 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
             })}
           </SidebarContent>
           <SidebarFooter>
-            <div className="flex flex-row items-center gap-2 mx-2 bg-slate-100 p-2 rounded-lg">
+            <Link
+              href="/profile"
+              className="flex flex-row items-center gap-2 bg-background p-2 rounded-lg"
+            >
               <CircleUserRound strokeWidth={1.25} className="size-10" />
               <div>
                 <p className="font-semibold">Sarah Carter</p>
-                <p className="text-xs text-gray-700">Premium Plan</p>
+                <p className="text-xs text-sidebar-ring">Premium Plan</p>
               </div>
-            </div>
+            </Link>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col bg-background">
           <div className="flex items-center p-4">
             <SidebarTrigger />
           </div>
-          <div className="flex-1 p-6 bg-white">{children}</div>
+          <div className="flex-1 p-6">{children}</div>
         </main>
       </div>
     </SidebarProvider>
