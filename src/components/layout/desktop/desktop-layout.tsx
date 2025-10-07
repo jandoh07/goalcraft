@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "../ui/sidebar";
+} from "../../ui/sidebar";
 import Image from "next/image";
 import { CircleUserRound, ListTodo, Goal, ChartLine } from "lucide-react";
 import Link from "next/link";
@@ -44,7 +44,13 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader>
-            <Image src="/logo.png" alt="Logo" width={130} height={60} />
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={130}
+              height={60}
+              // className="backdrop-hue-rotate-90"
+            />
           </SidebarHeader>
           <SidebarContent className="mt-4">
             {sidebarItems.map((item) => {

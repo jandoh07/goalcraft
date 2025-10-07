@@ -1,7 +1,7 @@
 "use client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import MobileLayout from "./mobile-layout";
-import DesktopLayout from "./desktop-layout";
+import MobileLayout from "./mobile/mobile-layout";
+import DesktopLayout from "./desktop/desktop-layout";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
