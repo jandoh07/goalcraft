@@ -36,3 +36,4 @@ jobs:
         with:
           uploadArtifacts: true
           temporaryPublicStorage: true
+          staticDistDir: .next
