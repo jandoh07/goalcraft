@@ -1,10 +1,32 @@
 "use client";
 import { useState } from "react";
 
-const TaskCard = () => {
+interface TaskCardProps {
+  type: "overdue" | "today" | "tomorrow" | "this-week";
+}
+
+const TaskCard = ({ type }: TaskCardProps) => {
   const [isChecked, setIsChecked] = useState(false);
+
+  const getBorderColor = () => {
+    switch (type) {
+      case "overdue":
+        return "border-destructive";
+      case "today":
+        return "border-accent";
+      case "tomorrow":
+        return "border-orange-500";
+      case "this-week":
+        return "border-blue-400";
+      default:
+        return "border-gray-500";
+    }
+  };
+
   return (
-    <div className="rounded-lg border-l-3 border-destructive px-2 py-4 my-2 flex justify-start items-start gap-2 shadow-sm bg-secondary">
+    <div
+      className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary`}
+    >
       <div>
         <input
           type="checkbox"
