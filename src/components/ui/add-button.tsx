@@ -11,7 +11,7 @@ interface AddButtonProps {
 const AddButton: React.FC<AddButtonProps> = ({ className, onClick }) => {
   return (
     <div
-      className={cn("absolute right-5 bottom-23 md:bottom-5", className)}
+      className={cn("fixed right-5 bottom-23 md:bottom-5", className)}
       onClick={onClick}
     >
       <Button

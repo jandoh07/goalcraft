@@ -1,17 +1,15 @@
-import { Plus } from "lucide-react";
 import React from "react";
 import { Button } from "../ui/button";
 
 const QuickAddTask = () => {
   return (
-    <div className="my-5 border border-border rounded-2xl p-3 flex justify-between items-center gap-3 shadow-sm bg-secondary">
-      <Plus />
+    <div className="my-5 border border-border rounded-xl flex justify-between items-center gap-3 px-2 shadow-sm bg-secondary overflow-hidden">
       <input
         type="text"
-        placeholder="Add a new task.."
-        className="w-full outline-none px-1"
+        placeholder="Quick add task.."
+        className="w-full outline-none px-1 py-3"
       />
-      <Button className="bg-accent text-accent-foreground hover:bg-accent/80">
+      <Button className="bg-accent text-accent-foreground hover:bg-accent/80 cursor-pointer">
         Add Task
       </Button>
     </div>
