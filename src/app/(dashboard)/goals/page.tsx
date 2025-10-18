@@ -6,7 +6,8 @@ import GoalCard from "@/components/goals/goal-card";
 import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";
 import AddButton from "@/components/ui/add-button";
-import { AddGoalModal } from "@/components/goals/add-goal-modal";
+import ResponsiveDialog from "@/components/ui/responsive-dialog";
+import AddGoalForm from "@/components/goals/add-goal-form";
 
 const Goals = () => {
   const [open, setOpen] = useState(false);
@@ -17,7 +18,9 @@ const Goals = () => {
       <GoalsHeader />
       <GoalCard />
       <AddButton onClick={() => setOpen(true)} />
-      <AddGoalModal open={open} setOpen={setOpen} />
+      <ResponsiveDialog open={open} setOpen={setOpen} title="Add Goal">
+        <AddGoalForm />
+      </ResponsiveDialog>
     </div>
   );
 };

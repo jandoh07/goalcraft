@@ -2,23 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { ComponentProps, useState } from "react";
 import { DatePicker } from "../ui/date-picker";
 import { Flag, Clock, Target, Plus, X } from "lucide-react";
@@ -57,45 +42,7 @@ const priorityOptions: {
   },
 ];
 
-interface AddTaskModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-}
-
-export function AddTaskModal({ open, setOpen }: AddTaskModalProps) {
-  const isDesktop = !useIsMobile();
-
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Task</DialogTitle>
-          </DialogHeader>
-          <AddTaskForm />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="min-h-[90vh]">
-        {/* <DrawerHeader className="text-left flex-shrink-0">
-          <DrawerTitle>Add Task</DrawerTitle>
-        </DrawerHeader> */}
-        <AddTaskForm className="px-4 flex-1 overflow-y-auto mb-4" />
-        {/* <DrawerFooter className="pt-2 flex-shrink-0">
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter> */}
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function AddTaskForm({ className }: ComponentProps<"form">) {
+export default function AddTaskForm({ className }: ComponentProps<"form">) {
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
@@ -256,5 +203,3 @@ function AddTaskForm({ className }: ComponentProps<"form">) {
     </form>
   );
 }
-
-export default AddTaskModal;

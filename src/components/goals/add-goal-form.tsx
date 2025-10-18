@@ -1,24 +1,7 @@
-"use client";
-
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ComponentProps } from "react";
 import { DatePicker } from "../ui/date-picker";
 import AiCoachTip from "../ai/ai-coach-tip";
@@ -76,45 +59,7 @@ const categoryOptions: {
   },
 ];
 
-interface AddGoalModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-}
-
-export function AddGoalModal({ open, setOpen }: AddGoalModalProps) {
-  const isDesktop = !useIsMobile();
-
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Add Goal</DialogTitle>
-          </DialogHeader>
-          <AddGoalForm />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="min-h-[90vh]">
-        {/* <DrawerHeader className="text-left">
-          <DrawerTitle>Add Goal</DrawerTitle>
-        </DrawerHeader> */}
-        <AddGoalForm className="px-4 pt-2 mb-2 overflow-y-auto" />
-        {/* <DrawerFooter className="pt-2">
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter> */}
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function AddGoalForm({ className }: ComponentProps<"form">) {
+export default function AddGoalForm({ className }: ComponentProps<"form">) {
   return (
     <form className={cn("grid items-start gap-6", className)}>
       <div className="grid gap-3">

@@ -1,12 +1,13 @@
 "use client";
 
 import MobileHeader from "@/components/layout/mobile/header";
+import AddTaskForm from "@/components/tasks/add-task-form";
 import QuickAddTask from "@/components/tasks/quick-add-task";
 import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
+import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { TriangleAlert } from "lucide-react";
 import React, { useState } from "react";
-import { AddTaskModal } from "@/components/tasks/add-task-modal";
 
 const Tasks = () => {
   const [open, setOpen] = useState(false);
@@ -27,7 +28,9 @@ const Tasks = () => {
         <TaskCard type="this-week" />
       </div>
       <AddButton onClick={() => setOpen(true)} />
-      <AddTaskModal open={open} setOpen={setOpen} />
+      <ResponsiveDialog open={open} setOpen={setOpen} title="Add Task">
+        <AddTaskForm />
+      </ResponsiveDialog>
     </div>
   );
 };
