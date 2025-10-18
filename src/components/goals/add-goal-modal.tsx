@@ -99,16 +99,16 @@ export function AddGoalModal({ open, setOpen }: AddGoalModalProps) {
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent>
-        <DrawerHeader className="text-left">
+      <DrawerContent className="min-h-[90vh]">
+        {/* <DrawerHeader className="text-left">
           <DrawerTitle>Add Goal</DrawerTitle>
-        </DrawerHeader>
-        <AddGoalForm className="px-4 max-h-[80vh] overflow-y-auto" />
-        <DrawerFooter className="pt-2">
+        </DrawerHeader> */}
+        <AddGoalForm className="px-4 pt-2 mb-2 overflow-y-auto" />
+        {/* <DrawerFooter className="pt-2">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
-        </DrawerFooter>
+        </DrawerFooter> */}
       </DrawerContent>
     </Drawer>
   );
@@ -155,7 +155,7 @@ function AddGoalForm({ className }: ComponentProps<"form">) {
         <Label htmlFor="due-date">Due Date</Label>
         <DatePicker />
       </div>
-      <Button type="submit">Save changes</Button>
+      <Button type="submit">Add Goal</Button>
     </form>
   );
 }

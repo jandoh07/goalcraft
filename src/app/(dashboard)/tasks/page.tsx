@@ -1,11 +1,16 @@
+"use client";
+
 import MobileHeader from "@/components/layout/mobile/header";
 import QuickAddTask from "@/components/tasks/quick-add-task";
 import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import { TriangleAlert } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
+import { AddTaskModal } from "@/components/tasks/add-task-modal";
 
 const Tasks = () => {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="max-w-7xl h-full mx-auto p-4 relative">
       <p className="hidden md:block text-lg font-semibold">My Tasks</p>
@@ -21,7 +26,8 @@ const Tasks = () => {
         <TaskCard type="tomorrow" />
         <TaskCard type="this-week" />
       </div>
-      <AddButton />
+      <AddButton onClick={() => setOpen(true)} />
+      <AddTaskModal open={open} setOpen={setOpen} />
     </div>
   );
 };
