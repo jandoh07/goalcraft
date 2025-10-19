@@ -12,7 +12,7 @@ import GoalForm from "@/components/goals/goal-form";
 const Goals = () => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="max-w-7xl h-full mx-auto p-4 relative">
+    <div className="max-w-7xl h-full mx-auto p-3 relative">
       <MobileHeader title="Your Goals" />
       <AiCoachTip />
       <GoalsHeader />

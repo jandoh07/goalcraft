@@ -76,9 +76,6 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="hidden md:block absolute top-3 right-3 z-50">
-            <ThemeToggle />
-          </div>
           {children}
         </ThemeProvider>
       </body>

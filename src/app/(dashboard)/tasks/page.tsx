@@ -32,7 +32,7 @@ const Tasks = () => {
   };
 
   return (
-    <div className="max-w-7xl h-full mx-auto p-4 relative">
+    <div className="max-w-7xl h-full mx-auto p-3 relative">
       <p className="hidden md:block text-lg font-semibold">My Tasks</p>
       <MobileHeader title="My Tasks" />
       <QuickAddTask />
