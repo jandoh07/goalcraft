@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChartLine, CircleUserRound, Goal, ListTodo } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,11 +43,24 @@ const BottomTab = () => {
             pathname === item.href ? "text-accent" : "text-foreground"
           }`}
         >
-          <item.icon className="size-6 my-1" />
+          {item.label === "Profile" ? (
+            <UserAvatar />
+          ) : (
+            <item.icon className="size-6 my-1" />
+          )}
           <span className="text-xs">{item.label}</span>
         </Link>
       ))}
     </nav>
+  );
+};
+
+const UserAvatar = () => {
+  return (
+    <Avatar>
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
   );
 };
 

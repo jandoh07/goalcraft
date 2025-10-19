@@ -11,9 +11,10 @@ import {
   SidebarTrigger,
 } from "../../ui/sidebar";
 import Image from "next/image";
-import { CircleUserRound, ListTodo, Goal, ChartLine } from "lucide-react";
+import { ListTodo, Goal, ChartLine } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const sidebarItems = [
   {
@@ -80,7 +81,13 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
               href="/profile"
               className="flex flex-row items-center gap-2 bg-background p-2 rounded-lg"
             >
-              <CircleUserRound strokeWidth={1.25} className="size-10" />
+              <Avatar className="size-10">
+                <AvatarImage
+                  src="https://github.com/shadcn.png"
+                  alt="@shadcn"
+                />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
               <div>
                 <p className="font-semibold">Sarah Carter</p>
                 <p className="text-xs text-sidebar-ring">Premium Plan</p>
