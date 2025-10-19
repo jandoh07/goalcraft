@@ -15,6 +15,7 @@ import { ListTodo, Goal, ChartLine } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/auth-context";
 
 const sidebarItems = [
   {
@@ -39,19 +40,14 @@ const sidebarItems = [
 
 const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader>
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={130}
-              height={60}
-              // className="backdrop-hue-rotate-90"
-            />
+            <Image src="/logo.png" alt="Logo" width={130} height={60} />
           </SidebarHeader>
           <SidebarContent className="mt-4">
             {sidebarItems.map((item) => {
@@ -83,13 +79,17 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <Avatar className="size-10">
                 <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
+                  src={user?.photoURL || ""}
+                  alt="User Profile Picture"
                 />
-                <AvatarFallback>CN</AvatarFallback>
+                <AvatarFallback>
+                  {user?.displayName?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold">Sarah Carter</p>
+                <p className="font-semibold line-clamp-1">
+                  {user?.displayName}
+                </p>
                 <p className="text-xs text-sidebar-ring">Premium Plan</p>
               </div>
             </Link>

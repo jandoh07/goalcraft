@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/auth-context";
 import { ChartLine, CircleUserRound, Goal, ListTodo } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,6 +34,8 @@ const tabItems = [
 
 const BottomTab = () => {
   const pathname = usePathname();
+  const { user } = useAuth();
+
   return (
     <nav className="flex justify-around items-center fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border">
       {tabItems.map((item) => (
@@ -44,7 +47,15 @@ const BottomTab = () => {
           }`}
         >
           {item.label === "Profile" ? (
-            <UserAvatar />
+            <Avatar>
+              <AvatarImage
+                src={user?.photoURL || ""}
+                alt="User Profile Picture"
+              />
+              <AvatarFallback>
+                {user?.displayName?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
           ) : (
             <item.icon className="size-6 my-1" />
           )}
@@ -52,15 +63,6 @@ const BottomTab = () => {
         </Link>
       ))}
     </nav>
-  );
-};
-
-const UserAvatar = () => {
-  return (
-    <Avatar>
-      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-      <AvatarFallback>CN</AvatarFallback>
-    </Avatar>
   );
 };
 

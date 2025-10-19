@@ -24,22 +24,31 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 const Profile = () => {
   const { setTheme, theme } = useTheme();
   const [pushNotifications, setPushNotifications] = useState(true);
+  const { user: authUser, logout } = useAuth();
+  const router = useRouter();
 
-  // Mock user data
+  // Use actual user data from auth or mock data
   const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "",
+    name: authUser?.displayName || authUser?.email?.split("@")[0] || "John Doe",
+    email: authUser?.email || "john.doe@example.com",
+    avatar: authUser?.photoURL || "",
     subscription: "premium", // "free" | "premium"
     joinDate: "January 2025",
   };
 
-  const handleSignOut = () => {
-    console.log("Sign out clicked");
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   return (
@@ -263,26 +272,6 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
-
-        {/* App Info */}
-        {/* <Card className="border-dashed">
-          <CardContent className="pt-6 text-center text-sm text-muted-foreground">
-            <p>GoalCraft v1.0.0</p>
-            <p className="mt-1">© 2025 GoalCraft. All rights reserved.</p>
-            <div className="flex items-center justify-center gap-4 mt-3">
-              <Button variant="link" className="h-auto p-0 text-xs">
-                Privacy Policy
-              </Button>
-              <Button variant="link" className="h-auto p-0 text-xs">
-                Terms of Service
-              </Button>
-              <Button variant="link" className="h-auto p-0 text-xs">
-                Help Center
-              </Button>
-            </div>
-          </CardContent>
-        </Card> */}
-
         <div className="w-full h-20 md:hidden"></div>
       </div>
     </div>
