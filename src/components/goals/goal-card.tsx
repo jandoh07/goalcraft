@@ -27,7 +27,7 @@ const GoalCard = () => {
               <Dumbbell className="size-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Get Fit & Healthy</h3>
+              <h3 className="font-semibold">Get Fit & Healthy</h3>
               <p className="text-sm text-muted-foreground">Fitness</p>
             </div>
           </div>
@@ -72,7 +72,7 @@ const GoalCard = () => {
           </p>
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-between border-t">
+      {/* <CardFooter className="flex items-center justify-between border-t">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-4 text-muted-foreground" />
           <div>
@@ -85,7 +85,7 @@ const GoalCard = () => {
         <Button variant="outline" size="sm">
           View Tasks
         </Button>
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 };

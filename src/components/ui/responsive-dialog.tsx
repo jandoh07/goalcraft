@@ -6,8 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerFooter } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "./button";
 
 /**
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
@@ -17,7 +18,9 @@ interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   title: string;
-  children?: React.ReactNode;
+  children: React.ReactNode;
+  submitLabel: string;
+  onSubmit: () => void;
 }
 
 const ResponsiveDialog = ({
@@ -25,6 +28,8 @@ const ResponsiveDialog = ({
   setOpen,
   title,
   children,
+  submitLabel,
+  onSubmit,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
 
@@ -43,16 +48,13 @@ const ResponsiveDialog = ({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent className="min-h-[90vh]">
-        {/* <DrawerHeader className="text-left">
-          <DrawerTitle>Add Goal</DrawerTitle>
-        </DrawerHeader> */}
+      <DrawerContent>
         <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
-        {/* <DrawerFooter className="pt-2">
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter> */}
+        <DrawerFooter className="pt-2">
+          <Button type="submit" onClick={onSubmit}>
+            {submitLabel}
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

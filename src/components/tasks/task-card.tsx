@@ -3,9 +3,10 @@ import { useState } from "react";
 
 interface TaskCardProps {
   type: "overdue" | "today" | "tomorrow" | "this-week";
+  onClick: () => void;
 }
 
-const TaskCard = ({ type }: TaskCardProps) => {
+const TaskCard = ({ type, onClick }: TaskCardProps) => {
   const [isChecked, setIsChecked] = useState(false);
 
   const getBorderColor = () => {
@@ -25,7 +26,8 @@ const TaskCard = ({ type }: TaskCardProps) => {
 
   return (
     <div
-      className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary`}
+      className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary hover:bg-secondary/40 cursor-pointer`}
+      onClick={onClick}
     >
       <div>
         <input
