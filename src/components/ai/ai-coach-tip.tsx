@@ -3,7 +3,7 @@ import React from "react";
 
 const AiCoachTip = () => {
   return (
-    <div className="bg-linear-to-r from-[#6077de] to-[#7951aa] min-h-20 w-full p-4 mb-4 flex flex-row items-start gap-5 rounded-lg text-white">
+    <div className="bg-linear-to-r from-[#6077de] to-[#7951aa] min-h-20 w-full p-4 mb-4 mt-3 md:mt-0 flex flex-row items-start gap-5 rounded-lg text-white">
       <div className="size-10 md:size-12 p-3 bg-white/25 rounded-full flex items-center justify-center">
         <Bot className="size-7 md:size-8" />
       </div>

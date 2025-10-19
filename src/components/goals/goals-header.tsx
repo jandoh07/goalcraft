@@ -21,7 +21,7 @@ const filterItems = [
 const GoalsHeader = () => {
   const isActive = "in-progress";
   return (
-    <div className="mb-8 mt-4">
+    <div className="my-4">
       <div className="md:hidden">
         <div className="overflow-x-auto no-scrollbar">
           <div className="flex space-x-2 pb-2 min-w-max">
