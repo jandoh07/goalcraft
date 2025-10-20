@@ -1,11 +1,6 @@
 "use client";
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dumbbell, MoreVertical, CheckCircle2 } from "lucide-react";
+import { Dumbbell, MoreVertical } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const GoalCard = () => {
