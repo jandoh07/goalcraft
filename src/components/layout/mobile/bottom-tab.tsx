@@ -53,7 +53,9 @@ const BottomTab = () => {
                 alt="User Profile Picture"
               />
               <AvatarFallback>
-                {user?.displayName?.charAt(0).toUpperCase() || "U"}
+                {user?.displayName?.charAt(0).toUpperCase() ||
+                  user?.name?.charAt(0).toUpperCase() ||
+                  "U"}
               </AvatarFallback>
             </Avatar>
           ) : (

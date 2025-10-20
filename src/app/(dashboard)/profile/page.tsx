@@ -26,20 +26,36 @@ import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const Profile = () => {
   const { setTheme, theme } = useTheme();
-  const [pushNotifications, setPushNotifications] = useState(true);
   const { user: authUser, logout } = useAuth();
   const router = useRouter();
 
-  // Use actual user data from auth or mock data
+  // Initialize state with user preferences from Firestore
+  const [pushNotifications, setPushNotifications] = useState(
+    authUser?.preferences?.pushNotifications ?? true
+  );
+
+  // Format join date from Firestore createdAt
+  const formatJoinDate = (date?: Date) => {
+    if (!date) return "Recently";
+    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  };
+
+  // Use actual user data from Firestore
   const user = {
-    name: authUser?.displayName || authUser?.email?.split("@")[0] || "John Doe",
-    email: authUser?.email || "john.doe@example.com",
+    name:
+      authUser?.name ||
+      authUser?.displayName ||
+      authUser?.email?.split("@")[0] ||
+      "User",
+    email: authUser?.email || "",
     avatar: authUser?.photoURL || "",
-    subscription: "premium", // "free" | "premium"
-    joinDate: "January 2025",
+    subscription: authUser?.subscription || "free",
+    joinDate: formatJoinDate(authUser?.createdAt),
   };
 
   const handleSignOut = async () => {
@@ -48,6 +64,21 @@ const Profile = () => {
       router.push("/login");
     } catch (error) {
       console.error("Sign out error:", error);
+    }
+  };
+
+  // Update push notifications in Firestore
+  const handlePushNotificationsChange = async (checked: boolean) => {
+    setPushNotifications(checked);
+
+    if (authUser?.uid) {
+      try {
+        await updateDoc(doc(db, "users", authUser.uid), {
+          "preferences.pushNotifications": checked,
+        });
+      } catch (error) {
+        console.error("Error updating push notifications:", error);
+      }
     }
   };
 
@@ -106,7 +137,7 @@ const Profile = () => {
               <Switch
                 id="push-notifications"
                 checked={pushNotifications}
-                onCheckedChange={setPushNotifications}
+                onCheckedChange={handlePushNotificationsChange}
               />
             </div>
           </CardContent>

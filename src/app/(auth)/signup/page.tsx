@@ -89,7 +89,7 @@ const SignUp = () => {
 
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      router.push("/goals");
     } catch (err) {
       if (err instanceof FirebaseError) {
         if (err.code === "auth/popup-closed-by-user") {
