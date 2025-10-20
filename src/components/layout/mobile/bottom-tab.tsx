@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
+import { avatarFallbackInitial } from "@/lib/utils";
 import { ChartLine, CircleUserRound, Goal, ListTodo } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -53,9 +54,7 @@ const BottomTab = () => {
                 alt="User Profile Picture"
               />
               <AvatarFallback>
-                {user?.displayName?.charAt(0).toUpperCase() ||
-                  user?.name?.charAt(0).toUpperCase() ||
-                  "U"}
+                {avatarFallbackInitial(user?.name, user?.displayName || "")}
               </AvatarFallback>
             </Avatar>
           ) : (

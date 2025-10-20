@@ -88,9 +88,13 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
               </Avatar>
               <div>
                 <p className="font-semibold line-clamp-1">
-                  {user?.displayName}
+                  {user?.name || user?.displayName || "User"}
                 </p>
-                <p className="text-xs text-sidebar-ring">Premium Plan</p>
+                <p className="text-xs text-sidebar-ring">
+                  {user?.subscription === "premium"
+                    ? "Premium Plan"
+                    : "Free Plan"}
+                </p>
               </div>
             </Link>
           </SidebarFooter>
