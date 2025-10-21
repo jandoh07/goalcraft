@@ -17,7 +17,7 @@ import {
   GoogleAuthProvider,
   UserCredential,
 } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useTheme } from "next-themes";
 

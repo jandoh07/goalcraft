@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   title: string;
+  description?: string;
   children: React.ReactNode;
   submitLabel: string;
   onSubmit: () => void;
@@ -27,6 +29,7 @@ const ResponsiveDialog = ({
   open,
   setOpen,
   title,
+  description,
   children,
   submitLabel,
   onSubmit,
@@ -36,9 +39,17 @@ const ResponsiveDialog = ({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent
+          className="sm:max-w-[550px]"
+          aria-describedby={description ? undefined : "dialog-content"}
+        >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
+            {description ? (
+              <DialogDescription>{description}</DialogDescription>
+            ) : (
+              <DialogDescription className="sr-only">{title}</DialogDescription>
+            )}
           </DialogHeader>
           {children}
         </DialogContent>

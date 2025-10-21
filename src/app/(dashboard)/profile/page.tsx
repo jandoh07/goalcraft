@@ -27,7 +27,7 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase/firebase";
 
 const Profile = () => {
   const { setTheme, theme } = useTheme();
