@@ -18,6 +18,7 @@ const Goals = () => {
   const { user } = useAuth();
   const { data: goals, isLoading } = useGoals(user?.uid || "");
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
+  const [triggerSubmit, setTriggerSubmit] = useState(false);
 
   const handleAddNew = () => {
     setInitialData(undefined);
@@ -55,12 +56,24 @@ const Goals = () => {
         setOpen={setOpen}
         title={initialData ? "Edit Goal" : "Add Goal"}
         submitLabel={initialData ? "Update Goal" : "Add Goal"}
-        onSubmit={() => {}}
+        onSubmit={() => setTriggerSubmit(true)}
       >
         {initialData && (
-          <GoalForm initialData={initialData} setOpen={setOpen} mode="edit" />
+          <GoalForm
+            initialData={initialData}
+            setOpen={setOpen}
+            mode="edit"
+            triggerSubmit={triggerSubmit}
+            setTriggerSubmit={setTriggerSubmit}
+          />
         )}
-        {!initialData && <GoalForm setOpen={setOpen} />}
+        {!initialData && (
+          <GoalForm
+            setOpen={setOpen}
+            triggerSubmit={triggerSubmit}
+            setTriggerSubmit={setTriggerSubmit}
+          />
+        )}
       </ResponsiveDialog>
     </div>
   );

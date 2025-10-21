@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ComponentProps, useState, useEffect } from "react";
+import { ComponentProps, useState, useEffect, useCallback } from "react";
 import { DatePicker } from "../ui/date-picker";
 import AiCoachTip from "../ai/ai-coach-tip";
 import { Goal } from "@/types";
@@ -17,6 +17,8 @@ interface GoalFormProps extends ComponentProps<"form"> {
   initialData?: Goal;
   mode?: "add" | "edit";
   setOpen: (isOpen: boolean) => void;
+  triggerSubmit: boolean;
+  setTriggerSubmit: (value: boolean) => void;
 }
 
 export default function GoalForm({
@@ -24,6 +26,8 @@ export default function GoalForm({
   initialData,
   mode = "add",
   setOpen,
+  triggerSubmit,
+  setTriggerSubmit,
 }: GoalFormProps) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(
@@ -46,9 +50,7 @@ export default function GoalForm({
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const submitTask = useCallback(() => {
     const goalData = {
       title,
       description,
@@ -84,7 +86,30 @@ export default function GoalForm({
         }
       );
     }
+  }, [
+    mode,
+    addGoalMutation,
+    updateGoalMutation,
+    title,
+    description,
+    category,
+    dueDate,
+    initialData,
+    setOpen,
+  ]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitTask();
   };
+
+  useEffect(() => {
+    if (triggerSubmit) {
+      submitTask();
+      setTriggerSubmit(false);
+    }
+  }, [triggerSubmit, setTriggerSubmit, submitTask]);
+
   return (
     <form
       className={cn("grid items-start gap-6", className)}

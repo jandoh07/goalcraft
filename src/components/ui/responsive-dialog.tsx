@@ -7,7 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerFooter } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "./button";
 
@@ -23,6 +30,7 @@ interface ResponsiveDialogProps {
   children: React.ReactNode;
   submitLabel: string;
   onSubmit: () => void;
+  triggerSubmit?: boolean;
 }
 
 const ResponsiveDialog = ({
@@ -33,6 +41,7 @@ const ResponsiveDialog = ({
   children,
   submitLabel,
   onSubmit,
+  triggerSubmit,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
 
@@ -60,10 +69,28 @@ const ResponsiveDialog = ({
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle className="sr-only">{title}</DrawerTitle>
+          {description ? (
+            <DrawerDescription>{description}</DrawerDescription>
+          ) : (
+            <DrawerDescription className="sr-only">{title}</DrawerDescription>
+          )}
+        </DrawerHeader>
         <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
         <DrawerFooter className="pt-2">
-          <Button type="submit" onClick={onSubmit}>
-            {submitLabel}
+          <Button type="submit" onClick={onSubmit} disabled={triggerSubmit}>
+            {triggerSubmit ? (
+              <div className="flex items-center justify-center gap-2 animate-pulse">
+                {submitLabel.includes("Update")
+                  ? "Updating..."
+                  : submitLabel.includes("Add")
+                  ? "Adding..."
+                  : "Submitting..."}
+              </div>
+            ) : (
+              submitLabel
+            )}
           </Button>
         </DrawerFooter>
       </DrawerContent>

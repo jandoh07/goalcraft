@@ -1,12 +1,16 @@
 "use client";
+import { Task } from "@/types";
 import { useState } from "react";
+import { Badge } from "../ui/badge";
+import { Flag } from "lucide-react";
 
 interface TaskCardProps {
   type: "overdue" | "today" | "tomorrow" | "this-week";
   onClick: () => void;
+  task: Task;
 }
 
-const TaskCard = ({ type, onClick }: TaskCardProps) => {
+const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
   const [isChecked, setIsChecked] = useState(false);
 
   const getBorderColor = () => {
@@ -39,16 +43,24 @@ const TaskCard = ({ type, onClick }: TaskCardProps) => {
       </div>
       <div className="space-y-1">
         <p className={`font-semibold ${isChecked ? "line-through" : ""}`}>
-          Complete project proposal
+          {task.title}
         </p>
-        <p className="text-sm">Final review and submission needed</p>
+        <p className="text-sm">{task.description}</p>
         <div className="flex items-center justify-start gap-2">
-          <div className="px-2 py-1 bg-red-500/25 text-red-500 rounded-2xl text-xs">
-            High Priority
-          </div>
-          <div className="px-2 py-1 bg-blue-500/25 text-blue-500 rounded-2xl text-xs">
-            Work Goals
-          </div>
+          {task.priority && (
+            <Badge
+              className={`capitalize ${
+                task.priority === "high"
+                  ? "bg-red-400"
+                  : task.priority === "medium"
+                  ? "bg-yellow-600"
+                  : "bg-green-600"
+              }`}
+            >
+              <Flag />
+              {task.priority + " Priority"}
+            </Badge>
+          )}
         </div>
       </div>
     </div>

@@ -1,33 +1,38 @@
 "use client";
 
 import MobileHeader from "@/components/layout/mobile/header";
-import { TaskFormData } from "@/components/tasks/task-form";
 import QuickAddTask from "@/components/tasks/quick-add-task";
 import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
-import { TriangleAlert } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
-import TaskForm from "@/components/tasks/task-form";
+import TaskForm from "@/components/tasks/task-form/task-form";
+import { useUserTasks } from "@/hooks/use-tasks";
+import { useAuth } from "@/contexts/auth-context";
+import { Task } from "@/types";
 
 const Tasks = () => {
   const [open, setOpen] = useState(false);
-  const [task, setTask] = useState<TaskFormData | undefined>(undefined);
+  const [activeTask, setActiveTask] = useState<Task | undefined>(undefined);
+  const [triggerSubmit, setTriggerSubmit] = useState(false);
+  const { user } = useAuth();
+  const tasks = useUserTasks(user?.uid || "");
 
-  const handleTaskClick = (data: TaskFormData) => {
-    setTask(data);
+  const handleTaskClick = (data: Task) => {
+    setActiveTask(data);
     setOpen(true);
   };
 
   const handleAddNew = () => {
-    setTask(undefined);
+    setActiveTask(undefined);
     setOpen(true);
   };
 
   const handleClose = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
-      setTimeout(() => setTask(undefined), 300);
+      setTimeout(() => setActiveTask(undefined), 300);
     }
   };
 
@@ -37,36 +42,46 @@ const Tasks = () => {
       <MobileHeader title="My Tasks" />
       <QuickAddTask />
       <div>
-        <div className="flex items-center gap-2 text-destructive mb-5">
+        {/* <div className="flex items-center gap-2 text-destructive mb-5">
           <TriangleAlert className="text-destructive" strokeWidth={2.5} />
           <p className="font-semibold">Overdue (3)</p>
-        </div>
-        <TaskCard
-          type="overdue"
-          onClick={() =>
-            handleTaskClick({
-              title: "Overdue Task",
-              description: "This task is overdue",
-              associatedGoal: "fitness",
-              dueDate: new Date(),
-              time: "09:00",
-              priority: "high",
-              subtasks: [],
-              isRecurring: false,
-              frequency: "",
-            })
-          }
-        />
+        </div> */}
+        {tasks.isLoading && (
+          <div className="w-full h-32">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          </div>
+        )}
+        {tasks.isSuccess && tasks.data?.length === 0 ? (
+          <div className="text-center text-muted-foreground mt-10">
+            <p className="mb-2">No tasks found.</p>
+          </div>
+        ) : (
+          tasks.data?.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => handleTaskClick(task)}
+              type="today"
+            />
+          ))
+        )}
       </div>
       <AddButton onClick={handleAddNew} />
       <ResponsiveDialog
         open={open}
         setOpen={handleClose}
-        title={task ? "Edit Task" : "Add Task"}
-        submitLabel={task ? "Update Task" : "Add Task"}
-        onSubmit={() => {}}
+        title={activeTask ? "Edit Task" : "Add Task"}
+        submitLabel={activeTask ? "Update Task" : "Add Task"}
+        onSubmit={() => setTriggerSubmit(true)}
+        triggerSubmit={triggerSubmit}
       >
-        <TaskForm initialData={task} mode={task ? "edit" : "add"} />
+        <TaskForm
+          initialData={activeTask}
+          mode={activeTask ? "edit" : "add"}
+          openDialog={handleClose}
+          triggerSubmit={triggerSubmit}
+          setTriggerSubmit={setTriggerSubmit}
+        />
       </ResponsiveDialog>
     </div>
   );
