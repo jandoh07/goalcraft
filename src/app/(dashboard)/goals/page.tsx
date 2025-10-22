@@ -12,25 +12,30 @@ import { Spinner } from "@/components/ui/spinner";
 import { useGoals } from "@/hooks/use-goals";
 import { useAuth } from "@/contexts/auth-context";
 import { Goal } from "@/types";
+import useGoalsForm from "@/hooks/use-goals-form";
+import useGoalsDialog from "@/hooks/use-goals-dialog";
 
 const Goals = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { data: goals, isLoading } = useGoals(user?.uid || "");
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
-  const [triggerSubmit, setTriggerSubmit] = useState(false);
-
-  const handleAddNew = () => {
-    setInitialData(undefined);
-    setOpen(true);
-  };
+  const goalsForm = useGoalsForm({
+    initialData,
+    mode: initialData ? "edit" : "add",
+    setOpen,
+  });
+  const { handleAddNew, handleExternalFormSubmit } = useGoalsDialog({
+    setInitialData,
+    setOpen,
+  });
 
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative">
       <MobileHeader title="Your Goals" />
       <AiCoachTip />
       {goals && goals.length > 0 && <GoalsHeader />}
-      <div>
+      <div className="pb-50 md:pb-5">
         {isLoading ? (
           <div className="flex justify-center items-center w-full h-32">
             <Spinner />
@@ -56,24 +61,14 @@ const Goals = () => {
         setOpen={setOpen}
         title={initialData ? "Edit Goal" : "Add Goal"}
         submitLabel={initialData ? "Update Goal" : "Add Goal"}
-        onSubmit={() => setTriggerSubmit(true)}
+        onSubmit={handleExternalFormSubmit}
+        isSubmitting={goalsForm.mutation.isPending}
       >
-        {initialData && (
-          <GoalForm
-            initialData={initialData}
-            setOpen={setOpen}
-            mode="edit"
-            triggerSubmit={triggerSubmit}
-            setTriggerSubmit={setTriggerSubmit}
-          />
-        )}
-        {!initialData && (
-          <GoalForm
-            setOpen={setOpen}
-            triggerSubmit={triggerSubmit}
-            setTriggerSubmit={setTriggerSubmit}
-          />
-        )}
+        <GoalForm
+          setOpen={setOpen}
+          mode={initialData ? "edit" : "add"}
+          goalForm={goalsForm}
+        />
       </ResponsiveDialog>
     </div>
   );

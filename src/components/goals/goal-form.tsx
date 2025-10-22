@@ -4,114 +4,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ComponentProps, useState, useEffect, useCallback } from "react";
+import { ComponentProps } from "react";
 import { DatePicker } from "../ui/date-picker";
 import AiCoachTip from "../ai/ai-coach-tip";
-import { Goal } from "@/types";
 import { goalCategoryOptions } from "@/constants";
-import { useAddGoal, useUpdateGoal } from "@/hooks/use-goals";
-import { useAuth } from "@/contexts/auth-context";
-import { toast } from "sonner";
+import useGoalsForm from "@/hooks/use-goals-form";
 
 interface GoalFormProps extends ComponentProps<"form"> {
-  initialData?: Goal;
   mode?: "add" | "edit";
   setOpen: (isOpen: boolean) => void;
-  triggerSubmit: boolean;
-  setTriggerSubmit: (value: boolean) => void;
+  goalForm: ReturnType<typeof useGoalsForm>;
 }
 
 export default function GoalForm({
   className,
-  initialData,
   mode = "add",
-  setOpen,
-  triggerSubmit,
-  setTriggerSubmit,
+  goalForm,
 }: GoalFormProps) {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
-  const [category, setCategory] = useState(initialData?.category || "");
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    initialData?.dueDate
-  );
-  const { user } = useAuth();
-  const addGoalMutation = useAddGoal(user?.uid || "");
-  const updateGoalMutation = useUpdateGoal(user?.uid || "");
-
-  useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title || "");
-      setDescription(initialData.description || "");
-      setCategory(initialData.category || "");
-      setDueDate(initialData.dueDate);
-    }
-  }, [initialData]);
-
-  const submitTask = useCallback(() => {
-    const goalData = {
-      title,
-      description,
-      category,
-      dueDate,
-    };
-
-    if (mode === "add") {
-      addGoalMutation.mutate(goalData, {
-        onSuccess: () => {
-          toast.success("Goal created successfully");
-          setOpen(false);
-        },
-        onError: (error) => {
-          console.error("Error creating goal:", error);
-          toast.error("Failed to create goal. Please try again.");
-        },
-      });
-    } else {
-      if (!initialData?.id) return;
-
-      updateGoalMutation.mutate(
-        { goalId: initialData.id, updates: goalData },
-        {
-          onSuccess: () => {
-            toast.success("Goal updated successfully");
-            setOpen(false);
-          },
-          onError: (error) => {
-            console.error("Error updating goal:", error);
-            toast.error("Failed to update goal. Please try again.");
-          },
-        }
-      );
-    }
-  }, [
-    mode,
-    addGoalMutation,
-    updateGoalMutation,
-    title,
-    description,
-    category,
-    dueDate,
-    initialData,
-    setOpen,
-  ]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitTask();
-  };
-
-  useEffect(() => {
-    if (triggerSubmit) {
-      submitTask();
-      setTriggerSubmit(false);
-    }
-  }, [triggerSubmit, setTriggerSubmit, submitTask]);
+  const { handleSubmit, formData, setters, mutation } = goalForm;
 
   return (
     <form
+      id="goal-form"
       className={cn("grid items-start gap-6", className)}
       onSubmit={handleSubmit}
     >
@@ -124,8 +38,8 @@ export default function GoalForm({
           type="text"
           id="title"
           placeholder="Enter your goal title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={formData.title}
+          onChange={(e) => setters.setTitle(e.target.value)}
         />
       </div>
       <div className="grid gap-3">
@@ -133,8 +47,8 @@ export default function GoalForm({
         <Input
           id="description"
           placeholder="Add goal description (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={formData.description}
+          onChange={(e) => setters.setDescription(e.target.value)}
         />
       </div>
       <div className="grid gap-3">
@@ -142,13 +56,13 @@ export default function GoalForm({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {goalCategoryOptions.map((categoryOption) => {
             const IconComponent = categoryOption.icon;
-            const isSelected = category === categoryOption.label;
+            const isSelected = formData.category === categoryOption.label;
             return (
               <Button
                 key={categoryOption.label}
                 type="button"
                 variant="outline"
-                onClick={() => setCategory(categoryOption.label)}
+                onClick={() => setters.setCategory(categoryOption.label)}
                 className={cn(
                   "w-full h-12 justify-start text-left font-normal gap-2 border-0",
                   categoryOption.bgColor,
@@ -172,14 +86,14 @@ export default function GoalForm({
       </div>
       <div className="grid gap-3">
         <Label htmlFor="due-date">Due Date</Label>
-        <DatePicker date={dueDate} onDateChange={setDueDate} />
+        <DatePicker date={formData.dueDate} onDateChange={setters.setDueDate} />
       </div>
       <Button
         type="submit"
         className="hidden md:block"
-        disabled={addGoalMutation.isPending || updateGoalMutation.isPending}
+        disabled={mutation.isPending}
       >
-        {addGoalMutation.isPending || updateGoalMutation.isPending ? (
+        {mutation.isPending ? (
           <div className="flex items-center justify-center gap-2 animate-pulse">
             {mode === "edit" ? "Updating..." : "Adding..."}
           </div>

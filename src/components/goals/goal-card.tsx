@@ -52,8 +52,8 @@ const GoalCard = ({
 
   return (
     <div>
-      <Card className="w-full mb-3">
-        <CardHeader>
+      <Card className="w-full mb-3 gap-3">
+        <CardHeader className="[.border-b]:pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">

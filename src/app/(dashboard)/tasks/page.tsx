@@ -8,7 +8,8 @@ import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
-import { useTaskDialog, useUserTasks } from "@/hooks/use-tasks";
+import { useUserTasks } from "@/hooks/use-tasks";
+import { useTaskDialog } from "@/hooks/use-task-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
 
