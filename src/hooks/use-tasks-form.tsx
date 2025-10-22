@@ -1,5 +1,5 @@
 import { Task } from "@/types";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAddTask } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -8,14 +8,10 @@ const useTasksForm = ({
   initialData,
   mode,
   openDialog,
-  triggerSubmit,
-  setTriggerSubmit,
 }: {
   initialData?: Task;
   mode: "add" | "edit";
   openDialog: (isOpen: boolean) => void;
-  triggerSubmit: boolean;
-  setTriggerSubmit: (value: boolean) => void;
 }) => {
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(
@@ -79,7 +75,9 @@ const useTasksForm = ({
     setDueDate(undefined);
   };
 
-  const submitTask = useCallback(() => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (mode === "add") {
       addTaskMutation.mutate(
         {
@@ -106,58 +104,38 @@ const useTasksForm = ({
     } else {
       // Handle editing an existing task
     }
-  }, [
-    addTaskMutation,
-    user,
-    title,
-    description,
-    dueDate,
-    time,
-    priority,
-    subtasks,
-    isRecurring,
-    frequency,
-    mode,
-    openDialog,
-  ]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitTask();
   };
 
-  useEffect(() => {
-    if (triggerSubmit) {
-      submitTask();
-      setTriggerSubmit(false);
-    }
-  }, [triggerSubmit, setTriggerSubmit, submitTask]);
-
   return {
-    title,
-    setTitle,
-    description,
-    setDescription,
-    associatedGoal,
-    setAssociatedGoal,
-    time,
-    setTime,
-    priority,
-    setPriority,
-    subtasks,
-    setSubtasks,
-    newSubtask,
-    setNewSubtask,
-    isRecurring,
-    setIsRecurring,
-    frequency,
-    setFrequency,
-    addSubtask,
-    removeSubtask,
+    formData: {
+      title,
+      description,
+      associatedGoal,
+      dueDate,
+      time,
+      priority,
+      isRecurring,
+      frequency,
+    },
+    setters: {
+      setTitle,
+      setDescription,
+      setAssociatedGoal,
+      setDueDate,
+      setTime,
+      setPriority,
+      setIsRecurring,
+      setFrequency,
+    },
+    subtasks: {
+      items: subtasks,
+      newSubtask,
+      setNewSubtask,
+      addSubtask,
+      removeSubtask,
+    },
+    mutation: addTaskMutation,
     handleSubmit,
-    dueDate,
-    setDueDate,
-    addTaskMutation,
   };
 };
 

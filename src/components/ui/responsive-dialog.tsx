@@ -30,7 +30,7 @@ interface ResponsiveDialogProps {
   children: React.ReactNode;
   submitLabel: string;
   onSubmit: () => void;
-  triggerSubmit?: boolean;
+  isSubmitting: boolean;
 }
 
 const ResponsiveDialog = ({
@@ -41,7 +41,7 @@ const ResponsiveDialog = ({
   children,
   submitLabel,
   onSubmit,
-  triggerSubmit,
+  isSubmitting,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
 
@@ -79,8 +79,8 @@ const ResponsiveDialog = ({
         </DrawerHeader>
         <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
         <DrawerFooter className="pt-2">
-          <Button type="submit" onClick={onSubmit} disabled={triggerSubmit}>
-            {triggerSubmit ? (
+          <Button type="submit" onClick={onSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
               <div className="flex items-center justify-center gap-2 animate-pulse">
                 {submitLabel.includes("Update")
                   ? "Updating..."

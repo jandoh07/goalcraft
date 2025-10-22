@@ -49,7 +49,7 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
         <div className="flex items-center justify-start gap-2">
           {task.priority && (
             <Badge
-              className={`capitalize ${
+              className={`capitalize text-xs ${
                 task.priority === "high"
                   ? "bg-red-400"
                   : task.priority === "medium"
@@ -58,7 +58,7 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
               }`}
             >
               <Flag />
-              {task.priority + " Priority"}
+              {/* {task.priority + " Priority"} */}
             </Badge>
           )}
         </div>

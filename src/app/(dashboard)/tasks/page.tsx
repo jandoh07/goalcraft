@@ -8,40 +8,27 @@ import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
-import { useUserTasks } from "@/hooks/use-tasks";
+import { useTaskDialog, useUserTasks } from "@/hooks/use-tasks";
 import { useAuth } from "@/contexts/auth-context";
-import { Task } from "@/types";
+import useTasksForm from "@/hooks/use-tasks-form";
 
 const Tasks = () => {
   const [open, setOpen] = useState(false);
-  const [activeTask, setActiveTask] = useState<Task | undefined>(undefined);
-  const [triggerSubmit, setTriggerSubmit] = useState(false);
   const { user } = useAuth();
   const tasks = useUserTasks(user?.uid || "");
-
-  const handleTaskClick = (data: Task) => {
-    setActiveTask(data);
-    setOpen(true);
-  };
-
-  const handleAddNew = () => {
-    setActiveTask(undefined);
-    setOpen(true);
-  };
-
-  const handleClose = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
-      setTimeout(() => setActiveTask(undefined), 300);
-    }
-  };
+  const taskDialog = useTaskDialog(setOpen);
+  const taskForm = useTasksForm({
+    initialData: taskDialog.activeTask,
+    mode: taskDialog.activeTask ? "edit" : "add",
+    openDialog: setOpen,
+  });
 
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative">
       <p className="hidden md:block text-lg font-semibold">My Tasks</p>
       <MobileHeader title="My Tasks" />
       <QuickAddTask />
-      <div>
+      <div className="pb-50 md:pb-5">
         {/* <div className="flex items-center gap-2 text-destructive mb-5">
           <TriangleAlert className="text-destructive" strokeWidth={2.5} />
           <p className="font-semibold">Overdue (3)</p>
@@ -60,27 +47,24 @@ const Tasks = () => {
             <TaskCard
               key={task.id}
               task={task}
-              onClick={() => handleTaskClick(task)}
+              onClick={() => taskDialog.handleTaskClick(task)}
               type="today"
             />
           ))
         )}
       </div>
-      <AddButton onClick={handleAddNew} />
+      <AddButton onClick={taskDialog.handleAddNew} />
       <ResponsiveDialog
         open={open}
-        setOpen={handleClose}
-        title={activeTask ? "Edit Task" : "Add Task"}
-        submitLabel={activeTask ? "Update Task" : "Add Task"}
-        onSubmit={() => setTriggerSubmit(true)}
-        triggerSubmit={triggerSubmit}
+        setOpen={taskDialog.handleClose}
+        title={taskDialog.activeTask ? "Edit Task" : "Add Task"}
+        submitLabel={taskDialog.activeTask ? "Update Task" : "Add Task"}
+        onSubmit={taskDialog.handleExternalFormSubmit}
+        isSubmitting={taskForm.mutation.isPending}
       >
         <TaskForm
-          initialData={activeTask}
-          mode={activeTask ? "edit" : "add"}
-          openDialog={handleClose}
-          triggerSubmit={triggerSubmit}
-          setTriggerSubmit={setTriggerSubmit}
+          mode={taskDialog.activeTask ? "edit" : "add"}
+          taskForm={taskForm}
         />
       </ResponsiveDialog>
     </div>
