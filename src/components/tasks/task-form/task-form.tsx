@@ -10,7 +10,7 @@ import SubTasks from "./sub-tasks";
 import RecurringTask from "./recurring-task";
 import Priority from "./priority";
 import InputBox from "@/components/ui/input-box";
-import DeleteAlertDialog from "@/components/ui/delete-alert-dialog";
+import DeleteAlertDialog from "@/components/ui/confirmation-dialog";
 
 interface AddTaskFormProps extends ComponentProps<"form"> {
   mode?: "add" | "edit";
@@ -94,14 +94,14 @@ export default function TaskForm({
       {mode === "edit" && (
         <DeleteAlertDialog
           isOpen={showDeleteDialog}
-          setIsOpen={setShowDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
           onConfirm={() => {
             if (onDelete) {
               onDelete();
             }
           }}
           onCancel={() => setShowDeleteDialog(false)}
-          tag="task"
+          preset="deleteTask"
         />
       )}
     </form>

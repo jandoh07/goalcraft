@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Goal } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useDeleteGoal } from "@/hooks/use-goals";
-import DeleteAlertDialog from "../ui/delete-alert-dialog";
+import DeleteAlertDialog from "../ui/confirmation-dialog";
 import { toast } from "sonner";
 
 const GoalCard = ({
@@ -122,10 +122,10 @@ const GoalCard = ({
       </Card>
       <DeleteAlertDialog
         isOpen={isDeleteDialogOpen}
-        setIsOpen={setIsDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleGoalDeletion}
         onCancel={() => setIsDeleteDialogOpen(false)}
-        tag="goal"
+        preset="deleteGoal"
       />
     </div>
   );

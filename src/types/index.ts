@@ -28,3 +28,5 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type PresetType = "deleteGoal" | "deleteTask";

@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "./button";
-import DeleteAlertDialog from "./delete-alert-dialog";
+import DeleteAlertDialog from "./confirmation-dialog";
 import { useState } from "react";
+import { PresetType } from "@/types";
 
 /**
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
@@ -34,6 +35,7 @@ interface ResponsiveDialogProps {
   onSubmit: () => void;
   isSubmitting: boolean;
   onDelete?: () => void;
+  confirmDialogPreset?: PresetType;
 }
 
 const ResponsiveDialog = ({
@@ -46,6 +48,7 @@ const ResponsiveDialog = ({
   onSubmit,
   isSubmitting,
   onDelete,
+  confirmDialogPreset,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -121,10 +124,10 @@ const ResponsiveDialog = ({
       {onDelete && (
         <DeleteAlertDialog
           isOpen={showDeleteDialog}
-          setIsOpen={setShowDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
           onConfirm={onDelete}
           onCancel={() => setShowDeleteDialog(false)}
-          tag="task"
+          preset={confirmDialogPreset || "deleteTask"}
         />
       )}
     </div>
