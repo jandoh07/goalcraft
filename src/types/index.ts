@@ -30,3 +30,11 @@ export interface Task {
 }
 
 export type PresetType = "deleteGoal" | "deleteTask";
+
+export type GoalCategory =
+  | "Health & Fitness"
+  | "Career"
+  | "Relationships"
+  | "Finance"
+  | "Education"
+  | "Hobbies";

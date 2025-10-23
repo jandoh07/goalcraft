@@ -31,11 +31,12 @@ interface ResponsiveDialogProps {
   title: string;
   description?: string;
   children: React.ReactNode;
-  submitLabel: string;
-  onSubmit: () => void;
-  isSubmitting: boolean;
+  submitLabel?: string;
+  onSubmit?: () => void;
+  isSubmitting?: boolean;
   onDelete?: () => void;
   confirmDialogPreset?: PresetType;
+  hideSubmitButton?: boolean;
 }
 
 const ResponsiveDialog = ({
@@ -46,9 +47,10 @@ const ResponsiveDialog = ({
   children,
   submitLabel,
   onSubmit,
-  isSubmitting,
+  isSubmitting = false,
   onDelete,
   confirmDialogPreset,
+  hideSubmitButton = false,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -57,7 +59,7 @@ const ResponsiveDialog = ({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          className="sm:max-w-[550px]"
+          className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto"
           aria-describedby={description ? undefined : "dialog-content"}
         >
           <DialogHeader>
@@ -90,30 +92,33 @@ const ResponsiveDialog = ({
           <DrawerFooter
             className={`pt-2 ${onDelete ? "grid grid-cols-4" : ""} gap-2`}
           >
-            <Button
-              type="submit"
-              onClick={onSubmit}
-              disabled={isSubmitting}
-              className="col-span-3"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center gap-2 animate-pulse">
-                  {submitLabel.includes("Update")
-                    ? "Updating..."
-                    : submitLabel.includes("Add")
-                    ? "Adding..."
-                    : "Submitting..."}
-                </div>
-              ) : (
-                submitLabel
-              )}
-            </Button>
+            {!hideSubmitButton && onSubmit && (
+              <Button
+                type="submit"
+                onClick={onSubmit}
+                disabled={isSubmitting}
+                className={onDelete ? "col-span-3" : ""}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center gap-2 animate-pulse">
+                    {submitLabel?.includes("Update")
+                      ? "Updating..."
+                      : submitLabel?.includes("Add")
+                      ? "Adding..."
+                      : "Submitting..."}
+                  </div>
+                ) : (
+                  submitLabel
+                )}
+              </Button>
+            )}
             {onDelete && (
               <Button
                 type="button"
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isSubmitting}
+                className={hideSubmitButton || !onSubmit ? "col-span-4" : ""}
               >
                 Delete
               </Button>

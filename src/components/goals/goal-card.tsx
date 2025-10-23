@@ -9,13 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dumbbell, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Goal } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 import { useDeleteGoal } from "@/hooks/use-goals";
 import DeleteAlertDialog from "../ui/confirmation-dialog";
 import { toast } from "sonner";
+import ResponsiveDialog from "../ui/responsive-dialog";
+import GoalDetails from "./goal-details";
+import GoalIcon from "./goal-icon";
 
 const GoalCard = ({
   goal,
@@ -29,6 +32,7 @@ const GoalCard = ({
   const { user } = useAuth();
   const deleteGoalMutation = useDeleteGoal(user?.uid || "");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleGoalDeletion = () => {
     if (!goal.id) return;
@@ -50,18 +54,26 @@ const GoalCard = ({
     setOpen(true);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent opening details when clicking on dropdown menu
+    if ((e.target as HTMLElement).closest('[role="button"]')) {
+      return;
+    }
+    setIsDetailsOpen(true);
+  };
+
   return (
     <div>
-      <Card className="w-full mb-3 gap-3">
+      <Card
+        className="w-full mb-3 gap-3 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={handleCardClick}
+      >
         <CardHeader className="[.border-b]:pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Dumbbell className="size-6 text-blue-600" />
-              </div>
               <div>
                 <h3 className="font-semibold">{goal.title}</h3>
-                <p className="text-sm text-muted-foreground">{goal.category}</p>
+                {goal.category && <GoalIcon category={goal.category} />}
               </div>
             </div>
             <DropdownMenu>
@@ -71,6 +83,7 @@ const GoalCard = ({
                   size="sm"
                   className="h-8 w-8 p-0"
                   aria-label="Goal options"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="size-4" />
                 </Button>
@@ -120,6 +133,18 @@ const GoalCard = ({
         </Button>
       </CardFooter> */}
       </Card>
+
+      {/* Goal Details Dialog */}
+      <ResponsiveDialog
+        open={isDetailsOpen}
+        setOpen={setIsDetailsOpen}
+        title="Goal Details"
+        hideSubmitButton={true}
+      >
+        <GoalDetails goal={goal} />
+      </ResponsiveDialog>
+
+      {/* Delete Confirmation Dialog */}
       <DeleteAlertDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
