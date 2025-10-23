@@ -6,17 +6,19 @@ import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
-import { useUserTasks } from "@/hooks/use-tasks";
+import { useGetTasks } from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
+import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
+import TaskGroupHeader from "@/components/tasks/task-group-header";
 
 const Tasks = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const tasks = useUserTasks(user?.uid || "");
+  const tasks = useGetTasks(user?.uid || "");
   const taskDialog = useTaskDialog(setOpen);
   const taskForm = useTasksForm({
     initialData: taskDialog.activeTask,
@@ -24,16 +26,45 @@ const Tasks = () => {
     openDialog: setOpen,
   });
 
+  // Group tasks by date
+  const groupedTasks = useMemo(() => {
+    if (!tasks.data) return null;
+    return groupTasksByDate(tasks.data);
+  }, [tasks.data]);
+
+  const renderTaskGroup = (
+    groupKey:
+      | "overdue"
+      | "today"
+      | "tomorrow"
+      | "this-week"
+      | "later"
+      | "no-date",
+    groupTasks: typeof tasks.data
+  ) => {
+    if (!groupTasks || groupTasks.length === 0) return null;
+
+    return (
+      <div key={groupKey}>
+        <TaskGroupHeader group={groupKey} count={groupTasks.length} />
+        {groupTasks.map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onClick={() => taskDialog.handleTaskClick(task)}
+            type={getTaskType(task.dueDate)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative">
       <p className="hidden md:block text-lg font-semibold">My Tasks</p>
       <MobileHeader title="My Tasks" />
       <QuickAddTask />
       <div className="pb-50 md:pb-5">
-        {/* <div className="flex items-center gap-2 text-destructive mb-5">
-          <TriangleAlert className="text-destructive" strokeWidth={2.5} />
-          <p className="font-semibold">Overdue (3)</p>
-        </div> */}
         {tasks.isLoading && (
           <div className="w-full h-32">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
@@ -44,14 +75,16 @@ const Tasks = () => {
             <p className="mb-2">No tasks found.</p>
           </div>
         ) : (
-          tasks.data?.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onClick={() => taskDialog.handleTaskClick(task)}
-              type="today"
-            />
-          ))
+          groupedTasks && (
+            <>
+              {renderTaskGroup("overdue", groupedTasks.overdue)}
+              {renderTaskGroup("today", groupedTasks.today)}
+              {renderTaskGroup("tomorrow", groupedTasks.tomorrow)}
+              {renderTaskGroup("this-week", groupedTasks["this-week"])}
+              {renderTaskGroup("later", groupedTasks.later)}
+              {renderTaskGroup("no-date", groupedTasks["no-date"])}
+            </>
+          )
         )}
       </div>
       <AddButton onClick={taskDialog.handleAddNew} />

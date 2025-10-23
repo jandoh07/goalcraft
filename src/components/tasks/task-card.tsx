@@ -5,7 +5,7 @@ import { Badge } from "../ui/badge";
 import { Flag } from "lucide-react";
 
 interface TaskCardProps {
-  type: "overdue" | "today" | "tomorrow" | "this-week";
+  type: "overdue" | "today" | "tomorrow" | "this-week" | "later" | "no-date";
   onClick: () => void;
   task: Task;
 }
@@ -23,6 +23,10 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
         return "border-orange-500";
       case "this-week":
         return "border-blue-400";
+      case "later":
+        return "border-muted-foreground";
+      case "no-date":
+        return "border-muted-foreground";
       default:
         return "border-gray-500";
     }

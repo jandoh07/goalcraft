@@ -1,7 +1,6 @@
 import {
   addTask,
   editTask,
-  fetchTask,
   fetchUserTasks,
   removeTask,
   toggleTaskStatus,
@@ -9,7 +8,7 @@ import {
 import { Task } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export const useUserTasks = (
+export const useGetTasks = (
   userId: string,
   filters?: { status?: string; goalId?: string }
 ) => {
@@ -20,20 +19,12 @@ export const useUserTasks = (
   });
 };
 
-export const useTask = (taskId: string) => {
-  return useQuery({
-    queryKey: ["task", taskId],
-    queryFn: () => fetchTask(taskId),
-    enabled: !!taskId,
-  });
-};
-
 export const useAddTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addTask,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.userId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 };
@@ -48,8 +39,8 @@ export const useUpdateTask = () => {
       taskId: string;
       updates: Partial<Task>;
     }) => editTask(taskId, updates),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 };

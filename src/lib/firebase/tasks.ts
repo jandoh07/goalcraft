@@ -3,7 +3,6 @@ import {
   collection,
   addDoc,
   getDocs,
-  getDoc,
   doc,
   updateDoc,
   deleteDoc,
@@ -61,29 +60,6 @@ export const fetchUserTasks = async (
     return tasks;
   } catch (error) {
     console.error("Error getting tasks:", error);
-    throw error;
-  }
-};
-
-export const fetchTask = async (taskId: string) => {
-  try {
-    const docRef = doc(db, "tasks", taskId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        ...data,
-        dueDate: data.dueDate?.toDate(),
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as Task;
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Error getting task:", error);
     throw error;
   }
 };

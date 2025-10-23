@@ -1,6 +1,6 @@
 import { Task } from "@/types";
 import { useEffect, useState } from "react";
-import { useAddTask } from "./use-tasks";
+import { useAddTask, useUpdateTask } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -37,6 +37,7 @@ const useTasksForm = ({
   const [frequency, setFrequency] = useState(initialData?.frequency || "");
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
+  const editTaskMutation = useUpdateTask();
 
   useEffect(() => {
     if (initialData) {
@@ -101,8 +102,31 @@ const useTasksForm = ({
           },
         }
       );
-    } else {
-      // Handle editing an existing task
+    } else if (mode === "edit" && initialData) {
+      editTaskMutation.mutate(
+        {
+          taskId: initialData.id || "",
+          updates: {
+            title,
+            description,
+            associatedGoal,
+            dueDate,
+            time,
+            priority,
+            subtasks,
+            isRecurring,
+            frequency,
+            status: "in-progress",
+          },
+        },
+        {
+          onSuccess: () => {
+            resetForm();
+            openDialog(false);
+            toast.success("Task updated successfully");
+          },
+        }
+      );
     }
   };
 
@@ -134,7 +158,7 @@ const useTasksForm = ({
       addSubtask,
       removeSubtask,
     },
-    mutation: addTaskMutation,
+    mutation: mode === "add" ? addTaskMutation : editTaskMutation,
     handleSubmit,
   };
 };
