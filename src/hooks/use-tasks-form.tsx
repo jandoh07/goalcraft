@@ -1,6 +1,6 @@
 import { Task } from "@/types";
 import { useEffect, useState } from "react";
-import { useAddTask, useUpdateTask } from "./use-tasks";
+import { useAddTask, useDeleteTask, useUpdateTask } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -38,6 +38,7 @@ const useTasksForm = ({
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
   const editTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
   useEffect(() => {
     if (initialData) {
@@ -130,6 +131,21 @@ const useTasksForm = ({
     }
   };
 
+  const handleDeleteTask = (
+    taskId: string,
+    handleClose: (isOpen: boolean) => void
+  ) => {
+    deleteTaskMutation.mutate(taskId, {
+      onSuccess: () => {
+        handleClose(false);
+        toast.success("Task deleted successfully");
+      },
+      onError: () => {
+        toast.error("Failed to delete task");
+      },
+    });
+  };
+
   return {
     formData: {
       title,
@@ -160,6 +176,7 @@ const useTasksForm = ({
     },
     mutation: mode === "add" ? addTaskMutation : editTaskMutation,
     handleSubmit,
+    handleDeleteTask,
   };
 };
 

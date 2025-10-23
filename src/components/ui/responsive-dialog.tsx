@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "./button";
+import DeleteAlertDialog from "./delete-alert-dialog";
+import { useState } from "react";
 
 /**
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
@@ -31,6 +33,7 @@ interface ResponsiveDialogProps {
   submitLabel: string;
   onSubmit: () => void;
   isSubmitting: boolean;
+  onDelete?: () => void;
 }
 
 const ResponsiveDialog = ({
@@ -42,8 +45,10 @@ const ResponsiveDialog = ({
   submitLabel,
   onSubmit,
   isSubmitting,
+  onDelete,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (isDesktop) {
     return (
@@ -67,34 +72,62 @@ const ResponsiveDialog = ({
   }
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle className="sr-only">{title}</DrawerTitle>
-          {description ? (
-            <DrawerDescription>{description}</DrawerDescription>
-          ) : (
-            <DrawerDescription className="sr-only">{title}</DrawerDescription>
-          )}
-        </DrawerHeader>
-        <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
-        <DrawerFooter className="pt-2">
-          <Button type="submit" onClick={onSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <div className="flex items-center justify-center gap-2 animate-pulse">
-                {submitLabel.includes("Update")
-                  ? "Updating..."
-                  : submitLabel.includes("Add")
-                  ? "Adding..."
-                  : "Submitting..."}
-              </div>
+    <div>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="sr-only">{title}</DrawerTitle>
+            {description ? (
+              <DrawerDescription>{description}</DrawerDescription>
             ) : (
-              submitLabel
+              <DrawerDescription className="sr-only">{title}</DrawerDescription>
             )}
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+          </DrawerHeader>
+          <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
+          <DrawerFooter
+            className={`pt-2 ${onDelete ? "grid grid-cols-4" : ""} gap-2`}
+          >
+            <Button
+              type="submit"
+              onClick={onSubmit}
+              disabled={isSubmitting}
+              className="col-span-3"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-2 animate-pulse">
+                  {submitLabel.includes("Update")
+                    ? "Updating..."
+                    : submitLabel.includes("Add")
+                    ? "Adding..."
+                    : "Submitting..."}
+                </div>
+              ) : (
+                submitLabel
+              )}
+            </Button>
+            {onDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isSubmitting}
+              >
+                Delete
+              </Button>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+      {onDelete && (
+        <DeleteAlertDialog
+          isOpen={showDeleteDialog}
+          setIsOpen={setShowDeleteDialog}
+          onConfirm={onDelete}
+          onCancel={() => setShowDeleteDialog(false)}
+          tag="task"
+        />
+      )}
+    </div>
   );
 };
 

@@ -76,14 +76,14 @@ const Tasks = () => {
           </div>
         ) : (
           groupedTasks && (
-            <>
+            <div className="">
               {renderTaskGroup("overdue", groupedTasks.overdue)}
               {renderTaskGroup("today", groupedTasks.today)}
               {renderTaskGroup("tomorrow", groupedTasks.tomorrow)}
               {renderTaskGroup("this-week", groupedTasks["this-week"])}
               {renderTaskGroup("later", groupedTasks.later)}
               {renderTaskGroup("no-date", groupedTasks["no-date"])}
-            </>
+            </div>
           )
         )}
       </div>
@@ -95,10 +95,25 @@ const Tasks = () => {
         submitLabel={taskDialog.activeTask ? "Update Task" : "Add Task"}
         onSubmit={taskDialog.handleExternalFormSubmit}
         isSubmitting={taskForm.mutation.isPending}
+        onDelete={
+          taskDialog.activeTask
+            ? () =>
+                taskForm.handleDeleteTask(
+                  taskDialog.activeTask?.id || "",
+                  taskDialog.handleClose
+                )
+            : undefined
+        }
       >
         <TaskForm
           mode={taskDialog.activeTask ? "edit" : "add"}
           taskForm={taskForm}
+          onDelete={() =>
+            taskForm.handleDeleteTask(
+              taskDialog.activeTask?.id || "",
+              taskDialog.handleClose
+            )
+          }
         />
       </ResponsiveDialog>
     </div>
