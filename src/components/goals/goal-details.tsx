@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import TaskCard from "@/components/tasks/task-card";
 import { getTaskType } from "@/lib/utils/task-grouping";
 import { Loader2 } from "lucide-react";
+import GoalIcon from "./goal-icon";
 
 interface GoalDetailsProps {
   goal: Goal;
@@ -75,9 +76,7 @@ const GoalDetails = ({ goal }: GoalDetailsProps) => {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold">{goal.title}</h2>
-            <Badge variant="outline" className="capitalize">
-              {goal.category}
-            </Badge>
+            <GoalIcon category={goal.category} />
           </div>
           <Badge
             variant={goal.status === "completed" ? "default" : "secondary"}

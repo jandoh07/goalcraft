@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Grid2x2, List } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,8 +42,8 @@ const GoalsHeader = ({ className }: { className?: string }) => {
         </div>
       </div>
       <div className="hidden md:flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <p className="md:text-lg font-semibold mr-8">Your Goals</p>
+        <p className="md:text-lg font-semibold mr-8">Your Goals</p>
+        <div className="space-x-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant={"outline"}>
@@ -92,23 +92,6 @@ const GoalsHeader = ({ className }: { className?: string }) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={"outline"}
-            onClick={() => console.log("Grid view")}
-            aria-label="Switch to grid view"
-          >
-            <Grid2x2 /> <span>Grid</span>
-          </Button>
-          <Button
-            variant={"default"}
-            className="bg-accent text-accent-foreground"
-            onClick={() => console.log("List view")}
-            aria-label="Switch to list view"
-          >
-            <List /> <span>List</span>
-          </Button>
         </div>
       </div>
     </div>
