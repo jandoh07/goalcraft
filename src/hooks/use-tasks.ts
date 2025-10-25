@@ -5,6 +5,7 @@ import {
   removeTask,
   toggleTaskStatus,
 } from "@/lib/firebase/tasks";
+import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -22,7 +23,10 @@ export const useGetTasks = (
 export const useAddTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: addTask,
+    mutationFn: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) =>
+      addTask(
+        removeEmptyFields(task) as Omit<Task, "id" | "createdAt" | "updatedAt">
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -38,7 +42,7 @@ export const useUpdateTask = () => {
     }: {
       taskId: string;
       updates: Partial<Task>;
-    }) => editTask(taskId, updates),
+    }) => editTask(taskId, removeEmptyFields(updates)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },

@@ -17,9 +17,10 @@ const useTasksForm = ({
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
-  const [associatedGoal, setAssociatedGoal] = useState(
-    initialData?.associatedGoal || null
-  );
+  const [associatedGoal, setAssociatedGoal] = useState({
+    goalId: initialData?.goalId || "",
+    goalTitle: initialData?.goalTitle || "",
+  });
   const [time, setTime] = useState(initialData?.time || "");
   const [priority, setPriority] = useState<"high" | "medium" | "low" | "">(
     initialData?.priority || ""
@@ -43,7 +44,10 @@ const useTasksForm = ({
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setAssociatedGoal(null);
+    setAssociatedGoal({
+      goalId: "",
+      goalTitle: "",
+    });
     setTime("");
     setPriority("");
     setSubtasks([]);
@@ -56,7 +60,10 @@ const useTasksForm = ({
     if (initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
-      setAssociatedGoal(initialData.associatedGoal || null);
+      setAssociatedGoal({
+        goalId: initialData.goalId || "",
+        goalTitle: initialData.goalTitle || "",
+      });
       setTime(initialData.time || "");
       setPriority(initialData.priority || "low");
       setSubtasks(initialData.subtasks || []);
@@ -89,7 +96,8 @@ const useTasksForm = ({
           userId: user?.uid || "",
           title,
           description,
-          associatedGoal,
+          goalId: associatedGoal.goalId,
+          goalTitle: associatedGoal.goalTitle,
           dueDate: dueDate,
           time,
           priority,
@@ -113,7 +121,8 @@ const useTasksForm = ({
           updates: {
             title,
             description,
-            associatedGoal,
+            goalId: associatedGoal.goalId,
+            goalTitle: associatedGoal.goalTitle,
             dueDate,
             time,
             priority,

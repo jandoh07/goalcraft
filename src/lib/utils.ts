@@ -26,3 +26,19 @@ export function avatarFallbackInitial(name?: string, displayName?: string) {
 
   return names[0].charAt(0).toUpperCase();
 }
+
+interface InputObject<T = unknown> {
+  [key: string]: T;
+}
+
+export const removeEmptyFields = <T extends InputObject>(
+  obj: T
+): Partial<T> => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => {
+      // Keep the value if it's not an empty string
+      // Also handles null/undefined and keeps falsy values like 0 or false
+      return value !== "" && value !== null && value !== undefined;
+    })
+  ) as Partial<T>;
+};

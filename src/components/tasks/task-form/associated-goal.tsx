@@ -24,8 +24,8 @@ const AssociatedGoal = ({
   const handleSelectChange = (value: string) => {
     const selectedGoal = goals?.find((goal) => goal.id === value);
     setAssociatedGoal({
-      id: value,
-      title: selectedGoal?.title || "",
+      goalId: value,
+      goalTitle: selectedGoal?.title || "",
     });
   };
 
@@ -35,7 +35,10 @@ const AssociatedGoal = ({
         <Target className="size-4 inline mr-2" />
         Associated Goal
       </Label>
-      <Select value={associatedGoal?.id} onValueChange={handleSelectChange}>
+      <Select
+        value={associatedGoal?.goalId || ""}
+        onValueChange={handleSelectChange}
+      >
         <SelectTrigger>
           <SelectValue
             placeholder={

@@ -12,15 +12,16 @@ export interface Goal {
 }
 
 export type AssociatedGoal = {
-  id: string;
-  title: string;
+  goalId: string;
+  goalTitle: string;
 } | null;
 
 export interface Task {
   id?: string;
   userId: string;
   goalId?: string;
-  associatedGoal: AssociatedGoal;
+  // associatedGoal: AssociatedGoal;
+  goalTitle?: string;
   title: string;
   description?: string;
   dueDate?: Date;

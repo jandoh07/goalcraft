@@ -66,10 +66,10 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
               {/* {task.priority + " Priority"} */}
             </Badge>
           )}
-          {task.associatedGoal && (
+          {task.goalId && (
             <Badge className="text-[0.6rem]" variant={"outline"}>
-              <GoalIcon category={""} />
-              {task.associatedGoal.title}
+              <GoalIcon category={"Finance"} onlyIcon={true} />
+              {task.goalTitle}
             </Badge>
           )}
           {/* {task.dueDate && (

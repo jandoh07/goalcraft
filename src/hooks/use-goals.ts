@@ -7,6 +7,7 @@ import {
   deleteGoal,
 } from "@/lib/firebase/goals";
 import { Goal } from "@/types";
+import { removeEmptyFields } from "@/lib/utils";
 
 export const useGoals = (userId: string, status?: string) => {
   return useQuery({
@@ -32,7 +33,14 @@ export const useAddGoal = (userId: string) => {
         Goal,
         "id" | "createdAt" | "updatedAt" | "userId" | "status"
       >
-    ) => addGoal(userId!, goalData),
+    ) =>
+      addGoal(
+        userId!,
+        removeEmptyFields(goalData) as Omit<
+          Goal,
+          "id" | "createdAt" | "updatedAt" | "userId" | "status"
+        >
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", userId] });
     },
@@ -48,7 +56,7 @@ export const useUpdateGoal = (userId: string) => {
     }: {
       goalId: string;
       updates: Partial<Goal>;
-    }) => updateGoal(goalId, updates),
+    }) => updateGoal(goalId, removeEmptyFields(updates)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", userId] });
     },
