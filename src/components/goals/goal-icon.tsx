@@ -1,6 +1,7 @@
 import React from "react";
 import { Badge } from "../ui/badge";
 import { goalCategoryConfig } from "@/constants";
+import { CircleQuestionMark } from "lucide-react";
 
 interface GoalIconProps {
   category: string;
@@ -10,6 +11,7 @@ const GoalIcon: React.FC<GoalIconProps> = ({ category }) => {
   const getCategoryIcon = () => {
     const categoryIconConfig =
       goalCategoryConfig[category as keyof typeof goalCategoryConfig];
+
     if (categoryIconConfig) {
       const IconComponent = categoryIconConfig.icon;
       return (
@@ -18,6 +20,8 @@ const GoalIcon: React.FC<GoalIconProps> = ({ category }) => {
         />
       );
     }
+
+    return <CircleQuestionMark className="inline-block mr-1 text-gray-500" />;
   };
 
   return (

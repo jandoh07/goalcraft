@@ -18,7 +18,7 @@ const useTasksForm = ({
     initialData?.description || ""
   );
   const [associatedGoal, setAssociatedGoal] = useState(
-    initialData?.associatedGoal || ""
+    initialData?.associatedGoal || null
   );
   const [time, setTime] = useState(initialData?.time || "");
   const [priority, setPriority] = useState<"high" | "medium" | "low" | "">(
@@ -40,17 +40,32 @@ const useTasksForm = ({
   const editTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
 
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setAssociatedGoal(null);
+    setTime("");
+    setPriority("");
+    setSubtasks([]);
+    setIsRecurring(false);
+    setFrequency("");
+    setDueDate(undefined);
+  };
+
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
-      setAssociatedGoal(initialData.associatedGoal || "");
+      setAssociatedGoal(initialData.associatedGoal || null);
       setTime(initialData.time || "");
       setPriority(initialData.priority || "low");
       setSubtasks(initialData.subtasks || []);
       setIsRecurring(initialData.isRecurring || false);
       setFrequency(initialData.frequency || "");
       setDueDate(initialData.dueDate || undefined);
+    } else {
+      // Reset form when initialData is undefined (add mode)
+      resetForm();
     }
   }, [initialData]);
 
@@ -65,18 +80,6 @@ const useTasksForm = ({
     setSubtasks(subtasks.filter((_, i) => i !== index));
   };
 
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setAssociatedGoal("");
-    setTime("");
-    setPriority("");
-    setSubtasks([]);
-    setIsRecurring(false);
-    setFrequency("");
-    setDueDate(undefined);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -86,7 +89,7 @@ const useTasksForm = ({
           userId: user?.uid || "",
           title,
           description,
-          // associatedGoal,
+          associatedGoal,
           dueDate: dueDate,
           time,
           priority,
@@ -125,6 +128,10 @@ const useTasksForm = ({
             resetForm();
             openDialog(false);
             toast.success("Task updated successfully");
+          },
+          onError: (error) => {
+            toast.error("Failed to update task");
+            console.error("Error updating task:", error);
           },
         }
       );

@@ -11,11 +11,16 @@ export interface Goal {
   updatedAt: Date;
 }
 
+export type AssociatedGoal = {
+  id: string;
+  title: string;
+} | null;
+
 export interface Task {
   id?: string;
   userId: string;
   goalId?: string;
-  associatedGoal?: string;
+  associatedGoal: AssociatedGoal;
   title: string;
   description?: string;
   dueDate?: Date;

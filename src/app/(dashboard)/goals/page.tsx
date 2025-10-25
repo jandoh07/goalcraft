@@ -17,7 +17,7 @@ import useGoalsDialog from "@/hooks/use-goals-dialog";
 const Goals = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const { data: goals, isLoading } = useGoals(user?.uid || "");
+  const { data: goals, isLoading } = useGoals(user?.uid || "", "in-progress");
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
   const goalsForm = useGoalsForm({
     initialData,

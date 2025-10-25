@@ -6,31 +6,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/auth-context";
+import { useGoals } from "@/hooks/use-goals";
+import type { AssociatedGoal } from "@/types";
 import { Target } from "lucide-react";
 
 const AssociatedGoal = ({
   associatedGoal,
   setAssociatedGoal,
 }: {
-  associatedGoal: string;
-  setAssociatedGoal: (goal: string) => void;
+  associatedGoal: AssociatedGoal;
+  setAssociatedGoal: React.Dispatch<React.SetStateAction<AssociatedGoal>>;
 }) => {
+  const { user } = useAuth();
+  const { data: goals, isLoading } = useGoals(user?.uid || "", "in-progress");
+
+  const handleSelectChange = (value: string) => {
+    const selectedGoal = goals?.find((goal) => goal.id === value);
+    setAssociatedGoal({
+      id: value,
+      title: selectedGoal?.title || "",
+    });
+  };
+
   return (
     <div className="grid gap-3">
       <Label htmlFor="goal">
         <Target className="size-4 inline mr-2" />
         Associated Goal
       </Label>
-      <Select value={associatedGoal} onValueChange={setAssociatedGoal}>
+      <Select value={associatedGoal?.id} onValueChange={handleSelectChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Select a goal" />
+          <SelectValue
+            placeholder={
+              goals && goals.length > 0
+                ? "Select a goal"
+                : "No goals in progress"
+            }
+          />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="fitness">Get Fit & Healthy</SelectItem>
-          <SelectItem value="career">Advance My Career</SelectItem>
-          <SelectItem value="finance">Save $10,000</SelectItem>
-          <SelectItem value="education">Learn Web Development</SelectItem>
-          <SelectItem value="none">No Goal</SelectItem>
+          {isLoading && (
+            <div className="flex w-full justify-center items-center">
+              Loading...
+            </div>
+          )}
+          {goals &&
+            goals.length > 0 &&
+            goals.map((goal) => (
+              <SelectItem key={goal.id} value={goal.id || ""}>
+                {goal.title}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

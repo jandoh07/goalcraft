@@ -3,6 +3,7 @@ import { Task } from "@/types";
 import { useState } from "react";
 import { Badge } from "../ui/badge";
 import { Flag } from "lucide-react";
+import GoalIcon from "../goals/goal-icon";
 
 interface TaskCardProps {
   type: "overdue" | "today" | "tomorrow" | "this-week" | "later" | "no-date";
@@ -65,6 +66,17 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
               {/* {task.priority + " Priority"} */}
             </Badge>
           )}
+          {task.associatedGoal && (
+            <Badge className="text-[0.6rem]" variant={"outline"}>
+              <GoalIcon category={""} />
+              {task.associatedGoal.title}
+            </Badge>
+          )}
+          {/* {task.dueDate && (
+            <div className="text-xs text-muted-foreground">
+              Due: {new Date(task.dueDate).toLocaleDateString()}
+            </div>
+          )} */}
         </div>
       </div>
     </div>
