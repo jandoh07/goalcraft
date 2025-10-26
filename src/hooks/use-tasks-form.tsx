@@ -1,4 +1,4 @@
-import { Task } from "@/types";
+import { AssociatedGoal, Task } from "@/types";
 import { useEffect, useState } from "react";
 import { useAddTask, useDeleteTask, useUpdateTask } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,7 +17,7 @@ const useTasksForm = ({
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
-  const [associatedGoal, setAssociatedGoal] = useState({
+  const [associatedGoal, setAssociatedGoal] = useState<AssociatedGoal>({
     goalId: initialData?.goalId || "",
     goalTitle: initialData?.goalTitle || "",
   });
@@ -96,8 +96,8 @@ const useTasksForm = ({
           userId: user?.uid || "",
           title,
           description,
-          goalId: associatedGoal.goalId,
-          goalTitle: associatedGoal.goalTitle,
+          goalId: associatedGoal?.goalId,
+          goalTitle: associatedGoal?.goalTitle,
           dueDate: dueDate,
           time,
           priority,
@@ -121,8 +121,8 @@ const useTasksForm = ({
           updates: {
             title,
             description,
-            goalId: associatedGoal.goalId,
-            goalTitle: associatedGoal.goalTitle,
+            goalId: associatedGoal?.goalId,
+            goalTitle: associatedGoal?.goalTitle,
             dueDate,
             time,
             priority,
