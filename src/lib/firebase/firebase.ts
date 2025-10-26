@@ -6,6 +6,11 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,6 +26,19 @@ const firebaseConfig = {
 // Initialize Firebase (check if already initialized to avoid errors)
 const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+// Initialize the Gemini Developer API backend service
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+export const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+
+initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+  ),
+  isTokenAutoRefreshEnabled: true, // Set to true to allow auto-refresh.
+});
 
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
