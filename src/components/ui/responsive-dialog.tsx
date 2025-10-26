@@ -59,7 +59,7 @@ const ResponsiveDialog = ({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto"
+          className="sm:max-w-[550px] max-h-[90vh]"
           aria-describedby={description ? undefined : "dialog-content"}
         >
           <DialogHeader>
@@ -70,7 +70,7 @@ const ResponsiveDialog = ({
               <DialogDescription className="sr-only">{title}</DialogDescription>
             )}
           </DialogHeader>
-          {children}
+          <div className="overflow-y-auto px-1">{children}</div>
         </DialogContent>
       </Dialog>
     );
