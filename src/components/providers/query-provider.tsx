@@ -17,13 +17,11 @@ export default function QueryProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Disable automatic refetching by default
-            // Enable as needed per query
             refetchOnWindowFocus: false,
             refetchOnMount: false,
-            refetchOnReconnect: true, // Refetch when coming back online (perfect for offline support!)
+            refetchOnReconnect: true,
             retry: 1,
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            staleTime: 5 * 60 * 1000,
           },
           mutations: {
             retry: 1,

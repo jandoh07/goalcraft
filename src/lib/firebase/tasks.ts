@@ -11,38 +11,47 @@ import {
   orderBy,
   Timestamp,
   DocumentData,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
+
+const userTasksQuery = (
+  userId: string,
+  filters?: { status?: string; goalId?: string }
+) => {
+  let q = query(
+    collection(db, "tasks"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+
+  if (filters?.status) {
+    q = query(
+      collection(db, "tasks"),
+      where("userId", "==", userId),
+      where("status", "==", filters.status),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  if (filters?.goalId) {
+    q = query(
+      collection(db, "tasks"),
+      where("userId", "==", userId),
+      where("goalId", "==", filters.goalId),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  return q;
+};
 
 export const fetchUserTasks = async (
   userId: string,
   filters?: { status?: string; goalId?: string }
 ) => {
   try {
-    let q = query(
-      collection(db, "tasks"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-
-    if (filters?.status) {
-      q = query(
-        collection(db, "tasks"),
-        where("userId", "==", userId),
-        where("status", "==", filters.status),
-        orderBy("createdAt", "desc")
-      );
-    }
-
-    if (filters?.goalId) {
-      q = query(
-        collection(db, "tasks"),
-        where("userId", "==", userId),
-        where("goalId", "==", filters.goalId),
-        orderBy("createdAt", "desc")
-      );
-    }
-
+    const q = userTasksQuery(userId, filters);
     const querySnapshot = await getDocs(q);
     const tasks: Task[] = [];
 
@@ -62,6 +71,38 @@ export const fetchUserTasks = async (
     console.error("Error getting tasks:", error);
     throw error;
   }
+};
+
+export const subscribeToUserTasks = (
+  userId: string,
+  filters: { status?: string; goalId?: string } | undefined,
+  callback: (tasks: Task[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const q = userTasksQuery(userId, filters);
+
+  // onSnapshot returns an unsubscribe function
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const tasks: Task[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        tasks.push({
+          id: doc.id,
+          ...data,
+          dueDate: data.dueDate?.toDate(),
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        } as Task);
+      });
+      callback(tasks);
+    },
+    (error) => {
+      console.error("Error in tasks subscription:", error);
+      onError?.(error);
+    }
+  );
 };
 
 export const addTask = async (

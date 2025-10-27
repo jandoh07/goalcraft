@@ -38,7 +38,7 @@ const useTasksForm = ({
   const [frequency, setFrequency] = useState(initialData?.frequency || "");
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
-  const editTaskMutation = useUpdateTask();
+  const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
 
   const resetForm = () => {
@@ -87,62 +87,49 @@ const useTasksForm = ({
     setSubtasks(subtasks.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const taskData = {
+    title,
+    description,
+    goalId: associatedGoal?.goalId,
+    goalTitle: associatedGoal?.goalTitle,
+    dueDate: dueDate,
+    time,
+    priority,
+    subtasks,
+    isRecurring,
+    frequency,
+    status: "in-progress" as const,
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+
+    const payload = {
+      userId: user?.uid || "",
+      ...taskData,
+    };
 
     if (mode === "add") {
-      addTaskMutation.mutate(
-        {
-          userId: user?.uid || "",
-          title,
-          description,
-          goalId: associatedGoal?.goalId,
-          goalTitle: associatedGoal?.goalTitle,
-          dueDate: dueDate,
-          time,
-          priority,
-          subtasks,
-          isRecurring,
-          frequency,
-          status: "in-progress",
-        },
-        {
-          onSuccess: () => {
-            resetForm();
-            openDialog(false);
-            toast.success("Task added successfully");
-          },
-        }
+      addTaskMutation.mutate(payload);
+      resetForm();
+      openDialog(false);
+      toast.success(
+        isOnline
+          ? "Task added successfully"
+          : "Task added! Will sync when online."
       );
     } else if (mode === "edit" && initialData) {
-      editTaskMutation.mutate(
-        {
-          taskId: initialData.id || "",
-          updates: {
-            title,
-            description,
-            goalId: associatedGoal?.goalId,
-            goalTitle: associatedGoal?.goalTitle,
-            dueDate,
-            time,
-            priority,
-            subtasks,
-            isRecurring,
-            frequency,
-            status: "in-progress",
-          },
-        },
-        {
-          onSuccess: () => {
-            resetForm();
-            openDialog(false);
-            toast.success("Task updated successfully");
-          },
-          onError: (error) => {
-            toast.error("Failed to update task");
-            console.error("Error updating task:", error);
-          },
-        }
+      updateTaskMutation.mutate({
+        taskId: initialData.id || "",
+        updates: { ...taskData },
+      });
+      resetForm();
+      openDialog(false);
+      toast.success(
+        isOnline
+          ? "Task updated successfully"
+          : "Task updated! Will sync when online."
       );
     }
   };
@@ -151,15 +138,15 @@ const useTasksForm = ({
     taskId: string,
     handleClose: (isOpen: boolean) => void
   ) => {
-    deleteTaskMutation.mutate(taskId, {
-      onSuccess: () => {
-        handleClose(false);
-        toast.success("Task deleted successfully");
-      },
-      onError: () => {
-        toast.error("Failed to delete task");
-      },
-    });
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+
+    deleteTaskMutation.mutate(taskId);
+    handleClose(false);
+    toast.success(
+      isOnline
+        ? "Task deleted successfully"
+        : "Task deleted! Will sync when online."
+    );
   };
 
   return {
@@ -190,7 +177,7 @@ const useTasksForm = ({
       addSubtask,
       removeSubtask,
     },
-    mutation: mode === "add" ? addTaskMutation : editTaskMutation,
+    mutation: mode === "add" ? addTaskMutation : updateTaskMutation,
     handleSubmit,
     handleDeleteTask,
   };
