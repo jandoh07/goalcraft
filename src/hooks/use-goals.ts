@@ -5,15 +5,33 @@ import {
   addGoal,
   updateGoal,
   deleteGoal,
+  subscribeToUserGoals,
 } from "@/lib/firebase/goals";
 import { Goal } from "@/types";
 import { removeEmptyFields } from "@/lib/utils";
+import { useEffect } from "react";
 
 export const useGoals = (userId: string, status?: string) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = subscribeToUserGoals(userId, status, (goals) => {
+      queryClient.setQueryData(["goals", userId, status], goals);
+    });
+
+    return () => unsubscribe();
+  }, [userId, status, queryClient]);
+
   return useQuery({
     queryKey: ["goals", userId, status],
     queryFn: () => getUserGoals(userId, status),
     enabled: !!userId, // only run when userId is defined
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -25,29 +43,66 @@ export const useGoal = (goalId: string) => {
   });
 };
 
-export const useAddGoal = (userId: string) => {
+export const useAddGoal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (
+    mutationFn: ({
+      userId,
+      goalData,
+    }: {
+      userId: string;
       goalData: Omit<
         Goal,
         "id" | "createdAt" | "updatedAt" | "userId" | "status"
-      >
-    ) =>
+      >;
+    }) =>
       addGoal(
-        userId!,
+        userId,
         removeEmptyFields(goalData) as Omit<
           Goal,
           "id" | "createdAt" | "updatedAt" | "userId" | "status"
         >
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goals", userId] });
+    onMutate: async ({ userId, goalData }) => {
+      await queryClient.cancelQueries({ queryKey: ["goals"] });
+
+      const tempGoal: Goal = {
+        ...goalData,
+        id: `temp-${Date.now()}`,
+        userId,
+        status: "in-progress",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const previousQueries = new Map();
+
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["goals"] })
+        .forEach((query) => {
+          const oldData = query.state.data as Goal[] | undefined;
+          previousQueries.set(query.queryKey, oldData);
+
+          if (oldData) {
+            queryClient.setQueryData(query.queryKey, [tempGoal, ...oldData]);
+          }
+        });
+
+      return { previousQueries, tempGoal };
+    },
+    onError: (err, variables, context) => {
+      console.error("Failed to add goal:", err);
+
+      // Rollback all queries
+      context?.previousQueries.forEach((data, queryKey) => {
+        queryClient.setQueryData(queryKey, data);
+      });
     },
   });
 };
 
-export const useUpdateGoal = (userId: string) => {
+export const useUpdateGoal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -57,18 +112,72 @@ export const useUpdateGoal = (userId: string) => {
       goalId: string;
       updates: Partial<Goal>;
     }) => updateGoal(goalId, removeEmptyFields(updates)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goals", userId] });
+    onMutate: async ({ goalId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ["goals"] });
+
+      const previousQueries = new Map();
+
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["goals"] })
+        .forEach((query) => {
+          const oldData = query.state.data as Goal[] | undefined;
+          previousQueries.set(query.queryKey, oldData);
+
+          if (oldData) {
+            const updatedData = oldData.map((goal) =>
+              goal.id === goalId
+                ? { ...goal, ...updates, updatedAt: new Date() }
+                : goal
+            );
+            queryClient.setQueryData(query.queryKey, updatedData);
+          }
+        });
+
+      return { previousQueries };
+    },
+    onError: (err, variables, context) => {
+      console.error("Failed to update goal:", err);
+
+      // Rollback all queries
+      context?.previousQueries.forEach((data, queryKey) => {
+        queryClient.setQueryData(queryKey, data);
+      });
     },
   });
 };
 
-export const useDeleteGoal = (userId: string) => {
+export const useDeleteGoal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (goalId: string) => deleteGoal(goalId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goals", userId] });
+    onMutate: async (goalId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["goals"] });
+
+      const previousQueries = new Map();
+
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["goals"] })
+        .forEach((query) => {
+          const oldData = query.state.data as Goal[] | undefined;
+          previousQueries.set(query.queryKey, oldData);
+
+          if (oldData) {
+            const updatedData = oldData.filter((goal) => goal.id !== goalId);
+            queryClient.setQueryData(query.queryKey, updatedData);
+          }
+        });
+
+      return { previousQueries };
+    },
+    onError: (err, goalId, context) => {
+      console.error("Failed to delete goal:", err);
+
+      // Rollback all queries
+      context?.previousQueries.forEach((data, queryKey) => {
+        queryClient.setQueryData(queryKey, data);
+      });
     },
   });
 };

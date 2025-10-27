@@ -11,28 +11,35 @@ import {
   deleteDoc,
   Timestamp,
   DocumentData,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Goal } from "@/types";
 
+const userGoalsQuery = (userId: string, status?: string) => {
+  let q;
+
+  if (status) {
+    q = query(
+      collection(db, "goals"),
+      where("userId", "==", userId),
+      where("status", "==", status),
+      orderBy("createdAt", "desc")
+    );
+  } else {
+    q = query(
+      collection(db, "goals"),
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  return q;
+};
+
 export const getUserGoals = async (userId: string, status?: string) => {
   try {
-    let q;
-
-    if (status) {
-      q = query(
-        collection(db, "goals"),
-        where("userId", "==", userId),
-        where("status", "==", status),
-        orderBy("createdAt", "desc")
-      );
-    } else {
-      q = query(
-        collection(db, "goals"),
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-    }
+    const q = userGoalsQuery(userId, status);
 
     const querySnapshot = await getDocs(q);
     const goals: Goal[] = [];
@@ -60,6 +67,35 @@ export const getUserGoals = async (userId: string, status?: string) => {
     }
     throw error;
   }
+};
+
+export const subscribeToUserGoals = (
+  userId: string,
+  status: string | undefined,
+  callback: (goals: Goal[]) => void
+) => {
+  const q = userGoalsQuery(userId, status);
+
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const goals: Goal[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        goals.push({
+          id: docSnap.id,
+          ...data,
+          dueDate: data.dueDate?.toDate(),
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        } as Goal);
+      });
+      callback(goals);
+    },
+    (error) => {
+      console.error("Error subscribing to goals:", error);
+    }
+  );
 };
 
 export const getGoal = async (goalId: string) => {

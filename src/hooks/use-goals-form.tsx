@@ -22,8 +22,8 @@ const useGoalsForm = ({
     initialData?.dueDate
   );
   const { user } = useAuth();
-  const addGoalMutation = useAddGoal(user?.uid || "");
-  const updateGoalMutation = useUpdateGoal(user?.uid || "");
+  const addGoalMutation = useAddGoal();
+  const updateGoalMutation = useUpdateGoal();
 
   useEffect(() => {
     if (initialData) {
@@ -36,6 +36,7 @@ const useGoalsForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     const goalData = {
       title,
       description,
@@ -44,32 +45,24 @@ const useGoalsForm = ({
     };
 
     if (mode === "add") {
-      addGoalMutation.mutate(goalData, {
-        onSuccess: () => {
-          toast.success("Goal created successfully");
-          setOpen(false);
-        },
-        onError: (error) => {
-          console.error("Error creating goal:", error);
-          toast.error("Failed to create goal. Please try again.");
-        },
-      });
+      addGoalMutation.mutate({ userId: user?.uid || "", goalData });
+
+      toast.success(
+        isOnline
+          ? "Goal created successfully"
+          : "Goal created! Will sync when online."
+      );
+      setOpen(false);
     } else {
       if (!initialData?.id) return;
+      updateGoalMutation.mutate({ goalId: initialData.id, updates: goalData });
 
-      updateGoalMutation.mutate(
-        { goalId: initialData.id, updates: goalData },
-        {
-          onSuccess: () => {
-            toast.success("Goal updated successfully");
-            setOpen(false);
-          },
-          onError: (error) => {
-            console.error("Error updating goal:", error);
-            toast.error("Failed to update goal. Please try again.");
-          },
-        }
+      toast.success(
+        isOnline
+          ? "Goal updated successfully"
+          : "Goal updated! Will sync when online."
       );
+      setOpen(false);
     }
   };
 

@@ -12,7 +12,6 @@ import {
 import { MoreVertical } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Goal } from "@/types";
-import { useAuth } from "@/contexts/auth-context";
 import { useDeleteGoal } from "@/hooks/use-goals";
 import DeleteAlertDialog from "../ui/confirmation-dialog";
 import { toast } from "sonner";
@@ -29,24 +28,21 @@ const GoalCard = ({
   setInitialData: React.Dispatch<React.SetStateAction<Goal | undefined>>;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { user } = useAuth();
-  const deleteGoalMutation = useDeleteGoal(user?.uid || "");
+  const deleteGoalMutation = useDeleteGoal();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleGoalDeletion = () => {
     if (!goal.id) return;
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
 
-    deleteGoalMutation.mutate(goal.id, {
-      onSuccess: () => {
-        setIsDeleteDialogOpen(false);
-        toast.success("Goal deleted successfully");
-      },
-      onError: (error) => {
-        console.error("Error deleting goal:", error);
-        toast.error("Failed to delete goal. Please try again.");
-      },
-    });
+    deleteGoalMutation.mutate(goal.id);
+    setIsDeleteDialogOpen(false);
+    toast.success(
+      isOnline
+        ? "Goal deleted successfully"
+        : "Goal deleted! Will sync when online."
+    );
   };
 
   const handleGoalEdit = () => {
@@ -88,7 +84,10 @@ const GoalCard = ({
                   <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent
+                align="end"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <DropdownMenuItem onSelect={handleGoalEdit}>
                   Edit Goal
                 </DropdownMenuItem>
