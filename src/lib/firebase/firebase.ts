@@ -33,12 +33,15 @@ const ai = getAI(app, { backend: new GoogleAIBackend() });
 // Create a `GenerativeModel` instance with a model that supports your use case
 export const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
 
-initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider(
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
-  ),
-  isTokenAutoRefreshEnabled: true, // Set to true to allow auto-refresh.
-});
+// Initialize App Check only on client side (requires document)
+if (typeof window !== "undefined") {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(
+      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+    ),
+    isTokenAutoRefreshEnabled: true, // Set to true to allow auto-refresh.
+  });
+}
 
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {

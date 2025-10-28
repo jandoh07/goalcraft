@@ -12,6 +12,8 @@ export default function NetworkStatus() {
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     // Set initial state
     setIsOnline(navigator.onLine);
 

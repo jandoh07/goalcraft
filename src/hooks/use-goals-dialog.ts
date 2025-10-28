@@ -14,6 +14,8 @@ const useGoalsDialog = ({
   };
 
   const handleExternalFormSubmit = () => {
+    if (typeof document === "undefined") return;
+
     const form = document.getElementById("goal-form");
 
     if (form) {

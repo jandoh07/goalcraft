@@ -24,6 +24,8 @@ export const useTaskDialog = (
   };
 
   const handleExternalFormSubmit = () => {
+    if (typeof document === "undefined") return;
+
     const form = document.getElementById("task-form");
 
     if (form) {
