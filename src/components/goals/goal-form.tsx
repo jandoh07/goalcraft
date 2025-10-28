@@ -9,6 +9,7 @@ import { DatePicker } from "../ui/date-picker";
 import AiCoachTip from "../ai/ai-coach-tip";
 import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
+import AISuggestion from "../ai/ai-suggestion";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   mode?: "add" | "edit";
@@ -30,9 +31,6 @@ export default function GoalForm({
       onSubmit={handleSubmit}
     >
       <div className="grid gap-3">
-        <AiCoachTip />
-      </div>
-      <div className="grid gap-3">
         <Label htmlFor="title">Goal Title</Label>
         <Input
           type="text"
@@ -40,6 +38,11 @@ export default function GoalForm({
           placeholder="Enter your goal title"
           value={formData.title}
           onChange={(e) => setters.setTitle(e.target.value)}
+        />
+        <AISuggestion
+          value={formData.title}
+          setValue={setters.setTitle}
+          promptType="goalTitleSuggestion"
         />
       </div>
       <div className="grid gap-3">
@@ -71,10 +74,7 @@ export default function GoalForm({
                 )}
               >
                 <IconComponent
-                  className={cn(
-                    "size-5 flex-shrink-0",
-                    categoryOption.iconColor
-                  )}
+                  className={cn("size-5 shrink-0", categoryOption.iconColor)}
                 />
                 <span className="truncate font-medium">
                   {categoryOption.label}

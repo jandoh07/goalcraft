@@ -12,7 +12,6 @@ import {
   ReCaptchaEnterpriseProvider,
 } from "firebase/app-check";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -27,21 +26,20 @@ const firebaseConfig = {
 const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Initialize the Gemini Developer API backend service
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-
-// Create a `GenerativeModel` instance with a model that supports your use case
-export const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
-
-// Initialize App Check only on client side (requires document)
 if (typeof window !== "undefined") {
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(
       process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
     ),
-    isTokenAutoRefreshEnabled: true, // Set to true to allow auto-refresh.
+    isTokenAutoRefreshEnabled: true,
   });
 }
+
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+export const flashModel = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+export const flashLiteModel = getGenerativeModel(ai, {
+  model: "gemini-2.5-flash-lite",
+});
 
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
