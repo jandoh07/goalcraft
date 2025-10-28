@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -29,8 +29,15 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/goals");
+    }
+  }, [user, authLoading, router]);
 
   const getErrorMessage = (error: FirebaseError) => {
     switch (error.code) {
@@ -71,15 +78,15 @@ const SignUp = () => {
 
     try {
       await signUp(email, password);
-      router.push("/goals");
+      // Don't navigate immediately - let the auth state change handle it
+      // The useEffect above will redirect when user is authenticated
     } catch (err) {
       if (err instanceof FirebaseError) {
         setError(getErrorMessage(err));
       } else {
         setError("An unexpected error occurred.");
       }
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only reset loading on error
     }
   };
 
@@ -89,7 +96,8 @@ const SignUp = () => {
 
     try {
       await signInWithGoogle();
-      router.push("/goals");
+      // Don't navigate immediately - let the auth state change handle it
+      // The useEffect above will redirect when user is authenticated
     } catch (err) {
       if (err instanceof FirebaseError) {
         if (err.code === "auth/popup-closed-by-user") {
@@ -100,13 +108,26 @@ const SignUp = () => {
       } else {
         setError("An unexpected error occurred.");
       }
-    } finally {
-      setGoogleLoading(false);
+      setGoogleLoading(false); // Only reset loading on error
     }
   };
 
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Don't render signup form if user is authenticated (will redirect)
+  if (user) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3 text-center">
           <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
