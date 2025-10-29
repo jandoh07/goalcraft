@@ -53,6 +53,14 @@ const Milestones = ({ goal }: MilestonesProps) => {
 
   return (
     <>
+      {!milestones ||
+        (milestones.length === 0 && (
+          <div className="h-20 flex justify-center items-center">
+            <p className="text-sm text-muted-foreground text-center">
+              No milestones added yet.
+            </p>
+          </div>
+        ))}
       {milestones && milestones.length > 0 && (
         <div className="space-y-3">
           <div className="space-y-2">
