@@ -15,6 +15,14 @@ import useTasksForm from "@/hooks/use-tasks-form";
 import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
 import TaskGroupHeader from "@/components/tasks/task-group-header";
 
+type Groupkey =
+  | "overdue"
+  | "today"
+  | "tomorrow"
+  | "this-week"
+  | "later"
+  | "no-date";
+
 const Tasks = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
@@ -26,20 +34,13 @@ const Tasks = () => {
     openDialog: setOpen,
   });
 
-  // Group tasks by date
   const groupedTasks = useMemo(() => {
     if (!tasks.data) return null;
     return groupTasksByDate(tasks.data);
   }, [tasks.data]);
 
   const renderTaskGroup = (
-    groupKey:
-      | "overdue"
-      | "today"
-      | "tomorrow"
-      | "this-week"
-      | "later"
-      | "no-date",
+    groupKey: Groupkey,
     groupTasks: typeof tasks.data
   ) => {
     if (!groupTasks || groupTasks.length === 0) return null;
@@ -105,16 +106,7 @@ const Tasks = () => {
             : undefined
         }
       >
-        <TaskForm
-          mode={taskDialog.activeTask ? "edit" : "add"}
-          taskForm={taskForm}
-          onDelete={() =>
-            taskForm.handleDeleteTask(
-              taskDialog.activeTask?.id || "",
-              taskDialog.handleClose
-            )
-          }
-        />
+        <TaskForm taskForm={taskForm} />
       </ResponsiveDialog>
     </div>
   );

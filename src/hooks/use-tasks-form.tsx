@@ -71,7 +71,6 @@ const useTasksForm = ({
       setFrequency(initialData.frequency || "");
       setDueDate(initialData.dueDate || undefined);
     } else {
-      // Reset form when initialData is undefined (add mode)
       resetForm();
     }
   }, [initialData]);

@@ -1,8 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ComponentProps, useState } from "react";
+import { ComponentProps } from "react";
 import AssociatedGoal from "./associated-goal";
 import useTasksForm from "@/hooks/use-tasks-form";
 import DueDateAndTime from "./due-date-and-time";
@@ -10,27 +9,18 @@ import SubTasks from "./sub-tasks";
 import RecurringTask from "./recurring-task";
 import Priority from "./priority";
 import InputBox from "@/components/ui/input-box";
-import DeleteAlertDialog from "@/components/ui/confirmation-dialog";
 
 interface AddTaskFormProps extends ComponentProps<"form"> {
-  mode?: "add" | "edit";
   taskForm: ReturnType<typeof useTasksForm>;
-  onDelete?: () => void;
 }
 
-export default function TaskForm({
-  className,
-  mode = "add",
-  taskForm,
-  onDelete,
-}: AddTaskFormProps) {
-  const { formData, setters, subtasks, handleSubmit, mutation } = taskForm;
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+export default function TaskForm({ className, taskForm }: AddTaskFormProps) {
+  const { formData, setters, subtasks, handleSubmit } = taskForm;
 
   return (
     <form
       id="task-form"
-      className={cn("grid items-start gap-6 pb-3 md:pb-0", className)}
+      className={cn("grid items-start gap-6 pb-3 md:pb-2", className)}
       onSubmit={handleSubmit}
     >
       <InputBox
@@ -74,36 +64,6 @@ export default function TaskForm({
         priority={formData.priority}
         setPriority={setters.setPriority}
       />
-      <div className="hidden md:flex gap-2">
-        <Button type="submit" className="flex-1">
-          {!mutation.isPending &&
-            (mode === "edit" ? "Update Task" : "Add Task")}
-          {mutation.isPending &&
-            (mode === "edit" ? "Updating..." : "Adding...")}
-        </Button>
-        {mode === "edit" && (
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            Delete
-          </Button>
-        )}
-      </div>
-      {mode === "edit" && (
-        <DeleteAlertDialog
-          isOpen={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={() => {
-            if (onDelete) {
-              onDelete();
-            }
-          }}
-          onCancel={() => setShowDeleteDialog(false)}
-          preset="deleteTask"
-        />
-      )}
     </form>
   );
 }

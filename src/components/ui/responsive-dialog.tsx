@@ -58,39 +58,52 @@ const ResponsiveDialog = ({
 
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="sm:max-w-[550px] max-h-[90vh] flex flex-col"
-          aria-describedby={description ? undefined : "dialog-content"}
-        >
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            {description ? (
-              <DialogDescription>{description}</DialogDescription>
-            ) : (
-              <DialogDescription className="sr-only">{title}</DialogDescription>
-            )}
-          </DialogHeader>
-          <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
-            {children}
-          </div>
-          <DialogFooter>
-            <Footer
-              hideSubmitButton={hideSubmitButton}
-              onSubmit={onSubmit!}
-              isSubmitting={isSubmitting}
-              onDelete={onDelete}
-              submitLabel={submitLabel!}
-              setShowDeleteDialog={setShowDeleteDialog}
-            />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent
+            className="sm:max-w-[550px] max-h-[90vh] flex flex-col"
+            aria-describedby={description ? undefined : "dialog-content"}
+          >
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+              {description ? (
+                <DialogDescription>{description}</DialogDescription>
+              ) : (
+                <DialogDescription className="sr-only">
+                  {title}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
+              {children}
+            </div>
+            <DialogFooter className={onDelete ? "grid grid-cols-4 gap-2" : ""}>
+              <Footer
+                hideSubmitButton={hideSubmitButton}
+                onSubmit={onSubmit!}
+                isSubmitting={isSubmitting}
+                onDelete={onDelete}
+                submitLabel={submitLabel!}
+                setShowDeleteDialog={setShowDeleteDialog}
+              />
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {onDelete && (
+          <DeleteAlertDialog
+            isOpen={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onConfirm={onDelete}
+            onCancel={() => setShowDeleteDialog(false)}
+            preset={confirmDialogPreset || "deleteTask"}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <div>
+    <>
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
           <DrawerHeader>
@@ -125,7 +138,7 @@ const ResponsiveDialog = ({
           preset={confirmDialogPreset || "deleteTask"}
         />
       )}
-    </div>
+    </>
   );
 };
 
@@ -153,17 +166,7 @@ const Footer = ({
           disabled={isSubmitting}
           className={onDelete ? "col-span-3" : "w-full"}
         >
-          {isSubmitting ? (
-            <div className="flex items-center justify-center gap-2 animate-pulse">
-              {submitLabel?.includes("Update")
-                ? "Updating..."
-                : submitLabel?.includes("Add")
-                ? "Adding..."
-                : "Submitting..."}
-            </div>
-          ) : (
-            submitLabel
-          )}
+          {submitLabel}
         </Button>
       )}
       {onDelete && (
