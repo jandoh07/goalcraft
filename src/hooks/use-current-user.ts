@@ -1,4 +1,5 @@
-import { useAuth, AppUser } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
+import { AppUser } from "@/types";
 
 /**
  * Custom hook to access current user with Firestore data
