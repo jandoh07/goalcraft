@@ -5,24 +5,19 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ComponentProps } from "react";
-import { DatePicker } from "../ui/date-picker";
-import AiCoachTip from "../ai/ai-coach-tip";
+import { DatePicker } from "../../ui/date-picker";
 import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
-import AISuggestion from "../ai/ai-suggestion";
+import AISuggestion from "../../ai/ai-suggestion";
+import Milestones from "./milestones";
 
 interface GoalFormProps extends ComponentProps<"form"> {
-  mode?: "add" | "edit";
   setOpen: (isOpen: boolean) => void;
   goalForm: ReturnType<typeof useGoalsForm>;
 }
 
-export default function GoalForm({
-  className,
-  mode = "add",
-  goalForm,
-}: GoalFormProps) {
-  const { handleSubmit, formData, setters, mutation } = goalForm;
+export default function GoalForm({ className, goalForm }: GoalFormProps) {
+  const { handleSubmit, formData, setters } = goalForm;
 
   return (
     <form
@@ -88,21 +83,10 @@ export default function GoalForm({
         <Label htmlFor="due-date">Due Date</Label>
         <DatePicker date={formData.dueDate} onDateChange={setters.setDueDate} />
       </div>
-      <Button
-        type="submit"
-        className="hidden md:block"
-        disabled={mutation.isPending}
-      >
-        {mutation.isPending ? (
-          <div className="flex items-center justify-center gap-2 animate-pulse">
-            {mode === "edit" ? "Updating..." : "Adding..."}
-          </div>
-        ) : mode === "edit" ? (
-          "Update Goal"
-        ) : (
-          "Add Goal"
-        )}
-      </Button>
+      <Milestones
+        milestones={formData.milestones}
+        setMilestones={setters.setMilestones}
+      />
     </form>
   );
 }

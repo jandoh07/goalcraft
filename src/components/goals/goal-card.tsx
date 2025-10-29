@@ -16,8 +16,10 @@ import { useDeleteGoal } from "@/hooks/use-goals";
 import DeleteAlertDialog from "../ui/confirmation-dialog";
 import { toast } from "sonner";
 import ResponsiveDialog from "../ui/responsive-dialog";
-import GoalDetails from "./goal-details";
+import GoalDetails from "./goal-details/goal-details";
 import GoalIcon from "./goal-icon";
+import { useGetTasks } from "@/hooks/use-tasks";
+import { useAuth } from "@/contexts/auth-context";
 
 const GoalCard = ({
   goal,
@@ -31,6 +33,11 @@ const GoalCard = ({
   const deleteGoalMutation = useDeleteGoal();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { user } = useAuth();
+  const allGoalTasks = useGetTasks(user?.uid!, { goalId: goal.id });
+  const completedTasks =
+    allGoalTasks.data?.filter((task) => task.status === "completed").length ||
+    0;
 
   const handleGoalDeletion = () => {
     if (!goal.id) return;
@@ -109,11 +116,13 @@ const GoalCard = ({
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Progress</span>
-              <span className="font-semibold">65%</span>
+              <span className="font-semibold">{goal.progress || 0}%</span>
             </div>
-            <Progress value={65} className="h-2" />
+            <Progress value={goal.progress || 0} className="h-2" />
             <p className="text-xs text-muted-foreground">
-              13 of 20 tasks completed
+              {allGoalTasks.data?.length === 0
+                ? "No task completed for this goal yet"
+                : `${completedTasks} of ${allGoalTasks.data?.length} tasks completed`}
             </p>
           </div>
         </CardContent>

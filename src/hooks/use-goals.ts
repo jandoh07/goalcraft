@@ -6,10 +6,12 @@ import {
   updateGoal,
   deleteGoal,
   subscribeToUserGoals,
+  updateMilestone,
 } from "@/lib/firebase/goals";
-import { Goal } from "@/types";
+import { Goal, UpdateGoalParams } from "@/types";
 import { removeEmptyFields } from "@/lib/utils";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export const useGoals = (userId: string, status?: string) => {
   const queryClient = useQueryClient();
@@ -98,6 +100,7 @@ export const useAddGoal = () => {
       context?.previousQueries.forEach((data, queryKey) => {
         queryClient.setQueryData(queryKey, data);
       });
+      toast.error("Failed to add goal. Please try again.");
     },
   });
 };
@@ -105,15 +108,17 @@ export const useAddGoal = () => {
 export const useUpdateGoal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      goalId,
-      updates,
-    }: {
-      goalId: string;
-      updates: Partial<Goal>;
-    }) => updateGoal(goalId, removeEmptyFields(updates)),
+    mutationFn: ({ goalId, updates, milestone }: UpdateGoalParams) =>
+      milestone
+        ? updateMilestone(
+            goalId,
+            milestone.milestoneIndex,
+            milestone.completed,
+            milestone.progress
+          )
+        : updateGoal(goalId, removeEmptyFields(updates)),
     onMutate: async ({ goalId, updates }) => {
-      await queryClient.cancelQueries({ queryKey: ["goals"] });
+      queryClient.cancelQueries({ queryKey: ["goals"] });
 
       const previousQueries = new Map();
 
@@ -143,6 +148,7 @@ export const useUpdateGoal = () => {
       context?.previousQueries.forEach((data, queryKey) => {
         queryClient.setQueryData(queryKey, data);
       });
+      toast.error("Failed to update goal. Please try again.");
     },
   });
 };
@@ -178,6 +184,7 @@ export const useDeleteGoal = () => {
       context?.previousQueries.forEach((data, queryKey) => {
         queryClient.setQueryData(queryKey, data);
       });
+      toast.error("Failed to delete goal. Please try again.");
     },
   });
 };

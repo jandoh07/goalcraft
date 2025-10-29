@@ -6,13 +6,12 @@ import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
-import GoalForm from "@/components/goals/goal-form";
+import GoalForm from "@/components/goals/goal-form/goal-form";
 import { Spinner } from "@/components/ui/spinner";
 import { useGoals } from "@/hooks/use-goals";
 import { useAuth } from "@/contexts/auth-context";
 import { Goal } from "@/types";
 import useGoalsForm from "@/hooks/use-goals-form";
-import useGoalsDialog from "@/hooks/use-goals-dialog";
 
 const Goals = () => {
   const [open, setOpen] = useState(false);
@@ -21,18 +20,14 @@ const Goals = () => {
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
   const goalsForm = useGoalsForm({
     initialData,
-    mode: initialData ? "edit" : "add",
-    setOpen,
-  });
-  const { handleAddNew, handleExternalFormSubmit } = useGoalsDialog({
     setInitialData,
+    mode: initialData ? "edit" : "add",
     setOpen,
   });
 
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative">
       <MobileHeader title="Your Goals" />
-      {/* <AiCoachTip /> */}
       {goals && goals.length > 0 && <GoalsHeader />}
       <div className="pb-50 md:pb-5">
         {isLoading ? (
@@ -54,20 +49,16 @@ const Goals = () => {
           </p>
         )}
       </div>
-      <AddButton onClick={handleAddNew} />
+      <AddButton onClick={goalsForm.handleAddNew} />
       <ResponsiveDialog
         open={open}
         setOpen={setOpen}
         title={initialData ? "Edit Goal" : "Add Goal"}
         submitLabel={initialData ? "Update Goal" : "Add Goal"}
-        onSubmit={handleExternalFormSubmit}
+        onSubmit={goalsForm.handleExternalFormSubmit}
         isSubmitting={goalsForm.mutation.isPending}
       >
-        <GoalForm
-          setOpen={setOpen}
-          mode={initialData ? "edit" : "add"}
-          goalForm={goalsForm}
-        />
+        <GoalForm setOpen={setOpen} goalForm={goalsForm} />
       </ResponsiveDialog>
     </div>
   );

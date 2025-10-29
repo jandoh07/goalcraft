@@ -51,7 +51,6 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* --primary: oklch(0.205 0 0); */
   --primary: oklch(0.602 0.1579 271.47);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
@@ -83,15 +82,11 @@
   --background: oklch(0.2781 0.0296 256.85);
   --foreground: oklch(0.8761 0 0);
   --card: oklch(0.2574 0.0262 255.76);
-  /* --card: oklch(27.349% 0.0281 255.213); */
   --card-foreground: oklch(0.8761 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.602 0.1579 271.47);
-  /* --primary: oklch(0.922 0 0); */
   --primary-foreground: oklch(1 0 0);
-  /* --primary-foreground: oklch(0.205 0 0); */
-  /* --secondary: oklch(0.269 0 0); */
   --secondary: oklch(0.2574 0.0262 255.76);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(1 0 0 / 25%);
@@ -133,5 +128,30 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, and Opera */
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: hsl(var(--muted)) hsl(var(--background)); /* Firefox */
+  }
+
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px; /* Width of vertical scrollbar */
+    height: 6px; /* Height of horizontal scrollbar */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--background)); /* Track color matches background */
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted)); /* Thumb color */
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.3); /* Darker on hover */
   }
 }
