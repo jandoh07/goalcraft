@@ -1,3 +1,5 @@
+import { User } from "firebase/auth";
+
 export interface Goal {
   id?: string;
   userId: string;
@@ -68,3 +70,11 @@ export type UpdateGoalParams =
         progress: number;
       };
     };
+
+export interface AppUser extends User {
+  name?: string;
+  subscription?: "free" | "premium";
+  createdAt?: Date;
+  theme?: "dark" | "light" | "system";
+  pushNotifications?: boolean;
+}

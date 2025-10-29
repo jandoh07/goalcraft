@@ -18,19 +18,9 @@ import {
   UserCredential,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { useTheme } from "next-themes";
-
-// Extended user type that includes Firestore data
-export interface AppUser extends User {
-  name?: string;
-  subscription?: "free" | "premium";
-  createdAt?: Date;
-  preferences?: {
-    darkMode?: boolean;
-    pushNotifications?: boolean;
-  };
-}
+import { AppUser } from "@/types";
 
 interface AuthContextType {
   user: AppUser | null;
@@ -72,20 +62,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             name: firestoreData.name || authUser.displayName || undefined,
             subscription: firestoreData.subscription || "free",
             createdAt: firestoreData.createdAt?.toDate(),
-            preferences: firestoreData.preferences || {
-              darkMode: false,
-              pushNotifications: true,
-            },
+            theme: firestoreData.theme || "system",
+            pushNotifications: firestoreData.pushNotifications ?? true,
           } as AppUser;
         } else {
           // If no Firestore doc exists, return auth user with defaults
           return {
             ...authUser,
             subscription: "free",
-            preferences: {
-              darkMode: theme === "dark",
-              pushNotifications: true,
-            },
+            theme: theme,
+            pushNotifications: true,
           } as AppUser;
         }
       } catch (error) {
@@ -94,10 +80,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return {
           ...authUser,
           subscription: "free",
-          preferences: {
-            darkMode: theme === "dark",
-            pushNotifications: true,
-          },
+          theme,
+          pushNotifications: true,
         } as AppUser;
       }
     },
@@ -109,24 +93,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (auth.currentUser) {
       const updatedUser = await fetchUserData(auth.currentUser);
       setUser(updatedUser);
-      setTheme(updatedUser.preferences?.darkMode ? "dark" : "light");
+      setTheme(updatedUser.theme || "system");
     }
   };
 
   useEffect(() => {
+    let userDocUnsubscribe: (() => void) | undefined;
+
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         // Fetch and merge Firestore data
         const appUser = await fetchUserData(authUser);
         setUser(appUser);
+
+        // Set up real-time listener for user document changes
+        const userDocRef = doc(db, "users", authUser.uid);
+        userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const firestoreData = docSnapshot.data();
+
+            // Update user with latest Firestore data
+            const updatedUser = {
+              ...authUser,
+              name: firestoreData.name || authUser.displayName || undefined,
+              subscription: firestoreData.subscription || "free",
+              createdAt: firestoreData.createdAt?.toDate(),
+              theme: firestoreData.theme || "system",
+              pushNotifications: firestoreData.pushNotifications ?? true,
+            } as AppUser;
+
+            setUser(updatedUser);
+
+            // Sync theme when it changes in Firestore
+            if (firestoreData.theme) {
+              setTheme(firestoreData.theme);
+            }
+          }
+        });
       } else {
         setUser(null);
+        // Clean up user doc listener if user logs out
+        if (userDocUnsubscribe) {
+          userDocUnsubscribe();
+        }
       }
       setLoading(false);
     });
 
-    return unsubscribe;
-  }, [fetchUserData]);
+    return () => {
+      unsubscribe();
+      if (userDocUnsubscribe) {
+        userDocUnsubscribe();
+      }
+    };
+  }, [fetchUserData, setTheme]);
 
   const signIn = async (email: string, password: string) => {
     return signInWithEmailAndPassword(auth, email, password);
@@ -140,10 +160,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: user.email,
           createdAt: new Date(),
           subscription: "free",
-          preferences: {
-            darkMode: theme === "dark",
-            pushNotifications: true,
-          },
+          theme,
+          pushNotifications: true,
         });
         return userCredential;
       }
@@ -167,10 +185,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             createdAt: new Date(),
             photoURL: user.photoURL,
             subscription: "free",
-            preferences: {
-              darkMode: theme === "dark",
-              pushNotifications: true,
-            },
+            theme: theme,
+            pushNotifications: true,
           });
         }
       } catch (error) {
