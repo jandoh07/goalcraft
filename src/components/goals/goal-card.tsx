@@ -34,7 +34,7 @@ const GoalCard = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { user } = useAuth();
-  const allGoalTasks = useGetTasks(user?.uid!, { goalId: goal.id });
+  const allGoalTasks = useGetTasks(user?.uid || "", { goalId: goal.id });
   const completedTasks =
     allGoalTasks.data?.filter((task) => task.status === "completed").length ||
     0;

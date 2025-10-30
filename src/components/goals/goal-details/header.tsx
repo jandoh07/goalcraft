@@ -7,14 +7,9 @@ import { Goal } from "@/types";
 
 interface HeaderProps {
   goal: Goal;
-  stats: {
-    total: number;
-    completed: number;
-    pending: number;
-  };
 }
 
-const Header = ({ goal, stats }: HeaderProps) => {
+const Header = ({ goal }: HeaderProps) => {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between">

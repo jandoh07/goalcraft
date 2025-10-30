@@ -6,7 +6,7 @@ import { db } from "../config/admin";
 // Run at a specific time every day (e.g., 2:00 AM UTC)
 export const handleRecurringTasks = onSchedule(
   { schedule: "0 2 * * *", timeZone: "Etc/UTC" },
-  async (event) => {
+  async () => {
     logger.info("Starting recurring tasks check...");
 
     const now = Timestamp.now();
@@ -28,7 +28,7 @@ export const handleRecurringTasks = onSchedule(
     let batch = db.batch();
     let opCount = 0;
     let tasksCreated = 0;
-    const promises: Promise<any>[] = [];
+    const promises: Promise<FirebaseFirestore.WriteResult[]>[] = [];
 
     for (const doc of snapshot.docs) {
       const masterTask = doc.data();
@@ -58,15 +58,14 @@ export const handleRecurringTasks = onSchedule(
         recurringMasterId: masterTaskId, // Link to the master
       };
 
-      // <-- CHANGE: Fix for the TypeScript error
-      // We cast to 'any' to delete properties from the spread object
-      // that should not be on an instance task.
-      delete (newTask as any).nextRun;
-      delete (newTask as any).recurringStatus;
+      // Remove properties that should not be on an instance task
+      const taskInstance: Record<string, unknown> = newTask;
+      delete taskInstance.nextRun;
+      delete taskInstance.recurringStatus;
 
       // Add the new task instance to the batch
       const newTaskRef = db.collection("tasks").doc();
-      batch.set(newTaskRef, newTask);
+      batch.set(newTaskRef, taskInstance);
 
       // Update the master task with the next future run date
       batch.update(doc.ref, {

@@ -33,7 +33,7 @@ const GoalDetails = ({ goal }: GoalDetailsProps) => {
 
   return (
     <div className="space-y-4">
-      <Header goal={goal} stats={stats} />
+      <Header goal={goal} />
       <Tabs defaultValue="milestones" className="">
         <TabsList className="bg-card w-full">
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
