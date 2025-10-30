@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  frontend_ci:
     runs-on: ubuntu-latest
     
     env:
@@ -22,18 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
+      - name: Setup Node.js 20 (for Frontend)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache Frontend Dependencies
-        uses: actions/cache@v3
-        with:
-          path: frontend/node_modules
-          key: ${{ runner.os }}-frontend-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-frontend-
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Next.js build
         uses: actions/cache@v3
@@ -41,41 +35,17 @@ jobs:
           path: frontend/.next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}
 
-      - name: Cache Firebase Functions dependencies
-        uses: actions/cache@v3
-        with:
-          path: functions/node_modules
-          key: ${{ runner.os }}-functions-${{ hashFiles('functions/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-functions-
-
       - name: Install Frontend dependencies
         working-directory: frontend
-        run: npm ci
-
-      - name: Install Firebase Functions dependencies
-        working-directory: functions
         run: npm ci
 
       - name: Type check Frontend
         working-directory: frontend
         run: npx tsc --noEmit
-      
-      - name: Type check Firebase Functions
-        working-directory: functions
-        run: npx tsc --noEmit
-        
+
       - name: Lint Frontend
         working-directory: frontend
         run: npm run lint
-      
-      - name: Lint Functions
-        working-directory: functions
-        run: npm run lint
-
-      - name: Build Firebase Functions (TypeScript to JavaScript)
-        working-directory: functions
-        run: npm run build
 
       - name: Run Frontend tests
         working-directory: frontend
@@ -83,4 +53,33 @@ jobs:
       
       - name: Build application (Frontend)
         working-directory: frontend
+        run: npm run build
+  
+  functions_ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 (for Functions)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Firebase Functions dependencies
+        working-directory: functions
+        run: npm ci
+      
+      - name: Type check Firebase Functions
+        working-directory: functions
+        run: npx tsc --noEmit
+      
+      - name: Lint Functions
+        working-directory: functions
+        run: npm run lint
+
+      - name: Build Firebase Functions (TypeScript to JavaScript)
+        working-directory: functions
         run: npm run build
