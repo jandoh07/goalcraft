@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PresetType } from "@/types";
+import { ConfirmDialogPresetType } from "@/types";
 
 interface ConfirmationDialogProps {
   onConfirm: () => void;
@@ -17,7 +17,7 @@ interface ConfirmationDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   title?: string;
   description?: string;
-  preset?: PresetType;
+  preset?: ConfirmDialogPresetType;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "destructive";

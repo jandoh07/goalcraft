@@ -20,7 +20,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "./button";
 import DeleteAlertDialog from "./confirmation-dialog";
 import { useState } from "react";
-import { PresetType } from "@/types";
+import { ConfirmDialogPresetType } from "@/types";
 
 /**
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
@@ -36,7 +36,7 @@ interface ResponsiveDialogProps {
   onSubmit?: () => void;
   isSubmitting?: boolean;
   onDelete?: () => void;
-  confirmDialogPreset?: PresetType;
+  confirmDialogPreset?: ConfirmDialogPresetType;
   hideSubmitButton?: boolean;
 }
 
