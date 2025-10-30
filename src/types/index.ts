@@ -42,6 +42,7 @@ export interface Task {
   frequency?: string;
   nextRun?: Date;
   recurringStatus?: "active" | "paused" | "stopped";
+  recurringMasterId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
