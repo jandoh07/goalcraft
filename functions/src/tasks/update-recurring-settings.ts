@@ -50,19 +50,6 @@ export const updateRecurringSettings = onCall<UpdateRecurrenceData>(
             recurringStatus: "paused",
             updatedAt: Timestamp.now(),
           });
-
-          // Optional: Delete future (not-yet-started) instances
-          const futureInstances = await db
-            .collection("tasks")
-            .where("recurringMasterId", "==", masterTaskId)
-            .where("status", "==", "in-progress") // or "pending"
-            .where("dueDate", ">", Timestamp.now())
-            .get();
-
-          futureInstances.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-          logger.info(`Deleting ${futureInstances.size} future instances.`);
           break;
 
         case "resume":
