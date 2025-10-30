@@ -41,7 +41,8 @@ export interface Task {
   isRecurring?: boolean;
   frequency?: string;
   nextRun?: Date;
-  recurringStatus?: "active" | "paused" | "stopped";
+  timeZone?: string;
+  recurringStatus?: "active" | "paused";
   recurringMasterId?: string;
   createdAt: Date;
   updatedAt: Date;
