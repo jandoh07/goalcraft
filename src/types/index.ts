@@ -30,7 +30,6 @@ export interface Task {
   id?: string;
   userId: string;
   goalId?: string;
-  // associatedGoal: AssociatedGoal;
   goalTitle?: string;
   title: string;
   description?: string;
@@ -41,6 +40,8 @@ export interface Task {
   subtasks?: string[];
   isRecurring?: boolean;
   frequency?: string;
+  nextRun?: Date;
+  recurringStatus?: "active" | "paused" | "stopped";
   createdAt: Date;
   updatedAt: Date;
 }
