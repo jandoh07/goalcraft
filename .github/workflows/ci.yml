@@ -26,7 +26,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Cache Frontend Dependencies
         uses: actions/cache@v3
@@ -48,7 +47,7 @@ jobs:
           path: functions/node_modules
           key: ${{ runner.os }}-functions-${{ hashFiles('functions/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-function
+            ${{ runner.os }}-functions-
 
       - name: Install Frontend dependencies
         working-directory: frontend
