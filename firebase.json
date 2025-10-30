@@ -26,10 +26,10 @@
     },
     "singleProjectMode": true,
     "firestore": {
-      "port": 8081
+      "port": 8080
     },
     "pubsub": {
-      "port": 8086
+      "port": 8085
     }
   }
 }
