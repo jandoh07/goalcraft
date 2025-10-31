@@ -29,7 +29,7 @@ import { ConfirmDialogPresetType } from "@/types";
 interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  title: string;
+  title?: string;
   description?: string;
   children: React.ReactNode;
   submitLabel?: string;
@@ -43,7 +43,7 @@ interface ResponsiveDialogProps {
 const ResponsiveDialog = ({
   open,
   setOpen,
-  title,
+  title = "",
   description,
   children,
   submitLabel,

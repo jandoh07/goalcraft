@@ -1,4 +1,4 @@
-import { AssociatedGoal, Task } from "@/types";
+import { AssociatedGoal, SubTask, Task } from "@/types";
 import { useEffect, useState } from "react";
 import { useAddTask, useDeleteTask, useUpdateTask } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
@@ -25,7 +25,7 @@ const useTasksForm = ({
   const [priority, setPriority] = useState<"high" | "medium" | "low" | "">(
     initialData?.priority || ""
   );
-  const [subtasks, setSubtasks] = useState<string[]>(
+  const [subtasks, setSubtasks] = useState<SubTask[]>(
     initialData?.subtasks || []
   );
   const [newSubtask, setNewSubtask] = useState("");
@@ -77,13 +77,18 @@ const useTasksForm = ({
 
   const addSubtask = () => {
     if (newSubtask.trim()) {
-      setSubtasks([...subtasks, newSubtask]);
+      const newSubtaskObj: SubTask = {
+        id: crypto.randomUUID(),
+        title: newSubtask.trim(),
+        completed: false,
+      };
+      setSubtasks([...subtasks, newSubtaskObj]);
       setNewSubtask("");
     }
   };
 
-  const removeSubtask = (index: number) => {
-    setSubtasks(subtasks.filter((_, i) => i !== index));
+  const removeSubtask = (id: string) => {
+    setSubtasks(subtasks.filter((subtask) => subtask.id !== id));
   };
 
   const taskData = {

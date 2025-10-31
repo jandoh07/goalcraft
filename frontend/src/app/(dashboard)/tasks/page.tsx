@@ -6,7 +6,7 @@ import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
 import { useGetTasks } from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
 import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
 import TaskGroupHeader from "@/components/tasks/task-group-header";
+import TaskDetails from "@/components/tasks/task-details/task-details";
 
 type Groupkey =
   | "overdue"
@@ -92,21 +93,26 @@ const Tasks = () => {
       <ResponsiveDialog
         open={open}
         setOpen={taskDialog.handleClose}
-        title={taskDialog.activeTask ? "Edit Task" : "Add Task"}
-        submitLabel={taskDialog.activeTask ? "Update Task" : "Add Task"}
+        title={""}
+        submitLabel={taskDialog.getSubmitLabel()}
         onSubmit={taskDialog.handleExternalFormSubmit}
         isSubmitting={taskForm.mutation.isPending}
-        onDelete={
-          taskDialog.activeTask
-            ? () =>
-                taskForm.handleDeleteTask(
-                  taskDialog.activeTask?.id || "",
-                  taskDialog.handleClose
-                )
-            : undefined
-        }
+        hideSubmitButton={taskDialog.hideSubmitButton()}
+        onDelete={taskDialog.deleteTask(() =>
+          taskForm.handleDeleteTask(
+            taskDialog.activeTask?.id || "",
+            taskDialog.handleClose
+          )
+        )}
       >
-        <TaskForm taskForm={taskForm} />
+        {taskDialog.mode === "view" ? (
+          <TaskDetails
+            setMode={taskDialog.setMode}
+            task={taskDialog.activeTask}
+          />
+        ) : (
+          <TaskForm taskForm={taskForm} />
+        )}
       </ResponsiveDialog>
     </div>
   );

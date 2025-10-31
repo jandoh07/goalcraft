@@ -1,6 +1,6 @@
 import {
   addTask,
-  editTask,
+  updateTask,
   fetchUserTasks,
   removeTask,
   subscribeToUserTasks,
@@ -100,7 +100,7 @@ export const useUpdateTask = () => {
     }: {
       taskId: string;
       updates: Partial<Task>;
-    }) => editTask(taskId, removeEmptyFields(updates)),
+    }) => updateTask(taskId, removeEmptyFields(updates)),
     onMutate: async ({ taskId, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
 

@@ -2,7 +2,7 @@
 import { Task } from "@/types";
 import { useState } from "react";
 import { Badge } from "../ui/badge";
-import { Flag } from "lucide-react";
+import { Flag, GitBranch } from "lucide-react";
 import GoalIcon from "../goals/goal-icon";
 
 interface TaskCardProps {
@@ -33,9 +33,14 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
     }
   };
 
+  const getCompletedSubtasksCount = () => {
+    if (!task.subtasks) return 0;
+    return task.subtasks.filter((st) => st.completed).length;
+  };
+
   return (
     <div
-      className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary hover:bg-secondary/40 cursor-pointer`}
+      className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary hover:bg-secondary/40 cursor-pointer overflow-hidden`}
       onClick={onClick}
     >
       <div>
@@ -46,12 +51,12 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
           onChange={() => setIsChecked(!isChecked)}
         />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1 min-w-0 flex-1">
         <p className={`font-semibold ${isChecked ? "line-through" : ""}`}>
           {task.title}
         </p>
         <p className="text-sm">{task.description}</p>
-        <div className="flex items-center justify-start gap-2">
+        <div className="flex items-center justify-start gap-2 overflow-x-auto custom-scrollbar">
           {task.priority && (
             <Badge
               className={`capitalize text-xs ${
@@ -63,7 +68,15 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
               }`}
             >
               <Flag />
-              {/* {task.priority + " Priority"} */}
+            </Badge>
+          )}
+          {task.subtasks && task.subtasks.length > 0 && (
+            <Badge
+              className="flex items-center gap-2 text-[0.6rem] px-2"
+              variant={"outline"}
+            >
+              <GitBranch className="size-2" /> {getCompletedSubtasksCount()} /{" "}
+              {task.subtasks.length}
             </Badge>
           )}
           {task.goalId && (

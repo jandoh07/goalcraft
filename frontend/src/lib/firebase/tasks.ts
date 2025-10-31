@@ -1,4 +1,4 @@
-import { Task } from "@/types";
+import { SubTask, Task } from "@/types";
 import {
   collection,
   addDoc,
@@ -12,6 +12,8 @@ import {
   Timestamp,
   DocumentData,
   onSnapshot,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -118,7 +120,7 @@ export const addTask = async (
   return docRef.id;
 };
 
-export const editTask = async (taskId: string, updates: Partial<Task>) => {
+export const updateTask = async (taskId: string, updates: Partial<Task>) => {
   const docRef = doc(db, "tasks", taskId);
   const updateData: DocumentData = {
     ...updates,
@@ -139,5 +141,25 @@ export const toggleTaskStatus = async (
   currentStatus: string
 ) => {
   const newStatus = currentStatus === "completed" ? "in-progress" : "completed";
-  await editTask(taskId, { status: newStatus as "in-progress" | "completed" });
+  await updateTask(taskId, {
+    status: newStatus as "in-progress" | "completed",
+  });
+};
+
+export const addSubtask = async (taskId: string, subtask: SubTask) => {
+  const taskRef = doc(db, "tasks", taskId);
+
+  await updateDoc(taskRef, {
+    subtasks: arrayUnion(subtask),
+    updatedAt: Timestamp.now(),
+  });
+};
+
+export const deleteSubtask = async (taskId: string, subtask: SubTask) => {
+  const taskRef = doc(db, "tasks", taskId);
+
+  await updateDoc(taskRef, {
+    subtasks: arrayRemove(subtask),
+    updatedAt: Timestamp.now(),
+  });
 };
