@@ -6,9 +6,8 @@ import {
   updateGoal,
   deleteGoal,
   subscribeToUserGoals,
-  updateMilestone,
 } from "@/lib/firebase/goals";
-import { Goal, UpdateGoalParams } from "@/types";
+import { Goal } from "@/types";
 import { removeEmptyFields } from "@/lib/utils";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -108,15 +107,13 @@ export const useAddGoal = () => {
 export const useUpdateGoal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ goalId, updates, milestone }: UpdateGoalParams) =>
-      milestone
-        ? updateMilestone(
-            goalId,
-            milestone.milestoneIndex,
-            milestone.completed,
-            milestone.progress
-          )
-        : updateGoal(goalId, removeEmptyFields(updates)),
+    mutationFn: ({
+      goalId,
+      updates,
+    }: {
+      goalId: string;
+      updates: Partial<Goal>;
+    }) => updateGoal(goalId, removeEmptyFields(updates)),
     onMutate: async ({ goalId, updates }) => {
       queryClient.cancelQueries({ queryKey: ["goals"] });
 

@@ -14,7 +14,7 @@ const Milestones = ({ goal }: MilestonesProps) => {
   const [milestones, setMilestones] = useState(goal?.milestones || []);
   const updateGoalMutation = useUpdateGoal();
 
-  const toggleMilestone = (milestoneId: string, index: number) => {
+  const toggleMilestone = (milestoneId: string) => {
     if (!goal || !goal?.id) return;
 
     const milestone = milestones.find((m) => m.id === milestoneId);
@@ -38,9 +38,8 @@ const Milestones = ({ goal }: MilestonesProps) => {
     setMilestones(updatedMilestones);
     updateGoalMutation.mutate({
       goalId: goal?.id,
-      milestone: {
-        milestoneIndex: index,
-        completed: !milestone.completed,
+      updates: {
+        milestones: updatedMilestones,
         progress: newProgress,
       },
     });
@@ -64,21 +63,21 @@ const Milestones = ({ goal }: MilestonesProps) => {
       {milestones && milestones.length > 0 && (
         <div className="space-y-3">
           <div className="space-y-2">
-            {milestones.map((milestone, index) => (
+            {milestones.map((milestone) => (
               <div
                 key={milestone.id}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-accent/50",
                   milestone.completed && "bg-muted/50"
                 )}
-                onClick={() => toggleMilestone(milestone.id!, index)}
+                onClick={() => toggleMilestone(milestone.id!)}
               >
                 <button
                   type="button"
                   className="shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleMilestone(milestone.id!, index);
+                    toggleMilestone(milestone.id!);
                   }}
                   disabled={updateGoalMutation.isPending}
                 >

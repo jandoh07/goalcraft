@@ -141,21 +141,6 @@ export const updateGoal = async (goalId: string, updates: Partial<Goal>) => {
   await updateDoc(docRef, updateData);
 };
 
-export const updateMilestone = async (
-  goalId: string,
-  milestoneIndex: number,
-  completed: boolean,
-  newProgress: number
-) => {
-  const docRef = doc(db, "goals", goalId);
-
-  await updateDoc(docRef, {
-    [`milestones.${milestoneIndex}.completed`]: completed,
-    progress: newProgress,
-    updatedAt: Timestamp.now(),
-  });
-};
-
 export const deleteGoal = async (goalId: string) => {
   await deleteDoc(doc(db, "goals", goalId));
 };

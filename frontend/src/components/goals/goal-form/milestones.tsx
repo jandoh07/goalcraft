@@ -63,67 +63,6 @@ const Milestones = ({ milestones, setMilestones }: MilestonesProps) => {
         </div>
       )}
 
-      {toggleAddMilestone && (
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-          <div className="space-y-2">
-            <Label htmlFor="milestone-title">Milestone Title</Label>
-            <Input
-              id="milestone-title"
-              placeholder="Enter milestone title"
-              value={newMilestone?.title || ""}
-              onChange={(e) =>
-                setNewMilestone({
-                  ...newMilestone,
-                  id: newMilestone?.id || crypto.randomUUID(),
-                  title: e.target.value,
-                  weight: newMilestone?.weight || 0,
-                  completed: newMilestone?.completed || false,
-                })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="milestone-weight">Milestone Weight (%)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              id="milestone-weight"
-              placeholder="Enter milestone weight"
-              value={newMilestone?.weight || ""}
-              onChange={(e) =>
-                setNewMilestone({
-                  ...newMilestone,
-                  id: newMilestone?.id || crypto.randomUUID(),
-                  title: newMilestone?.title || "",
-                  weight: Number(e.target.value),
-                  completed: newMilestone?.completed || false,
-                })
-              }
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setToggleAddMilestone(false);
-                setNewMilestone(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={addMilestone}
-              disabled={!newMilestone?.title.trim() || !newMilestone?.weight}
-            >
-              Add Milestone
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Display existing milestones */}
       {milestones.length > 0 && (
         <div className="space-y-3">
@@ -187,6 +126,67 @@ const Milestones = ({ milestones, setMilestones }: MilestonesProps) => {
             {getTotalWeight() !== 100 && getTotalWeight() > 0 && (
               <span className="text-destructive ml-2">(Should equal 100%)</span>
             )}
+          </div>
+        </div>
+      )}
+
+      {toggleAddMilestone && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="milestone-title">Milestone Title</Label>
+            <Input
+              id="milestone-title"
+              placeholder="Enter milestone title"
+              value={newMilestone?.title || ""}
+              onChange={(e) =>
+                setNewMilestone({
+                  ...newMilestone,
+                  id: newMilestone?.id || crypto.randomUUID(),
+                  title: e.target.value,
+                  weight: newMilestone?.weight || 0,
+                  completed: newMilestone?.completed || false,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="milestone-weight">Milestone Weight (%)</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              id="milestone-weight"
+              placeholder="Enter milestone weight"
+              value={newMilestone?.weight || ""}
+              onChange={(e) =>
+                setNewMilestone({
+                  ...newMilestone,
+                  id: newMilestone?.id || crypto.randomUUID(),
+                  title: newMilestone?.title || "",
+                  weight: Number(e.target.value),
+                  completed: newMilestone?.completed || false,
+                })
+              }
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setToggleAddMilestone(false);
+                setNewMilestone(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={addMilestone}
+              disabled={!newMilestone?.title.trim() || !newMilestone?.weight}
+            >
+              Add Milestone
+            </Button>
           </div>
         </div>
       )}

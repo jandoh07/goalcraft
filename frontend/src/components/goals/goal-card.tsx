@@ -146,7 +146,6 @@ const GoalCard = ({
       <ResponsiveDialog
         open={isDetailsOpen}
         setOpen={setIsDetailsOpen}
-        title="Goal Details"
         hideSubmitButton={true}
       >
         <GoalDetails goal={goal} />

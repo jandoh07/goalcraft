@@ -15,14 +15,16 @@ const Header = ({ goal }: HeaderProps) => {
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold">{goal.title}</h2>
-          <GoalIcon category={goal.category} />
+          <div className="flex items-center gap-2">
+            <GoalIcon category={goal.category} />
+            <Badge
+              variant={goal.status === "completed" ? "default" : "secondary"}
+              className="capitalize border border-border bg-background"
+            >
+              {goal.status}
+            </Badge>
+          </div>
         </div>
-        <Badge
-          variant={goal.status === "completed" ? "default" : "secondary"}
-          className="capitalize"
-        >
-          {goal.status}
-        </Badge>
       </div>
 
       {goal.description && (
