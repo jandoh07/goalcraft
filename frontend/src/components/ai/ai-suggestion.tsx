@@ -1,16 +1,29 @@
 import { aiPrompts } from "@/constants";
 import useAISuggestion from "@/hooks/use-ai-suggestion";
 import { Bot, X } from "lucide-react";
+import { useEffect } from "react";
 
 interface AISuggestionProps {
   value: string;
   setValue: (value: string) => void;
   promptType: keyof typeof aiPrompts;
+  lastAcceptedSuggestion?: string;
 }
 
-const AISuggestion = ({ value, setValue, promptType }: AISuggestionProps) => {
+const AISuggestion = ({
+  value,
+  setValue,
+  promptType,
+  lastAcceptedSuggestion,
+}: AISuggestionProps) => {
   const { isLoading, suggestion, setSuggestion, setLastAcceptedSuggestion } =
     useAISuggestion({ value, promptType });
+
+  useEffect(() => {
+    if (lastAcceptedSuggestion) {
+      setLastAcceptedSuggestion(lastAcceptedSuggestion);
+    }
+  }, [lastAcceptedSuggestion, setLastAcceptedSuggestion]);
 
   // Don't show component if not loading and no suggestion
   if (!isLoading && !suggestion) return null;

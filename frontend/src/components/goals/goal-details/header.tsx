@@ -19,7 +19,7 @@ const Header = ({ goal }: HeaderProps) => {
             <GoalIcon category={goal.category} />
             <Badge
               variant={goal.status === "completed" ? "default" : "secondary"}
-              className="capitalize border border-border bg-background"
+              className="capitalize border border-border bg-background text-foreground"
             >
               {goal.status}
             </Badge>

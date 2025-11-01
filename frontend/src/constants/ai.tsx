@@ -1,42 +1,142 @@
 export const aiPrompts = {
   goalTitleSuggestion: (
     goalTitle: string
-  ) => `You are helping users improve goal titles based on the SMART framework.
+  ) => `You are an AI assistant helping a user write a goal title for their app.
+        Your task is to analyze the user's goal title based on the criteria below and provide one of two responses.
+
         Current goal title: "${goalTitle}"
-        Make the goal more specific and action-oriented, but do not include deadlines, schedules — those will be handled separately.
-        If possible include a target for the goal preferably numerical
-        Keep it concise and natural, ideally under 12 words.
-        Respond with only the improved goal title — no explanations.
+
+        ---
+        **Criteria for an Excellent Title:**
+        1.  **Action-Oriented:** Starts with a clear verb (e.g., "Complete", "Learn", "Grow").
+        2.  **Specific & Measurable:** Includes a specific, numerical target (e.g., "5k race", "10 new recipes", "500 subscribers").
+        3.  **Concise:** Is 12 words or less.
+        4.  **No Timeframes:** Does NOT include deadlines (e.g., "in 3 months", "by next week"). The app handles this separately.
+
+        ---
+        **Your Response (Choose one):**
+
+        1.  **If the goal title *already* meets all 4 criteria:**
+            Respond with the exact phrase: "✨ Great goal! That's a solid title."
+
+        2.  **If the goal title can be improved (it's vague, not action-oriented, too long, or includes a timeframe):**
+            Rewrite it to meet the criteria. Respond with *only* the new, improved goal title. Do not add explanations or quotes.
+
+        ---
+        **Examples:**
+
+        Input: "I want to get more subscribers"
+        Output: "Grow YouTube channel to 500 subscribers"
+
+        Input: "Learn a new skill"
+        Output: "Master 3 new songs on guitar"
+
+        Input: "Run a 5k race in 3 months"
+        Output: "Run a 5k race"
+
+        Input: "Save $2000"
+        Output: "✨ Great goal! That's a solid title."
+
+        Input: "Read 10 books"
+        Output: "✨ Great goal! That's a solid title."
+        ---
+
+        Current goal title: "${goalTitle}"
         `,
   goalMilestoneGeneration: (
     goal_title: string,
     description?: string,
     reason?: string
-  ) => `You are helping a user break down their goal into measurable milestones.
+  ) => `You are an expert goal-setting assistant. Your task is to break down a user's goal into 3-5 sequential, measurable milestones.
 
         Goal title: "${goal_title}"
         {{#if description}}Goal description: "${description}"{{/if}}
         {{#if reason}}Reason or motivation: "${reason}"{{/if}}
 
-        Generate a list of 3 to 5 clear, specific milestones that represent meaningful progress toward completing this goal. 
-        Each milestone should include:
-        - A short description (1 line)
-        - A completion weight (percentage), ensuring the total adds up to 100%
+        ---
+        **Critical Instructions:**
 
-        Keep milestone titles concise (under 8 words) and avoid extra descriptive text.
-        If the goal is time-bound (e.g., has a deadline implied by the goal or context), ensure milestones are ordered logically toward completion.
+        1.  **MATCH THE FINAL TARGET:** Look for a numerical target in the Goal Title (e.g., "1000 subscribers", "Save $5000"). The **final milestone's title MUST be this exact target** (e.g., "Reach 1000 subscribers", "Save $5000"). This is the most important rule.
 
-        Respond **only in valid JSON** in the following format:
+        2.  **ANALYZE GOAL TYPE:** Determine if the goal is a "first-time" goal (e.g., "Get *first* 100...").
 
+        3.  **GENERATE MILESTONES:** Create 3-5 milestones in a logical, sequential order *leading up to* the final target from Rule #1.
+
+        4.  **ASSIGN WEIGHTS:**
+            * **If "First-Time" Goal:** Create a small, symbolic first milestone (like "First Download") with a low weight (e.g., 1-5%). Distribute the remaining 95-99% logically across the other milestones, with the final milestone completing the 100%.
+            * **If "Standard" Goal:** Distribute the weights logically to represent the progress toward the final goal.
+
+        5.  **SUM TO 100%:** The "weight" for all milestones **MUST sum to exactly 100%**.
+
+        6.  **CONCISE TITLES:** Keep milestone titles action-oriented and under 8 words.
+
+        ---
+        **Example for "Grow YouTube channel to 1000 subscribers":**
+
+        \`\`\`json
         {
-        "milestones": [
-            {"title": "Milestone 1", "weight": 25},
-            {"title": "Milestone 2", "weight": 25},
-            {"title": "Milestone 3", "weight": 25},
-            {"title": "Milestone 4", "weight": 25}
-        ]
+          "milestones": [
+            {"title": "Publish first 5 videos", "weight": 10},
+            {"title": "Reach 100 subscribers", "weight": 20},
+            {"title": "Reach 500 subscribers", "weight": 30},
+            {"title": "Reach 1000 subscribers", "weight": 40}
+          ]
         }
-    `,
+        \`\`\`
+
+        ---
+        **Output Format:**
+
+        Respond ONLY with a valid JSON object. Do not add any text, markdown, or explanations outside the JSON structure.
+
+        \`\`\`json
+        {
+          "milestones": [
+            {"title": "Milestone 1", "weight": 20},
+            {"title": "Milestone 2", "weight": 30},
+            {"title": "Milestone 3", "weight": 50}
+          ]
+        }
+        \`\`\`
+        `,
+  goalDescriptionGeneration: (
+    goal_title: string,
+    due_date: string
+  ) => `You are an AI assistant helping a user write the "Description" for their goal.
+        The description should be a 2-3 sentence summary that covers the **Specifics** (the "what") and the **Relevance** (the "why").
+
+        You will be given the user's goal title and deadline.
+
+        Goal: "${goal_title}"
+        Deadline: "${due_date}"
+
+        Your task is to generate a 2-3 sentence draft description.
+        - The first sentence should state the "what" and "when" based on the goal and deadline.
+        - The second sentence should be a **placeholder question** that prompts the user to add their "why" (their reason/relevance).
+        - Write in the first person (e.g., "My goal is...").
+        - Respond with ONLY the generated description.
+
+        ---
+        **Example 1:**
+        Goal: "Grow YouTube channel to 1000 subscribers"
+        Deadline: "February 1, 2026"
+        **AI Response:**
+        My objective is to grow my YouTube channel to 1000 subscribers by February 1, 2026. This goal is important to me because... [tap to add your "why"]
+
+        ---
+        **Example 2:**
+        Goal: "Run a 5k race"
+        Deadline: "January 15, 2026"
+        **AI Response:**
+        I am committing to training for and completing a 5k race by January 15, 2026. Achieving this is a key milestone for me because... [tap to add your "why"]
+
+        ---
+        **Example 3:**
+        Goal: "Get 100 app downloads"
+        Deadline: "May 30, 2026"
+        **AI Response:**
+        My goal is to get the first 100 downloads for my app by May 30, 2026. This is the first step in... [tap to add your reason]
+        `,
   taskSuggestionFromGoal: (
     goalTitle: string,
     description?: string,
@@ -94,12 +194,4 @@ export const aiPrompts = {
         "suggestion": "Suggestion here..."
         }
         `,
-  checkGoalTitle: (goalTitle: string) => `
-        You are a typing completion detector. 
-        Determine if the following text is likely a complete thought or sentence.
-
-        Text: "${goalTitle}"
-
-        Return only "true" if it looks complete enough for goal suggestions, 
-        otherwise return "false".`,
 };

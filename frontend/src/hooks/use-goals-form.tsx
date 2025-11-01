@@ -121,6 +121,7 @@ const useGoalsForm = ({
     handleExternalFormSubmit,
     mutation: mode === "add" ? addGoalMutation : updateGoalMutation,
     resetFormData: resetForm,
+    initialData,
   };
 };
 

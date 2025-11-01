@@ -10,6 +10,7 @@ import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
 import AISuggestion from "../../ai/ai-suggestion";
 import Milestones from "./milestones";
+import { Textarea } from "@/components/ui/textarea";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -17,7 +18,7 @@ interface GoalFormProps extends ComponentProps<"form"> {
 }
 
 export default function GoalForm({ className, goalForm }: GoalFormProps) {
-  const { handleSubmit, formData, setters } = goalForm;
+  const { handleSubmit, formData, setters, initialData } = goalForm;
 
   return (
     <form
@@ -38,11 +39,12 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
           value={formData.title}
           setValue={setters.setTitle}
           promptType="goalTitleSuggestion"
+          lastAcceptedSuggestion={initialData?.title}
         />
       </div>
       <div className="grid gap-3">
         <Label htmlFor="description">Description</Label>
-        <Input
+        <Textarea
           id="description"
           placeholder="Add goal description (optional)"
           value={formData.description}
@@ -86,6 +88,7 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
       <Milestones
         milestones={formData.milestones}
         setMilestones={setters.setMilestones}
+        goalTitle={formData.title}
       />
     </form>
   );

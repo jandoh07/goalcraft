@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { aiPrompts } from "@/constants";
+import { flashLiteModel } from "@/lib/firebase/firebase";
 import { cn } from "@/lib/utils";
 import { Milestone } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
@@ -9,11 +11,17 @@ import { useState } from "react";
 interface MilestonesProps {
   milestones: Milestone[];
   setMilestones: (milestones: Milestone[]) => void;
+  goalTitle?: string;
 }
 
-const Milestones = ({ milestones, setMilestones }: MilestonesProps) => {
+const Milestones = ({
+  milestones,
+  setMilestones,
+  goalTitle,
+}: MilestonesProps) => {
   const [toggleAddMilestone, setToggleAddMilestone] = useState(false);
   const [newMilestone, setNewMilestone] = useState<Milestone | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const addMilestone = () => {
     if (!newMilestone?.title.trim() || !newMilestone?.weight) {
@@ -46,6 +54,41 @@ const Milestones = ({ milestones, setMilestones }: MilestonesProps) => {
       (sum, milestone) => sum + (Number(milestone.weight) || 0),
       0
     );
+  };
+
+  const generateMilestonesWithAI = async () => {
+    try {
+      if (!goalTitle) return;
+      setLoading(true);
+      const prompt = aiPrompts.goalMilestoneGeneration(goalTitle);
+      const result = await flashLiteModel.generateContent(prompt);
+      const responseText = result.response.text().trim();
+
+      // Remove markdown code block markers if present
+      const jsonText = responseText
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+
+      // Parse the JSON response
+      const parsedResponse = JSON.parse(jsonText);
+
+      // Map the milestones to include IDs and completed status
+      const generatedMilestones: Milestone[] = parsedResponse.milestones.map(
+        (m: { title: string; weight: number }) => ({
+          id: crypto.randomUUID(),
+          title: m.title,
+          weight: m.weight,
+          completed: false,
+        })
+      );
+
+      setMilestones(generatedMilestones);
+    } catch (error) {
+      console.error("Error generating milestones with AI:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -197,8 +240,10 @@ const Milestones = ({ milestones, setMilestones }: MilestonesProps) => {
         <button
           type="button"
           className="px-2 py-1 text-xs text-accent underline rounded-2xl cursor-pointer bg-accent/10 hover:bg-accent/20 font-medium"
+          onClick={() => generateMilestonesWithAI()}
+          disabled={loading || !goalTitle}
         >
-          Generate milestones with AI
+          {loading ? "Generating..." : "Generate milestones with AI"}
         </button>
       </div>
     </div>
