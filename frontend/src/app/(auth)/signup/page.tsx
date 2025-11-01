@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
-import { FirebaseError } from "firebase/app";
+import { handleEmailSignUp, handleGoogleSignUp } from "@/hooks/use-sign-up";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +28,6 @@ const SignUp = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
   const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -38,79 +37,6 @@ const SignUp = () => {
       router.replace("/goals");
     }
   }, [user, authLoading, router]);
-
-  const getErrorMessage = (error: FirebaseError) => {
-    switch (error.code) {
-      case "auth/email-already-in-use":
-        return "An account with this email already exists.";
-      case "auth/invalid-email":
-        return "Invalid email address.";
-      case "auth/operation-not-allowed":
-        return "Email/password accounts are not enabled.";
-      case "auth/weak-password":
-        return "Password should be at least 6 characters.";
-      default:
-        return "An error occurred. Please try again.";
-    }
-  };
-
-  const validatePassword = () => {
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return false;
-    }
-    return true;
-  };
-
-  const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!validatePassword()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await signUp(email, password);
-      // Don't navigate immediately - let the auth state change handle it
-      // The useEffect above will redirect when user is authenticated
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        setError(getErrorMessage(err));
-      } else {
-        setError("An unexpected error occurred.");
-      }
-      setLoading(false); // Only reset loading on error
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setError("");
-    setGoogleLoading(true);
-
-    try {
-      await signInWithGoogle();
-      // Don't navigate immediately - let the auth state change handle it
-      // The useEffect above will redirect when user is authenticated
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        if (err.code === "auth/popup-closed-by-user") {
-          setError("Sign-up cancelled.");
-        } else {
-          setError(getErrorMessage(err));
-        }
-      } else {
-        setError("An unexpected error occurred.");
-      }
-      setGoogleLoading(false); // Only reset loading on error
-    }
-  };
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -143,7 +69,20 @@ const SignUp = () => {
             </div>
           )}
 
-          <form onSubmit={handleEmailSignUp} className="space-y-4">
+          <form
+            onSubmit={(e) =>
+              handleEmailSignUp(
+                e,
+                email,
+                password,
+                confirmPassword,
+                setError,
+                setLoading,
+                signUp
+              )
+            }
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -250,7 +189,9 @@ const SignUp = () => {
             type="button"
             variant="outline"
             className="w-full"
-            onClick={handleGoogleSignUp}
+            onClick={() =>
+              handleGoogleSignUp(setError, setGoogleLoading, signInWithGoogle)
+            }
             disabled={loading || googleLoading}
           >
             {googleLoading ? (

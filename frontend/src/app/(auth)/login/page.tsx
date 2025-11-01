@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Loader2 } from "lucide-react";
-import { FirebaseError } from "firebase/app";
+import { handleEmailLogin, handleGoogleLogin } from "@/hooks/use-login";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -35,66 +35,6 @@ const Login = () => {
       router.replace("/goals");
     }
   }, [user, authLoading, router]);
-
-  const getErrorMessage = (error: FirebaseError) => {
-    switch (error.code) {
-      case "auth/invalid-email":
-        return "Invalid email address.";
-      case "auth/user-disabled":
-        return "This account has been disabled.";
-      case "auth/user-not-found":
-        return "No account found with this email.";
-      case "auth/wrong-password":
-        return "Incorrect password.";
-      case "auth/invalid-credential":
-        return "Invalid email or password.";
-      case "auth/too-many-requests":
-        return "Too many failed attempts. Please try again later.";
-      default:
-        return "An error occurred. Please try again.";
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      await signIn(email, password);
-      // Don't navigate immediately - let the auth state change handle it
-      // The useEffect above will redirect when user is authenticated
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        setError(getErrorMessage(err));
-      } else {
-        setError("An unexpected error occurred.");
-      }
-      setLoading(false); // Only reset loading on error
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError("");
-    setGoogleLoading(true);
-
-    try {
-      await signInWithGoogle();
-      // Don't navigate immediately - let the auth state change handle it
-      // The useEffect above will redirect when user is authenticated
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        if (err.code === "auth/popup-closed-by-user") {
-          setError("Sign-in cancelled.");
-        } else {
-          setError(getErrorMessage(err));
-        }
-      } else {
-        setError("An unexpected error occurred.");
-      }
-      setGoogleLoading(false); // Only reset loading on error
-    }
-  };
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -127,7 +67,12 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form
+            onSubmit={(e) =>
+              handleEmailLogin(e, email, password, setError, setLoading, signIn)
+            }
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -201,7 +146,9 @@ const Login = () => {
             type="button"
             variant="outline"
             className="w-full"
-            onClick={handleGoogleLogin}
+            onClick={() =>
+              handleGoogleLogin(setError, setGoogleLoading, signInWithGoogle)
+            }
             disabled={loading || googleLoading}
           >
             {googleLoading ? (
