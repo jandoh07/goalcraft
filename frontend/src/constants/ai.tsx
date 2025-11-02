@@ -137,6 +137,38 @@ export const aiPrompts = {
         **AI Response:**
         My goal is to get the first 100 downloads for my app by May 30, 2026. This is the first step in... [tap to add your reason]
         `,
+  goalDescriptionPlaceholderGeneration: (goal_title: string) => `
+        You are an AI assistant that helps users write better goal descriptions.
+
+        Your task: Generate a short, one-line *example placeholder* (starting with "e.g.,") for the description field of a SMART goal.
+
+        The placeholder should:
+        - Give a clear *specific context* for the goal (the “what” or “where”)
+        - Hint at the *motivation or reason* behind it (the “why”)
+        - Be natural, encouraging, and under 15 words
+        - Follow this pattern:
+          "e.g., [specific context related to the goal]... [reason or motivation]..."
+
+        Do NOT repeat the goal title directly. Make it sound human and relatable.
+
+        ---
+        Examples:
+        Goal Title: "Grow YouTube channel to 1000 subscribers"
+        → e.g., "For my gardening videos... I want to inspire more people..."
+
+        Goal Title: "Run a 5k race"
+        → e.g., "Preparing for the city marathon... I want to challenge myself..."
+
+        Goal Title: "Save $1,000"
+        → e.g., "For a new laptop... I need it for my freelance work..."
+
+        Goal Title: "Learn Python"
+        → e.g., "To build my first web app... It’ll boost my tech career..."
+        ---
+
+        Goal Title: "${goal_title}"
+        Response:
+        `,
   taskSuggestionFromGoal: (
     goalTitle: string,
     description?: string,

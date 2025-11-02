@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,9 @@ import { ComponentProps } from "react";
 import { DatePicker } from "../../ui/date-picker";
 import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
-import AISuggestion from "../../ai/ai-suggestion";
 import Milestones from "./milestones";
-import { Textarea } from "@/components/ui/textarea";
+import GoalTitle from "./goal-title";
+import GoalDescription from "./goal-description";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -26,31 +25,16 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
       className={cn("grid items-start gap-6", className)}
       onSubmit={handleSubmit}
     >
-      <div className="grid gap-3">
-        <Label htmlFor="title">Goal Title</Label>
-        <Input
-          type="text"
-          id="title"
-          placeholder="Enter your goal title"
-          value={formData.title}
-          onChange={(e) => setters.setTitle(e.target.value)}
-        />
-        <AISuggestion
-          value={formData.title}
-          setValue={setters.setTitle}
-          promptType="goalTitleSuggestion"
-          lastAcceptedSuggestion={initialData?.title}
-        />
-      </div>
-      <div className="grid gap-3">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Add goal description (optional)"
-          value={formData.description}
-          onChange={(e) => setters.setDescription(e.target.value)}
-        />
-      </div>
+      <GoalTitle
+        title={formData.title}
+        setTitle={setters.setTitle}
+        initialTitle={initialData?.title}
+      />
+      <GoalDescription
+        description={formData.description}
+        setDescription={setters.setDescription}
+        title={formData.title}
+      />
       <div className="grid gap-3">
         <Label htmlFor="category">Category</Label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
