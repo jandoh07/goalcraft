@@ -8,18 +8,24 @@ const DueDateAndTime = ({
   setTime,
   date,
   setDate,
+  mode,
+  defaultValue = "Today",
 }: {
   time: string;
   setTime: (value: string) => void;
   date: Date | undefined;
   setDate: (value: Date | undefined) => void;
+  mode?: "add" | "edit";
+  defaultValue?: string;
 }) => {
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        {/* <Label htmlFor="due-date">Due Date</Label> */}
-        {/* <DatePicker date={date} onDateChange={setDate} /> */}
-        <NaturalLanguageDatePicker date={date} setDate={setDate} />
+        <NaturalLanguageDatePicker
+          date={date}
+          setDate={setDate}
+          defaultValue={mode === "add" ? defaultValue : ""}
+        />
       </div>
       <div className="grid gap-3">
         <Label htmlFor="time">

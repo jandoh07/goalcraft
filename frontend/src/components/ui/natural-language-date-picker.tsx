@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function formatDate(date: Date | undefined) {
   if (!date) {
@@ -35,15 +35,23 @@ interface NaturalLanguageDatePickerProps {
 export function NaturalLanguageDatePicker({
   date,
   setDate,
-  defaultValue = "Today",
+  defaultValue,
 }: NaturalLanguageDatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(defaultValue || formatDate(date) || "");
   const [month, setMonth] = useState<Date | undefined>(date);
 
-  // Check if we should show the "Due on..." text
+  useEffect(() => {
+    if (defaultValue && !date) {
+      const parsedDate = parseDate(defaultValue);
+      if (parsedDate) {
+        setDate(parsedDate);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const shouldShowDueText = () => {
-    // Ensure 'value' is defined and is a string before calling methods on it
     if (typeof value !== "string") return false;
 
     if (!date) return false;

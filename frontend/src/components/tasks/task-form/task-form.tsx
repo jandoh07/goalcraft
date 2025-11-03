@@ -46,6 +46,8 @@ export default function TaskForm({ className, taskForm }: AddTaskFormProps) {
         setTime={setters.setTime}
         date={formData.dueDate}
         setDate={setters.setDueDate}
+        mode={taskForm.mode}
+        defaultValue="Today"
       />
       <SubTasks
         subtasks={subtasks.items}

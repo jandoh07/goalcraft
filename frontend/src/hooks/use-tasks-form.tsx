@@ -184,6 +184,7 @@ const useTasksForm = ({
     mutation: mode === "add" ? addTaskMutation : updateTaskMutation,
     handleSubmit,
     handleDeleteTask,
+    mode,
   };
 };
 
