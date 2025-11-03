@@ -1,8 +1,7 @@
-import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date-picker";
 import { Clock } from "lucide-react";
-import React from "react";
 
 const DueDateAndTime = ({
   time,
@@ -16,10 +15,11 @@ const DueDateAndTime = ({
   setDate: (value: Date | undefined) => void;
 }) => {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
       <div className="grid gap-3">
-        <Label htmlFor="due-date">Due Date</Label>
-        <DatePicker date={date} onDateChange={setDate} />
+        {/* <Label htmlFor="due-date">Due Date</Label> */}
+        {/* <DatePicker date={date} onDateChange={setDate} /> */}
+        <NaturalLanguageDatePicker date={date} setDate={setDate} />
       </div>
       <div className="grid gap-3">
         <Label htmlFor="time">
