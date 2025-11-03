@@ -122,6 +122,7 @@ const useGoalsForm = ({
     mutation: mode === "add" ? addGoalMutation : updateGoalMutation,
     resetFormData: resetForm,
     initialData,
+    mode,
   };
 };
 

@@ -4,12 +4,12 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ComponentProps } from "react";
-import { DatePicker } from "../../ui/date-picker";
 import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
 import Milestones from "./milestones";
 import GoalTitle from "./goal-title";
 import GoalDescription from "./goal-description";
+import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date-picker";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -66,8 +66,11 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
         </div>
       </div>
       <div className="grid gap-3">
-        <Label htmlFor="due-date">Due Date</Label>
-        <DatePicker date={formData.dueDate} onDateChange={setters.setDueDate} />
+        <NaturalLanguageDatePicker
+          date={formData.dueDate}
+          setDate={setters.setDueDate}
+          defaultValue={goalForm.mode === "add" ? "In 3 months" : ""}
+        />
       </div>
       <Milestones
         milestones={formData.milestones}
