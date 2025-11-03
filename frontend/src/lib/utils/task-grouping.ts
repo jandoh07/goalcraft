@@ -44,9 +44,9 @@ export const groupTasksByDate = (tasks: Task[]): GroupedTasks => {
 
   tasks.forEach((task) => {
     // Skip completed tasks
-    if (task.status === "completed") {
-      return;
-    }
+    // if (task.status === "completed") {
+    //   return;
+    // }
 
     // Handle tasks without due dates
     if (!task.dueDate) {

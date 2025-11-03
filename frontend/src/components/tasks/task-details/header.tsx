@@ -10,6 +10,7 @@ import { Calendar, Clock, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import GoalIcon from "@/components/goals/goal-icon";
 import { format } from "date-fns";
+import { useToggleTaskStatus } from "@/hooks/use-tasks";
 
 interface HeaderProps {
   task: Task;
@@ -17,12 +18,23 @@ interface HeaderProps {
 }
 
 const Header = ({ task, setMode }: HeaderProps) => {
+  const toggleTaskStatus = useToggleTaskStatus();
   return (
     <div>
       <div className="flex justify-between items-start mt-1">
         <div>
           <div className="flex items-start gap-2">
-            <input type="checkbox" className="mt-1 size-5" />
+            <input
+              type="checkbox"
+              className="mt-1 size-5"
+              checked={task.status === "completed"}
+              onChange={() =>
+                toggleTaskStatus.mutate({
+                  taskId: task.id || "",
+                  currentStatus: task.status,
+                })
+              }
+            />
             <h3 className="text-lg font-semibold mb-2">{task.title}</h3>
           </div>
           {task.description && (

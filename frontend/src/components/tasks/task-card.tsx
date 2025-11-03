@@ -1,9 +1,9 @@
 "use client";
 import { Task } from "@/types";
-import { useState } from "react";
 import { Badge } from "../ui/badge";
 import { Flag, GitBranch } from "lucide-react";
 import GoalIcon from "../goals/goal-icon";
+import { useToggleTaskStatus } from "@/hooks/use-tasks";
 
 interface TaskCardProps {
   type: "overdue" | "today" | "tomorrow" | "this-week" | "later" | "no-date";
@@ -12,7 +12,7 @@ interface TaskCardProps {
 }
 
 const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
-  const [isChecked, setIsChecked] = useState(false);
+  const toggleTaskStatus = useToggleTaskStatus();
 
   const getBorderColor = () => {
     switch (type) {
@@ -43,16 +43,25 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
       className={`rounded-lg border-l-3 ${getBorderColor()} px-2 py-4 my-3 flex justify-start items-start gap-2 shadow-sm bg-secondary hover:bg-secondary/40 cursor-pointer overflow-hidden`}
       onClick={onClick}
     >
-      <div>
+      <div onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           className="size-4 bg-background"
-          checked={isChecked}
-          onChange={() => setIsChecked(!isChecked)}
+          checked={task.status === "completed"}
+          onChange={() =>
+            toggleTaskStatus.mutate({
+              taskId: task.id || "",
+              currentStatus: task.status,
+            })
+          }
         />
       </div>
       <div className="space-y-1 min-w-0 flex-1">
-        <p className={`font-semibold ${isChecked ? "line-through" : ""}`}>
+        <p
+          className={`font-semibold ${
+            task.status === "completed" ? "line-through" : ""
+          }`}
+        >
           {task.title}
         </p>
         <p className="text-sm">{task.description}</p>
