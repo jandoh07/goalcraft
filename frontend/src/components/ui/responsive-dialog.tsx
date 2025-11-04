@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -21,6 +20,8 @@ import { Button } from "./button";
 import DeleteAlertDialog from "./confirmation-dialog";
 import { useState } from "react";
 import { ConfirmDialogPresetType } from "@/types";
+import { Reply } from "lucide-react";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 /**
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
@@ -29,8 +30,8 @@ import { ConfirmDialogPresetType } from "@/types";
 interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   children: React.ReactNode;
   submitLabel?: string;
   onSubmit?: () => void;
@@ -38,12 +39,13 @@ interface ResponsiveDialogProps {
   onDelete?: () => void;
   confirmDialogPreset?: ConfirmDialogPresetType;
   hideSubmitButton?: boolean;
+  backIconAction?: () => void;
 }
 
 const ResponsiveDialog = ({
   open,
   setOpen,
-  title = "",
+  title,
   description,
   children,
   submitLabel,
@@ -52,6 +54,7 @@ const ResponsiveDialog = ({
   onDelete,
   confirmDialogPreset,
   hideSubmitButton = false,
+  backIconAction,
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -65,14 +68,11 @@ const ResponsiveDialog = ({
             aria-describedby={description ? undefined : "dialog-content"}
           >
             <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
-              {description ? (
-                <DialogDescription>{description}</DialogDescription>
-              ) : (
-                <DialogDescription className="sr-only">
-                  {title}
-                </DialogDescription>
-              )}
+              <DialogTitle className="sr-only">{title}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {description}
+              </DialogDescription>
+              {backIconAction && <Reply onClick={backIconAction} />}
             </DialogHeader>
             <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
               {children}
@@ -108,11 +108,10 @@ const ResponsiveDialog = ({
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle className="sr-only">{title}</DrawerTitle>
-            {description ? (
-              <DrawerDescription>{description}</DrawerDescription>
-            ) : (
-              <DrawerDescription className="sr-only">{title}</DrawerDescription>
-            )}
+            <DrawerDescription className="sr-only">
+              {description}
+            </DrawerDescription>
+            {backIconAction && <Reply onClick={backIconAction} />}
           </DrawerHeader>
           <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
           <DrawerFooter
