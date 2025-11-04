@@ -71,6 +71,12 @@ const Goals = () => {
       <ResponsiveDialog
         open={open}
         setOpen={setOpen}
+        title={initialData ? "Edit Goal" : "Add New Goal"}
+        description={
+          initialData
+            ? "Update the details of your goal."
+            : "Fill out the form to create a new goal."
+        }
         submitLabel={initialData ? "Update Goal" : "Add Goal"}
         onSubmit={goalsForm.handleExternalFormSubmit}
         isSubmitting={goalsForm.mutation.isPending}
