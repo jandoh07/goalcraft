@@ -14,37 +14,38 @@ import {
   onSnapshot,
   arrayUnion,
   arrayRemove,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { calculateNextRun } from "../utils/calculate-next-run-date";
 
 const userTasksQuery = (
   userId: string,
   filters?: { status?: string; goalId?: string }
 ) => {
-  let q = query(
-    collection(db, "tasks"),
+  let q;
+  const tasksCollection = collection(db, "tasks");
+  const baseQuery = query(
+    tasksCollection,
     where("userId", "==", userId),
-    orderBy("createdAt", "desc")
+    where("isRecurring", "==", false)
   );
 
   if (filters?.status) {
     q = query(
-      collection(db, "tasks"),
-      where("userId", "==", userId),
+      baseQuery,
       where("status", "==", filters.status),
       orderBy("createdAt", "desc")
     );
-  }
-
-  if (filters?.goalId) {
+  } else if (filters?.goalId) {
     q = query(
-      collection(db, "tasks"),
-      where("userId", "==", userId),
+      baseQuery,
       where("goalId", "==", filters.goalId),
       orderBy("createdAt", "desc")
     );
+  } else {
+    q = query(baseQuery, orderBy("createdAt", "desc"));
   }
-
   return q;
 };
 
@@ -111,13 +112,64 @@ export const addTask = async (
   taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
 ) => {
   const now = Timestamp.now();
-  const docRef = await addDoc(collection(db, "tasks"), {
-    ...taskData,
-    dueDate: taskData.dueDate ? Timestamp.fromDate(taskData.dueDate) : null,
-    createdAt: now,
-    updatedAt: now,
-  });
-  return docRef.id;
+
+  if (taskData.isRecurring) {
+    if (!taskData.dueDate || !taskData.frequency) {
+      throw new Error(
+        "Recurring tasks must have an initial dueDate and a frequency."
+      );
+    }
+
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const nextRunDate = calculateNextRun(
+      taskData.frequency,
+      taskData.dueDate,
+      timeZone
+    );
+
+    const batch = writeBatch(db);
+    const masterTaskRef = doc(collection(db, "tasks"));
+    const instanceTaskRef = doc(collection(db, "tasks"));
+
+    const masterTask = {
+      ...taskData,
+      recurringStatus: "active",
+      timeZone: timeZone,
+      nextRun: Timestamp.fromDate(nextRunDate),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    delete masterTask.dueDate;
+    masterTask.isRecurring = true;
+
+    const instanceTask = {
+      ...taskData,
+      isRecurring: false,
+      recurringMasterId: masterTaskRef.id,
+      dueDate: Timestamp.fromDate(taskData.dueDate),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    delete instanceTask.nextRun;
+    delete instanceTask.timeZone;
+
+    batch.set(masterTaskRef, masterTask);
+    batch.set(instanceTaskRef, instanceTask);
+    await batch.commit();
+
+    return instanceTaskRef.id;
+  } else {
+    const docRef = await addDoc(collection(db, "tasks"), {
+      ...taskData,
+      isRecurring: false,
+      dueDate: taskData.dueDate ? Timestamp.fromDate(taskData.dueDate) : null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return docRef.id;
+  }
 };
 
 export const updateTask = async (taskId: string, updates: Partial<Task>) => {

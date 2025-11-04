@@ -63,6 +63,16 @@ export const useTaskDialog = (
     return undefined;
   };
 
+  const getDescription = () => {
+    if (activeTask && mode === "view") return "View the details of your task.";
+    if (activeTask && mode === "edit")
+      return "Make changes to your existing task.";
+
+    if (mode === "add") return "Fill out the form to add a new task.";
+
+    return "";
+  };
+
   return {
     activeTask,
     handleTaskClick,
@@ -71,6 +81,7 @@ export const useTaskDialog = (
     handleExternalFormSubmit,
     getTitle,
     getSubmitLabel,
+    getDescription,
     hideSubmitButton,
     deleteTask,
     mode,

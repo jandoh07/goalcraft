@@ -2,7 +2,6 @@
 
 import { Task } from "@/types";
 import { Badge } from "../../ui/badge";
-import { Switch } from "../../ui/switch";
 import { Flag, Repeat } from "lucide-react";
 import Header from "./header";
 import SubTasks from "./sub-tasks";
@@ -26,11 +25,6 @@ const TaskDetails = ({ setMode, task }: TaskDetailsProps) => {
   }, [tasks, task]);
 
   if (!currentTask) return null;
-
-  const toggleRecurring = () => {
-    // TODO: Implement toggle recurring logic
-    console.log("Toggle recurring");
-  };
 
   const getPriorityColor = (priority: string | undefined) => {
     switch (priority) {
@@ -66,23 +60,19 @@ const TaskDetails = ({ setMode, task }: TaskDetailsProps) => {
         </div>
       )}
 
-      {/* Recurring Toggle */}
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-3">
           <Repeat className="h-4 w-4 text-muted-foreground" />
           <div>
             <p className="text-sm font-medium">Recurring Task</p>
-            {currentTask.isRecurring && currentTask.frequency && (
+            {currentTask.frequency && (
               <p className="text-xs text-muted-foreground">
-                Repeats {currentTask.frequency}
+                {currentTask.frequency.charAt(0).toUpperCase() +
+                  currentTask.frequency.slice(1)}
               </p>
             )}
           </div>
         </div>
-        <Switch
-          checked={currentTask.isRecurring || false}
-          onCheckedChange={toggleRecurring}
-        />
       </div>
     </div>
   );

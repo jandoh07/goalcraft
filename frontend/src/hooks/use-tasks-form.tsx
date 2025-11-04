@@ -36,6 +36,9 @@ const useTasksForm = ({
     initialData?.dueDate || undefined
   );
   const [frequency, setFrequency] = useState(initialData?.frequency || "");
+  const [recurringMasterId, setRecurringMasterId] = useState(
+    initialData?.recurringMasterId || ""
+  );
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
   const updateTaskMutation = useUpdateTask();
@@ -54,6 +57,7 @@ const useTasksForm = ({
     setIsRecurring(false);
     setFrequency("");
     setDueDate(undefined);
+    setRecurringMasterId("");
   };
 
   useEffect(() => {
@@ -70,6 +74,7 @@ const useTasksForm = ({
       setIsRecurring(initialData.isRecurring || false);
       setFrequency(initialData.frequency || "");
       setDueDate(initialData.dueDate || undefined);
+      setRecurringMasterId(initialData.recurringMasterId || "");
     } else {
       resetForm();
     }
@@ -163,6 +168,7 @@ const useTasksForm = ({
       priority,
       isRecurring,
       frequency,
+      recurringMasterId,
     },
     setters: {
       setTitle,
@@ -173,6 +179,7 @@ const useTasksForm = ({
       setPriority,
       setIsRecurring,
       setFrequency,
+      setRecurringMasterId,
     },
     subtasks: {
       items: subtasks,

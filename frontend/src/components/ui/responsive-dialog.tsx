@@ -72,7 +72,9 @@ const ResponsiveDialog = ({
               <DialogDescription className="sr-only">
                 {description}
               </DialogDescription>
-              {backIconAction && <Reply onClick={backIconAction} />}
+              {backIconAction && (
+                <Reply onClick={backIconAction} className="cursor-pointer" />
+              )}
             </DialogHeader>
             <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
               {children}
@@ -111,7 +113,9 @@ const ResponsiveDialog = ({
             <DrawerDescription className="sr-only">
               {description}
             </DrawerDescription>
-            {backIconAction && <Reply onClick={backIconAction} />}
+            {backIconAction && (
+              <Reply onClick={backIconAction} className="cursor-pointer" />
+            )}
           </DrawerHeader>
           <div className="px-4 pt-2 mb-2 overflow-y-auto">{children}</div>
           <DrawerFooter

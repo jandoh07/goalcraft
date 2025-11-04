@@ -61,6 +61,8 @@ export default function TaskForm({ className, taskForm }: AddTaskFormProps) {
         setIsRecurring={setters.setIsRecurring}
         frequency={formData.frequency}
         setFrequency={setters.setFrequency}
+        recurringMasterId={formData.recurringMasterId}
+        setRecurringMasterId={setters.setRecurringMasterId}
       />
       <Priority
         priority={formData.priority}

@@ -7,30 +7,55 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import React from "react";
 
 const RecurringTask = ({
   isRecurring,
   setIsRecurring,
   frequency,
   setFrequency,
+  recurringMasterId,
+  setRecurringMasterId,
 }: {
   isRecurring: boolean;
   setIsRecurring: (value: boolean) => void;
   frequency: string;
   setFrequency: (value: string) => void;
+  recurringMasterId?: string;
+  setRecurringMasterId: (value: string) => void;
 }) => {
+  const isSwitchOn = !!recurringMasterId || isRecurring;
+
+  const handleCheckedChange = (checked: boolean) => {
+    if (checked) {
+      // --- When turning ON ---
+      // This is for "add mode"
+      setIsRecurring(true);
+      // Default to daily if no frequency is set
+      if (!frequency) {
+        setFrequency("daily");
+      }
+    } else {
+      // --- When turning OFF ---
+      // This is for "edit mode"
+      // You must clear both states to stop the recurrence.
+      // Your parent component should see this change and show a
+      // "Stop Recurrence?" confirmation dialog.
+      setIsRecurring(false);
+      setRecurringMasterId("");
+    }
+  };
+
   return (
     <div className="grid gap-3">
       <div className="flex items-center justify-between">
         <Label htmlFor="recurring">Repeat Task</Label>
         <Switch
           id="recurring"
-          checked={isRecurring}
-          onCheckedChange={setIsRecurring}
+          checked={isSwitchOn}
+          onCheckedChange={handleCheckedChange}
         />
       </div>
-      {isRecurring && (
+      {isSwitchOn && (
         <div className="grid gap-3 pl-4 border-l-2 border-primary">
           <Label htmlFor="frequency">Frequency</Label>
           <Select value={frequency} onValueChange={setFrequency}>

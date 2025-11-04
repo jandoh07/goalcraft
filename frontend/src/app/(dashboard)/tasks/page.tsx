@@ -93,17 +93,23 @@ const Tasks = () => {
       <ResponsiveDialog
         open={open}
         setOpen={taskDialog.handleClose}
-        title={""}
+        title={taskDialog.getTitle()}
+        description={taskDialog.getDescription()}
         submitLabel={taskDialog.getSubmitLabel()}
         onSubmit={taskDialog.handleExternalFormSubmit}
         isSubmitting={taskForm.mutation.isPending}
         hideSubmitButton={taskDialog.hideSubmitButton()}
-        onDelete={taskDialog.deleteTask(() =>
-          taskForm.handleDeleteTask(
-            taskDialog.activeTask?.id || "",
-            taskDialog.handleClose
-          )
-        )}
+        backIconAction={
+          taskDialog.mode === "edit"
+            ? () => taskDialog.setMode("view")
+            : undefined
+        }
+        // onDelete={taskDialog.deleteTask(() =>
+        //   taskForm.handleDeleteTask(
+        //     taskDialog.activeTask?.id || "",
+        //     taskDialog.handleClose
+        //   )
+        // )}
       >
         {taskDialog.mode === "view" ? (
           <TaskDetails
