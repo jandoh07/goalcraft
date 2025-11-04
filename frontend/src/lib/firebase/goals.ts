@@ -19,7 +19,15 @@ import { Goal } from "@/types";
 const userGoalsQuery = (userId: string, status?: string) => {
   let q;
 
-  if (status) {
+  if (status === "overdue") {
+    q = query(
+      collection(db, "goals"),
+      where("userId", "==", userId),
+      where("status", "==", "in-progress"),
+      where("dueDate", "<", Timestamp.now()),
+      orderBy("dueDate", "asc")
+    );
+  } else if (status === "in-progress" || status === "completed") {
     q = query(
       collection(db, "goals"),
       where("userId", "==", userId),

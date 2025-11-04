@@ -98,7 +98,7 @@ const Milestones = ({
           <Label>Milestones (Add milestones to show progress)</Label>
           <Button
             type="button"
-            size="icon"
+            size="sm"
             onClick={() => setToggleAddMilestone(!toggleAddMilestone)}
           >
             <Plus className="size-4" />
@@ -109,9 +109,6 @@ const Milestones = ({
       {/* Display existing milestones */}
       {milestones.length > 0 && (
         <div className="space-y-3">
-          {/* <Label className="text-sm font-medium">
-            Current Milestones ({milestones.length})
-          </Label> */}
           {milestones.map((milestone) => (
             <div
               key={milestone.id}

@@ -10,6 +10,9 @@ interface HeaderProps {
 }
 
 const Header = ({ goal }: HeaderProps) => {
+  const isOverdue = goal.dueDate
+    ? new Date(goal.dueDate) < new Date() && goal.status !== "completed"
+    : false;
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between">
@@ -23,6 +26,11 @@ const Header = ({ goal }: HeaderProps) => {
             >
               {goal.status}
             </Badge>
+            {isOverdue && (
+              <span className="text-xs text-destructive font-medium">
+                Overdue
+              </span>
+            )}
           </div>
         </div>
       </div>

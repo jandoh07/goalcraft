@@ -38,6 +38,9 @@ const GoalCard = ({
   const completedTasks =
     allGoalTasks.data?.filter((task) => task.status === "completed").length ||
     0;
+  const isOverdue = goal.dueDate
+    ? new Date(goal.dueDate) < new Date() && goal.status !== "completed"
+    : false;
 
   const handleGoalDeletion = () => {
     if (!goal.id) return;
@@ -68,7 +71,9 @@ const GoalCard = ({
   return (
     <div>
       <Card
-        className="w-full mb-3 gap-3 cursor-pointer hover:shadow-md transition-shadow"
+        className={`w-full mb-3 gap-3 cursor-pointer hover:shadow-md transition-shadow ${
+          isOverdue ? "bg-destructive/10 border-destructive" : ""
+        }`}
         onClick={handleCardClick}
       >
         <CardHeader className="[.border-b]:pb-2">
@@ -76,7 +81,14 @@ const GoalCard = ({
             <div className="flex items-start gap-3">
               <div>
                 <h3 className="font-semibold">{goal.title}</h3>
-                {goal.category && <GoalIcon category={goal.category} />}
+                <div className="flex items-center gap-2">
+                  {goal.category && <GoalIcon category={goal.category} />}
+                  {isOverdue && (
+                    <span className="text-xs text-destructive font-medium">
+                      Overdue
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <DropdownMenu>
@@ -126,23 +138,7 @@ const GoalCard = ({
             </p>
           </div>
         </CardContent>
-        {/* <CardFooter className="flex items-center justify-between border-t">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="size-4 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium">Next Task</p>
-            <p className="text-xs text-muted-foreground">
-              Complete 30-minute run
-            </p>
-          </div>
-        </div>
-        <Button variant="outline" size="sm">
-          View Tasks
-        </Button>
-      </CardFooter> */}
       </Card>
-
-      {/* Goal Details Dialog */}
       <ResponsiveDialog
         open={isDetailsOpen}
         setOpen={setIsDetailsOpen}
@@ -150,8 +146,6 @@ const GoalCard = ({
       >
         <GoalDetails goal={goal} />
       </ResponsiveDialog>
-
-      {/* Delete Confirmation Dialog */}
       <DeleteAlertDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}

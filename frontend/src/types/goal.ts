@@ -5,7 +5,7 @@ export interface Goal {
   description?: string;
   category: string;
   dueDate?: Date;
-  status: "in-progress" | "completed" | "archived";
+  status: "in-progress" | "completed";
   progress?: number;
   milestones?: Milestone[];
   createdAt: Date;

@@ -16,7 +16,10 @@ import useGoalsForm from "@/hooks/use-goals-form";
 const Goals = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const { data: goals, isLoading } = useGoals(user?.uid || "", "in-progress");
+  const [goalFilter, setGoalFilter] = useState<
+    "all" | "in-progress" | "completed" | "overdue"
+  >("in-progress");
+  const { data: goals, isLoading } = useGoals(user?.uid || "", goalFilter);
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
   const goalsForm = useGoalsForm({
     initialData,
@@ -25,10 +28,25 @@ const Goals = () => {
     setOpen,
   });
 
+  const getEmptyStateMessage = () => {
+    switch (goalFilter) {
+      case "all":
+        return "You have no goals yet. Click the + button to add your first goal!";
+      case "in-progress":
+        return "No goals in progress. Start a new goal to get going!";
+      case "completed":
+        return "No completed goals yet. Keep working towards your active goals!";
+      case "overdue":
+        return "No overdue goals. Great job staying on track!";
+      default:
+        return "You have no goals yet. Click the + button to add your first goal!";
+    }
+  };
+
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative">
       <MobileHeader title="Your Goals" />
-      {goals && goals.length > 0 && <GoalsHeader />}
+      <GoalsHeader setGoalFilter={setGoalFilter} goalFilter={goalFilter} />
       <div className="pb-50 md:pb-5">
         {isLoading ? (
           <div className="flex justify-center items-center w-full h-32">
@@ -45,7 +63,7 @@ const Goals = () => {
           ))
         ) : (
           <p className="text-center text-muted-foreground mt-20">
-            You have no goals yet. Click the + button to add your first goal!
+            {getEmptyStateMessage()}
           </p>
         )}
       </div>
@@ -53,7 +71,6 @@ const Goals = () => {
       <ResponsiveDialog
         open={open}
         setOpen={setOpen}
-        // title={initialData ? "Edit Goal" : "Add Goal"}
         submitLabel={initialData ? "Update Goal" : "Add Goal"}
         onSubmit={goalsForm.handleExternalFormSubmit}
         isSubmitting={goalsForm.mutation.isPending}
