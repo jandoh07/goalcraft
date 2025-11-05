@@ -6,7 +6,14 @@ import {
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Flag,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import GoalIcon from "@/components/goals/goal-icon";
 import { format } from "date-fns";
@@ -37,9 +44,6 @@ const Header = ({ task, setMode }: HeaderProps) => {
             />
             <h3 className="text-lg font-semibold mb-2">{task.title}</h3>
           </div>
-          {task.description && (
-            <p className="text-sm text-muted-foreground">{task.description}</p>
-          )}
         </div>
         <div className="flex justify-between items-start">
           <div className="flex-1" />
@@ -62,9 +66,21 @@ const Header = ({ task, setMode }: HeaderProps) => {
           </DropdownMenu>
         </div>
       </div>
-      {/* Associated Goal */}
       {task.goalId && task.goalTitle && (
-        <div className="">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {task.priority && (
+            <Badge
+              className={`capitalize text-xs ${
+                task.priority === "high"
+                  ? "bg-red-400"
+                  : task.priority === "medium"
+                  ? "bg-yellow-600"
+                  : "bg-green-600"
+              }`}
+            >
+              <Flag />
+            </Badge>
+          )}
           <Badge
             variant="outline"
             className="text-xs line-clamp-1 flex items-center"
@@ -89,6 +105,9 @@ const Header = ({ task, setMode }: HeaderProps) => {
           </span>
         </div>
       </div>
+      {task.description && (
+        <p className="text-sm text-muted-foreground mt-2">{task.description}</p>
+      )}
     </div>
   );
 };
