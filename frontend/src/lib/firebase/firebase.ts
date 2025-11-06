@@ -27,6 +27,9 @@ const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 if (typeof window !== "undefined") {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN =
+    process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_DEBUG_TOKEN;
+
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(
       process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
