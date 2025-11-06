@@ -50,19 +50,22 @@ export const useAddGoal = () => {
     mutationFn: ({
       userId,
       goalData,
+      newCategory,
     }: {
       userId: string;
       goalData: Omit<
         Goal,
         "id" | "createdAt" | "updatedAt" | "userId" | "status"
       >;
+      newCategory?: string;
     }) =>
       addGoal(
         userId,
         removeEmptyFields(goalData) as Omit<
           Goal,
           "id" | "createdAt" | "updatedAt" | "userId" | "status"
-        >
+        >,
+        newCategory
       ),
     onMutate: async ({ userId, goalData }) => {
       await queryClient.cancelQueries({ queryKey: ["goals"] });

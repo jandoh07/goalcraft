@@ -6,12 +6,13 @@ import {
   getDocs,
   getDoc,
   doc,
-  addDoc,
   updateDoc,
   deleteDoc,
   Timestamp,
   DocumentData,
   onSnapshot,
+  writeBatch,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Goal } from "@/types";
@@ -123,10 +124,14 @@ export const getGoal = async (goalId: string) => {
 
 export const addGoal = async (
   userId: string,
-  goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">
+  goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">,
+  newCategory?: string
 ) => {
+  const batch = writeBatch(db);
   const now = Timestamp.now();
-  const docRef = await addDoc(collection(db, "goals"), {
+
+  const goalRef = doc(collection(db, "goals"));
+  batch.set(goalRef, {
     ...goalData,
     dueDate: goalData.dueDate ? Timestamp.fromDate(goalData.dueDate) : null,
     createdAt: now,
@@ -134,7 +139,16 @@ export const addGoal = async (
     userId,
     status: "in-progress",
   });
-  return docRef.id;
+
+  if (newCategory) {
+    const userRef = doc(db, "users", userId);
+    batch.update(userRef, {
+      customCategories: arrayUnion(newCategory),
+    });
+  }
+
+  await batch.commit();
+  return goalRef.id;
 };
 
 export const updateGoal = async (goalId: string, updates: Partial<Goal>) => {

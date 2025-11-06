@@ -1,15 +1,13 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { ComponentProps } from "react";
-import { goalCategoryOptions } from "@/constants";
 import useGoalsForm from "@/hooks/use-goals-form";
 import Milestones from "./milestones";
 import GoalTitle from "./goal-title";
 import GoalDescription from "./goal-description";
 import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date-picker";
+import GoalCategories from "./goal-categories";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -35,36 +33,11 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
         setDescription={setters.setDescription}
         title={formData.title}
       />
-      <div className="grid gap-3">
-        <Label htmlFor="category">Category</Label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {goalCategoryOptions.map((categoryOption) => {
-            const IconComponent = categoryOption.icon;
-            const isSelected = formData.category === categoryOption.label;
-            return (
-              <Button
-                key={categoryOption.label}
-                type="button"
-                variant="outline"
-                onClick={() => setters.setCategory(categoryOption.label)}
-                className={cn(
-                  "w-full h-12 justify-start text-left font-normal gap-2 border-0",
-                  categoryOption.bgColor,
-                  isSelected &&
-                    "ring-2 ring-offset-2 ring-offset-background ring-primary"
-                )}
-              >
-                <IconComponent
-                  className={cn("size-5 shrink-0", categoryOption.iconColor)}
-                />
-                <span className="truncate font-medium">
-                  {categoryOption.label}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
-      </div>
+      <GoalCategories
+        category={formData.category}
+        setCategory={setters.setCategory}
+        onNewCategory={setters.setNewCategory}
+      />
       <div className="grid gap-3">
         <NaturalLanguageDatePicker
           date={formData.dueDate}

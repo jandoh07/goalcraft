@@ -26,7 +26,8 @@ const useGoalsForm = ({
   const [milestones, setMilestones] = useState<Milestone[]>(
     initialData?.milestones || []
   );
-  const { user } = useAuth();
+  const [newCategory, setNewCategory] = useState<string | undefined>(undefined);
+  const { user, refreshUser } = useAuth();
   const addGoalMutation = useAddGoal();
   const updateGoalMutation = useUpdateGoal();
 
@@ -46,6 +47,7 @@ const useGoalsForm = ({
     setCategory("");
     setDueDate(undefined);
     setMilestones([]);
+    setNewCategory(undefined);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,7 +62,13 @@ const useGoalsForm = ({
     };
 
     if (mode === "add") {
-      addGoalMutation.mutate({ userId: user?.uid || "", goalData });
+      addGoalMutation.mutate({
+        userId: user?.uid || "",
+        goalData,
+        newCategory,
+      });
+
+      if (addGoalMutation.isSuccess && newCategory) refreshUser();
 
       toast.success(
         isOnline
@@ -115,6 +123,7 @@ const useGoalsForm = ({
       setCategory,
       setDueDate,
       setMilestones,
+      setNewCategory,
     },
     handleSubmit,
     handleAddNew,

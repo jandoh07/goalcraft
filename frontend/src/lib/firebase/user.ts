@@ -20,3 +20,11 @@ export const updateUserPreferences = async (
 
   await updateDoc(docRef, updateData);
 };
+
+export const updateUserCustomCategories = async (
+  userId: string,
+  customCategories: string[]
+) => {
+  const docRef = doc(db, "users", userId);
+  await updateDoc(docRef, { customCategories });
+};

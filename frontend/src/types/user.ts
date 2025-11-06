@@ -6,4 +6,5 @@ export interface AppUser extends User {
   createdAt?: Date;
   theme?: "dark" | "light" | "system";
   pushNotifications?: boolean;
+  customCategories?: string[];
 }

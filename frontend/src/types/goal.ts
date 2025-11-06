@@ -25,4 +25,5 @@ export type GoalCategory =
   | "Relationships"
   | "Finance"
   | "Education"
-  | "Hobbies";
+  | "PersonalGrowth"
+  | "Productivity";

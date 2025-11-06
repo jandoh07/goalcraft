@@ -5,8 +5,9 @@ import {
   Heart,
   DollarSign,
   GraduationCap,
-  Palette,
   LucideIcon,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 
 interface CategoryConfig {
@@ -47,11 +48,17 @@ export const goalCategoryConfig: Record<GoalCategory, CategoryConfig> = {
     iconColor: "text-purple-600",
     bgColor: "bg-purple-100 hover:bg-purple-200",
   },
-  Hobbies: {
-    label: "Hobbies",
-    icon: Palette,
-    iconColor: "text-orange-600",
-    bgColor: "bg-orange-100 hover:bg-orange-200",
+  PersonalGrowth: {
+    label: "Personal Growth",
+    icon: Sparkles,
+    iconColor: "text-indigo-600",
+    bgColor: "bg-indigo-100 hover:bg-indigo-200",
+  },
+  Productivity: {
+    label: "Productivity",
+    icon: Clock,
+    iconColor: "text-yellow-600",
+    bgColor: "bg-yellow-100 hover:bg-yellow-200",
   },
 };
 

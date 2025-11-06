@@ -30,6 +30,7 @@ export const fetchUserData = async (
         createdAt: firestoreData.createdAt?.toDate(),
         theme: firestoreData.theme || "system",
         pushNotifications: firestoreData.pushNotifications ?? true,
+        customCategories: firestoreData.customCategories || [],
       } as AppUser;
     } else {
       // If no Firestore doc exists, return auth user with defaults
@@ -144,6 +145,7 @@ export const setupAuthListener = (
             createdAt: firestoreData.createdAt?.toDate(),
             theme: firestoreData.theme || "system",
             pushNotifications: firestoreData.pushNotifications ?? true,
+            customCategories: firestoreData.customCategories || [],
           } as AppUser;
 
           setUser(updatedUser);
