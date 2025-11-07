@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useAddSubtask } from "@/hooks/use-sub-task";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 import { SubTask } from "@/types";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface SubTasksProps {
@@ -16,6 +17,7 @@ interface SubTasksProps {
 const SubTasks = ({ subtasks, taskId }: SubTasksProps) => {
   const [toggleAddSubtask, setToggleAddSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [subtaskToDelete, setSubtaskToDelete] = useState<SubTask | null>(null);
   const addSubtaskMutation = useAddSubtask();
   const updateTask = useUpdateTask();
   const { user } = useAuth();
@@ -48,6 +50,22 @@ const SubTasks = ({ subtasks, taskId }: SubTasksProps) => {
       },
     });
   };
+
+  const handleDeleteSubtask = () => {
+    if (!subtaskToDelete) return;
+
+    const updatedSubtasks = subtasks.filter(
+      (st) => st.id !== subtaskToDelete.id
+    );
+
+    updateTask.mutate({
+      taskId,
+      updates: {
+        subtasks: updatedSubtasks,
+      },
+    });
+  };
+
   return (
     <div>
       <p className="font-medium">Subtasks</p>
@@ -91,6 +109,10 @@ const SubTasks = ({ subtasks, taskId }: SubTasksProps) => {
                     {subtask.title}
                   </p>
                 </div>
+                <Trash2
+                  className="size-5 text-destructive cursor-pointer"
+                  onClick={() => setSubtaskToDelete(subtask)}
+                />
               </div>
             ))}
           </div>
@@ -125,6 +147,16 @@ const SubTasks = ({ subtasks, taskId }: SubTasksProps) => {
           </Button>
         )}
       </div>
+      <ConfirmationDialog
+        title="Are you sure you want to delete this subtask"
+        description="This action cannot be undone."
+        isOpen={!!subtaskToDelete}
+        onOpenChange={(isOpen) =>
+          setSubtaskToDelete(isOpen ? subtaskToDelete : null)
+        }
+        onCancel={() => setSubtaskToDelete(null)}
+        onConfirm={handleDeleteSubtask}
+      />
     </div>
   );
 };

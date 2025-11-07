@@ -32,20 +32,23 @@ const TaskDetails = ({ setMode, task }: TaskDetailsProps) => {
         subtasks={currentTask.subtasks || []}
         taskId={currentTask.id || ""}
       />
-      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-        <div className="flex items-center gap-3">
-          <Repeat className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium">Recurring Task</p>
-            {currentTask.frequency && (
-              <p className="text-xs text-muted-foreground">
-                {currentTask.frequency.charAt(0).toUpperCase() +
-                  currentTask.frequency.slice(1)}
-              </p>
-            )}
+
+      {task?.recurringMasterId && (
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Repeat className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Recurring Task</p>
+              {currentTask.frequency && (
+                <p className="text-xs text-muted-foreground">
+                  {currentTask.frequency.charAt(0).toUpperCase() +
+                    currentTask.frequency.slice(1)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
