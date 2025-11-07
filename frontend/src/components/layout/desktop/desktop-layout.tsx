@@ -64,11 +64,11 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                   <SidebarMenuButton
                     size="lg"
                     isActive={isActive}
-                    className="w-[95%] rounded-lg mx-auto"
+                    className="w-[95%] rounded-lg mx-auto p-0"
                   >
                     <Link
                       href={item.href}
-                      className="flex flex-row items-center gap-2 pl-2 w-full"
+                      className="flex flex-row items-center gap-2 w-full h-full pl-2"
                     >
                       <IconComponent className="size-6" />
                       <span className="font-semibold">{item.label}</span>
