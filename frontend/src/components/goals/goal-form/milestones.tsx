@@ -96,17 +96,16 @@ const Milestones = ({
       {!toggleAddMilestone && (
         <div className="flex justify-between items-center gap-2">
           <Label>Milestones (Add milestones to show progress)</Label>
-          <Button
+          <button
             type="button"
-            size="sm"
+            className="px-3 py-1 bg-accent text-accent-foreground rounded-2xl cursor-pointer hover:bg-accent/80 text-xs font-medium"
             onClick={() => setToggleAddMilestone(!toggleAddMilestone)}
           >
             <Plus className="size-4" />
-          </Button>
+          </button>
         </div>
       )}
 
-      {/* Display existing milestones */}
       {milestones.length > 0 && (
         <div className="space-y-3">
           {milestones.map((milestone) => (
