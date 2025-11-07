@@ -11,9 +11,10 @@ import { useMemo } from "react";
 interface TaskDetailsProps {
   setMode: (mode: "view" | "edit") => void;
   task?: Task;
+  setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const TaskDetails = ({ setMode, task }: TaskDetailsProps) => {
+const TaskDetails = ({ setMode, task, setDialogOpen }: TaskDetailsProps) => {
   const { user } = useAuth();
   const { data: tasks } = useGetTasks(user?.uid || "");
 
@@ -27,7 +28,11 @@ const TaskDetails = ({ setMode, task }: TaskDetailsProps) => {
 
   return (
     <div className="space-y-6">
-      <Header task={currentTask} setMode={setMode} />
+      <Header
+        task={currentTask}
+        setMode={setMode}
+        setDialogOpen={setDialogOpen}
+      />
       <SubTasks
         subtasks={currentTask.subtasks || []}
         taskId={currentTask.id || ""}

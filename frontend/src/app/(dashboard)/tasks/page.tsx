@@ -104,17 +104,12 @@ const Tasks = () => {
             ? () => taskDialog.setMode("view")
             : undefined
         }
-        // onDelete={taskDialog.deleteTask(() =>
-        //   taskForm.handleDeleteTask(
-        //     taskDialog.activeTask?.id || "",
-        //     taskDialog.handleClose
-        //   )
-        // )}
       >
         {taskDialog.mode === "view" ? (
           <TaskDetails
             setMode={taskDialog.setMode}
             task={taskDialog.activeTask}
+            setDialogOpen={setOpen}
           />
         ) : (
           <TaskForm taskForm={taskForm} />

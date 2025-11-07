@@ -17,15 +17,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import GoalIcon from "@/components/goals/goal-icon";
 import { format } from "date-fns";
-import { useToggleTaskStatus } from "@/hooks/use-tasks";
+import { useDeleteTask, useToggleTaskStatus } from "@/hooks/use-tasks";
+import { useState } from "react";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 
 interface HeaderProps {
   task: Task;
   setMode: (mode: "view" | "edit") => void;
+  setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Header = ({ task, setMode }: HeaderProps) => {
+const Header = ({ task, setMode, setDialogOpen }: HeaderProps) => {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const toggleTaskStatus = useToggleTaskStatus();
+  const deleteTaskMutation = useDeleteTask();
+
   return (
     <div>
       <div className="flex justify-between items-start mt-1">
@@ -58,7 +64,10 @@ const Header = ({ task, setMode }: HeaderProps) => {
                 <Pencil className="h-4 w-4" />
                 Edit Task
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setShowConfirmDialog(true)}
+              >
                 <Trash2 className="h-4 w-4" />
                 Delete Task
               </DropdownMenuItem>
@@ -108,6 +117,16 @@ const Header = ({ task, setMode }: HeaderProps) => {
       {task.description && (
         <p className="text-sm text-muted-foreground mt-2">{task.description}</p>
       )}
+      <ConfirmationDialog
+        isOpen={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onCancel={() => setShowConfirmDialog(false)}
+        onConfirm={() => {
+          setShowConfirmDialog(false);
+          deleteTaskMutation.mutate(task.id || "");
+          setDialogOpen(false);
+        }}
+      />
     </div>
   );
 };
