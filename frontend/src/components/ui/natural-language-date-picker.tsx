@@ -133,7 +133,7 @@ export function NaturalLanguageDatePicker({
         </Popover>
       </div>
       {shouldShowDueText() && (
-        <div className="text-muted-foreground px-1 text-sm">
+        <div className="text-muted-foreground px-1 text-sm -mt-2">
           Due on <span className="font-medium">{formatDate(date)}</span>.
         </div>
       )}

@@ -99,44 +99,6 @@ export const aiPrompts = {
         }
         \`\`\`
         `,
-  goalDescriptionGeneration: (
-    goal_title: string,
-    due_date: string
-  ) => `You are an AI assistant helping a user write the "Description" for their goal.
-        The description should be a 2-3 sentence summary that covers the **Specifics** (the "what") and the **Relevance** (the "why").
-
-        You will be given the user's goal title and deadline.
-
-        Goal: "${goal_title}"
-        Deadline: "${due_date}"
-
-        Your task is to generate a 2-3 sentence draft description.
-        - The first sentence should state the "what" and "when" based on the goal and deadline.
-        - The second sentence should be a **placeholder question** that prompts the user to add their "why" (their reason/relevance).
-        - Write in the first person (e.g., "My goal is...").
-        - Respond with ONLY the generated description.
-
-        ---
-        **Example 1:**
-        Goal: "Grow YouTube channel to 1000 subscribers"
-        Deadline: "February 1, 2026"
-        **AI Response:**
-        My objective is to grow my YouTube channel to 1000 subscribers by February 1, 2026. This goal is important to me because... [tap to add your "why"]
-
-        ---
-        **Example 2:**
-        Goal: "Run a 5k race"
-        Deadline: "January 15, 2026"
-        **AI Response:**
-        I am committing to training for and completing a 5k race by January 15, 2026. Achieving this is a key milestone for me because... [tap to add your "why"]
-
-        ---
-        **Example 3:**
-        Goal: "Get 100 app downloads"
-        Deadline: "May 30, 2026"
-        **AI Response:**
-        My goal is to get the first 100 downloads for my app by May 30, 2026. This is the first step in... [tap to add your reason]
-        `,
   goalDescriptionPlaceholderGeneration: (goal_title: string) => `
         You are an AI assistant that helps users write better goal descriptions.
 
@@ -169,35 +131,76 @@ export const aiPrompts = {
         Goal Title: "${goal_title}"
         Response:
         `,
-  taskSuggestionFromGoal: (
+  taskSuggestionBasic: (
     goalTitle: string,
     description?: string,
-    reason?: string,
     milestones?: [string]
-  ) => `You are helping a user turn their goal into practical, actionable tasks they can complete regularly.
+  ) => `You are a productivity coach helping a user turn their goal into practical, actionable tasks.
 
-        Goal title: "${goalTitle}"
-        {{#if description}}Goal description: "${description}"{{/if}}
-        {{#if reason}}Reason or motivation: "${reason}"{{/if}}
-        {{#if milestones}}Milestones: ${milestones}{{/if}}
+        **Goal Information:**
+        * **Title:** "${goalTitle}"
+        {{#if description}}* **Description:** "${description}"{{/if}}
+        {{#if milestones}}* **Milestones:** ${milestones}{{/if}}
 
-        Generate a list of 3 to 7 tasks that the user can do to make progress toward this goal. 
-        Some tasks can be recurring (e.g., daily, weekly, or monthly) if it makes sense for the goal.
+        ---
+        **Instructions:**
 
-        For each task, include:
-        - A short, specific task title (e.g., "Publish a new video" or "Analyze YouTube analytics")
-        - An optional recurrence field (e.g., "daily", "weekly", "monthly", or null)
-        - A brief reason or benefit (why this task matters)
+        1.  **Generate Tasks:** Create a list of 3-7 actionable tasks based *only* on the Goal Information provided.
+        2.  **Actionable:** Tasks must start with a verb (e.g., "Research", "Schedule", "Write").
+        3.  **Recurring Tasks:** If it makes sense for the goal, make some tasks recurring (e.g., "Practice piano", "Review analytics").
+        4.  **Format:** Respond ONLY with a valid JSON object. Do not add any text, markdown, or explanations.
 
-        Respond **only** in valid JSON in the following format:
+        ---
+        **Output Format:**
 
+        \`\`\`json
         {
-        "tasks": [
-            {"title": "Task 1", "recurrence": "weekly", "reason": "Reason 1"},
-            {"title": "Task 2", "recurrence": null, "reason": "Reason 2"}
-        ]
+          "tasks": [
+            {"title": "Task 1", "isRecurring": true, "frequency": "weekly", "reason": "This helps build a consistent habit."},
+            {"title": "Task 2", "isRecurring": false, "frequency": null, "reason": "This is a one-time setup step."},
+            {"title": "Task 3", "isRecurring": false, "frequency": null, "reason": "This moves the first milestone forward."},
+            {"title": "Task 4", "isRecurring": true, "frequency": "daily", "reason": "Daily practice improves skills steadily."}
+          ]
         }
+        \`\`\`
         `,
+  taskSuggestionCustom: (
+    goalTitle: string,
+    userPrompt: string,
+    description?: string,
+    milestones?: [string]
+  ) => `You are a productivity assistant. Your job is to help a user generate tasks for their goal, **paying special attention to their custom request.**
+
+      **User's Custom Request:**
+      "${userPrompt}"
+
+      ---
+      **Goal Information (for context):**
+      * **Title:** "${goalTitle}"
+      {{#if description}}* **Description:** "${description}"{{/if}}
+      {{#if milestones}}* **Milestones:** ${milestones}{{/if}}
+
+      ---
+      **Instructions:**
+
+      1.  **CRITICAL: Prioritize Request:** Generate 3-7 tasks that **directly fulfill the user's custom request.**
+      2.  **Use Context:** Use the **Goal Information** as context to make the tasks more relevant. (e.g., if the goal is "Learn Python" and the request is "add reading tasks", suggest "Read Chapter 1 of 'Python Crash Course'").
+      3.  **Recurring Tasks:** If the user asks for recurring tasks (e.g., "every day", "weekly"), you *must* set "isRecurring" to true and "frequency" appropriately. The frequency can be "daily", "weekly", "monthly", etc.
+      4.  **Format:** Respond ONLY with a valid JSON object. Do not add any text, markdown, or explanations.
+
+      ---
+      **Output Format:**
+
+      \`\`\`json
+      {
+        "tasks": [
+          {"title": "Task 1", "isRecurring": true, "frequency": "daily", "reason": "Fulfills the user's daily request."},
+          {"title": "Task 2", "isRecurring": false, "frequency": null, "reason": "Based on the user's specific instruction."},
+          {"title": "Task 3", "isRecurring": false, "frequency": null, "reason": "Aligns with the user's goal and request."}
+        ]
+      }
+      \`\`\`
+      `,
   goalFeasibilityCheck: (
     goalTitle: string,
     description?: string,

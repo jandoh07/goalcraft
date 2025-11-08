@@ -8,6 +8,7 @@ import GoalTitle from "./goal-title";
 import GoalDescription from "./goal-description";
 import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date-picker";
 import GoalCategories from "./goal-categories";
+import Tasks from "./tasks";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -38,17 +39,20 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
         setCategory={setters.setCategory}
         onNewCategory={setters.setNewCategory}
       />
-      <div className="grid gap-3">
-        <NaturalLanguageDatePicker
-          date={formData.dueDate}
-          setDate={setters.setDueDate}
-          defaultValue={goalForm.mode === "add" ? "In 3 months" : ""}
-        />
-      </div>
+      <NaturalLanguageDatePicker
+        date={formData.dueDate}
+        setDate={setters.setDueDate}
+        defaultValue={goalForm.mode === "add" ? "In 3 months" : ""}
+      />
       <Milestones
         milestones={formData.milestones}
         setMilestones={setters.setMilestones}
         goalTitle={formData.title}
+      />
+      <Tasks
+        goalTitle={formData.title}
+        description={formData.description}
+        milestones={formData.milestones}
       />
     </form>
   );
