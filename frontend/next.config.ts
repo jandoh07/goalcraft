@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   turbopack: {}, // Acknowledge webpack config from PWA plugin
   output: "export",
   trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default withPWA({

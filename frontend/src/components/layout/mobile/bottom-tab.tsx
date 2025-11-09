@@ -11,25 +11,25 @@ const tabItems = [
     id: 1,
     label: "Goals",
     icon: Goal,
-    href: "/goals",
+    href: "/goals/",
   },
   {
     id: 2,
     label: "Tasks",
     icon: ListTodo,
-    href: "/tasks",
+    href: "/tasks/",
   },
   {
     id: 3,
     label: "Analytics",
     icon: ChartLine,
-    href: "/analytics",
+    href: "/analytics/",
   },
   {
     id: 4,
     label: "Profile",
     icon: CircleUserRound,
-    href: "/profile",
+    href: "/profile/",
   },
 ];
 
