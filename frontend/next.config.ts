@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {}, // Acknowledge webpack config from PWA plugin
   output: "export",
+  trailingSlash: true,
 };
 
 export default withPWA({
