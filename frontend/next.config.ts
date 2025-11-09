@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {}, // Acknowledge webpack config from PWA plugin
+  output: "export",
 };
 
 export default withPWA({
