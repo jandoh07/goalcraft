@@ -56,10 +56,19 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  other: {
+    "apple-mobile-web-app-status-bar-style": "default", // or 'black-translucent'
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "oklch(0.985 0 0)" },
+    {
+      media: "(prefers-color-scheme: dark)",
+      color: "oklch(0.2781 0.0296 256.85)",
+    },
+  ],
 };
 
 export default function RootLayout({
