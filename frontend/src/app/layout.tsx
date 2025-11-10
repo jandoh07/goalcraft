@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const isStaging = process.env.NEXT_PUBLIC_ENVIRONMENT === "staging";
 const APP_NAME = "GoalCraft";
 const APP_DEFAULT_TITLE = "GoalCraft — Set and Achieve Your Goals";
 const APP_TITLE_TEMPLATE = "%s | GoalCraft";
@@ -56,6 +58,7 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  robots: isStaging ? "noindex, nofollow" : "index, follow",
 };
 
 export const viewport: Viewport = {
@@ -86,6 +89,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AuthProvider>
+              <ServiceWorkerProvider />
               {children}
               <Toaster position="top-right" />
             </AuthProvider>
