@@ -1,37 +1,30 @@
-import { generateSW } from "workbox-build";
+import { injectManifest } from "workbox-build";
+import { build } from "esbuild";
+import { unlinkSync } from "fs";
 
 async function buildSW() {
-  await generateSW({
-    globDirectory: "out",
-    globPatterns: ["**/*.{js,css,html,png,svg,ico,json,woff2}"],
-    swDest: "out/sw.js",
-    clientsClaim: true,
-    skipWaiting: true,
+  const tempSwPath = "out/sw-temp.js";
 
-    runtimeCaching: [
-      {
-        urlPattern: ({ request }) => request.mode === "navigate",
-        handler: "NetworkFirst",
-        options: {
-          cacheName: "pages",
-          networkTimeoutSeconds: 3,
-        },
-      },
-      {
-        urlPattern: /\.(?:js|css|png|jpg|jpeg|svg|gif|woff2)$/,
-        handler: "CacheFirst",
-        options: {
-          cacheName: "static-assets",
-          expiration: {
-            maxEntries: 100,
-            maxAgeSeconds: 30 * 24 * 60 * 60,
-          },
-        },
-      },
-    ],
+  await build({
+    entryPoints: ["src/app/sw.ts"],
+    bundle: true,
+    outfile: tempSwPath,
+    format: "iife",
+    target: "es2020",
+    platform: "browser",
+    minify: true,
   });
 
-  console.log("✅ Service worker generated (static only)");
+  await injectManifest({
+    swSrc: tempSwPath,
+    swDest: "out/sw.js",
+    globDirectory: "out",
+    globPatterns: ["**/*.{js,css,html,png,svg,ico,json,woff2}"],
+  });
+
+  unlinkSync(tempSwPath);
+
+  console.log("✅ Service worker bundled, injected, and generated.");
 }
 
 buildSW();
