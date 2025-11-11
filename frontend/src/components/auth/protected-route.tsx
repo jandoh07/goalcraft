@@ -12,12 +12,17 @@ export default function ProtectedRoute({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const offline = typeof navigator !== "undefined" && !navigator.onLine;
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !offline) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, offline]);
+
+  if (offline) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
