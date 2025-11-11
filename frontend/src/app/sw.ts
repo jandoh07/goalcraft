@@ -11,6 +11,22 @@ declare const self: ServiceWorkerGlobalScope;
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
+// Cache Next.js data files for client-side navigation
+registerRoute(
+  ({ request }) => request.url.includes("/_next/data/"),
+  new NetworkFirst({
+    cacheName: "next-data",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+    networkTimeoutSeconds: 2,
+  })
+);
+
+// Cache page navigations
 registerRoute(
   ({ request }) => request.mode === "navigate",
   new NetworkFirst({
@@ -25,9 +41,23 @@ registerRoute(
   })
 );
 
+// Cache JavaScript chunks aggressively for better offline performance
+registerRoute(
+  ({ request }) => request.destination === "script",
+  new CacheFirst({
+    cacheName: "js-chunks",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+    ],
+  })
+);
+
+// Cache other static assets
 registerRoute(
   ({ request }) =>
-    request.destination === "script" ||
     request.destination === "style" ||
     request.destination === "image" ||
     request.destination === "font",
