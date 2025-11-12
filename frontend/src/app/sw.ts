@@ -4,74 +4,97 @@ import { clientsClaim } from "workbox-core";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
-import { CacheFirst, NetworkFirst } from "workbox-strategies";
+import {
+  CacheFirst,
+  NetworkFirst,
+  StaleWhileRevalidate,
+} from "workbox-strategies";
 
 declare const self: ServiceWorkerGlobalScope;
 
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-// Cache Next.js data files for client-side navigation
 registerRoute(
-  ({ request }) => request.url.includes("/_next/data/"),
-  new NetworkFirst({
-    cacheName: "next-data",
+  ({ url }) => url.searchParams.has("_rsc"),
+  new StaleWhileRevalidate({
+    cacheName: "rsc-payloads",
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
+        maxEntries: 100,
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
-    networkTimeoutSeconds: 2,
   })
 );
 
-// Cache page navigations
 registerRoute(
   ({ request }) => request.mode === "navigate",
   new NetworkFirst({
     cacheName: "pages",
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 20,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
     networkTimeoutSeconds: 3,
   })
 );
 
-// Cache JavaScript chunks aggressively for better offline performance
 registerRoute(
   ({ request }) => request.destination === "script",
   new CacheFirst({
     cacheName: "js-chunks",
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 60,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        maxEntries: 100,
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
   })
 );
 
-// Cache other static assets
 registerRoute(
-  ({ request }) =>
-    request.destination === "style" ||
-    request.destination === "image" ||
-    request.destination === "font",
+  ({ request }) => request.destination === "style",
   new CacheFirst({
-    cacheName: "static-assets",
+    cacheName: "styles",
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
   })
 );
 
+registerRoute(
+  ({ request }) => request.destination === "image",
+  new CacheFirst({
+    cacheName: "images",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 150,
+        maxAgeSeconds: 60 * 24 * 60 * 60,
+      }),
+    ],
+  })
+);
+
+registerRoute(
+  ({ request }) => request.destination === "font",
+  new CacheFirst({
+    cacheName: "fonts",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 30,
+        maxAgeSeconds: 365 * 24 * 60 * 60,
+      }),
+    ],
+  })
+);
+
+// Push notification handlers
 self.addEventListener("push", (event) => {
   if (!event.data) {
     console.log("This push event has no data.");
