@@ -64,7 +64,7 @@ const ResponsiveDialog = ({
       <>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
-            className="sm:max-w-[550px] max-h-[90vh] flex flex-col"
+            className="sm:max-w-[600px] max-h-[90vh] flex flex-col"
             aria-describedby={description ? undefined : "dialog-content"}
           >
             <DialogHeader>

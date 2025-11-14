@@ -7,7 +7,7 @@ import {
   deleteGoal,
   subscribeToUserGoals,
 } from "@/lib/firebase/goals";
-import { Goal } from "@/types";
+import { Goal, Task } from "@/types";
 import { removeEmptyFields } from "@/lib/utils";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ export const useAddGoal = () => {
       userId,
       goalData,
       newCategory,
+      tasks,
     }: {
       userId: string;
       goalData: Omit<
@@ -58,6 +59,10 @@ export const useAddGoal = () => {
         "id" | "createdAt" | "updatedAt" | "userId" | "status"
       >;
       newCategory?: string;
+      tasks?: Omit<
+        Task,
+        "id" | "createdAt" | "updatedAt" | "userId" | "goalId"
+      >[];
     }) =>
       addGoal(
         userId,
@@ -65,7 +70,8 @@ export const useAddGoal = () => {
           Goal,
           "id" | "createdAt" | "updatedAt" | "userId" | "status"
         >,
-        newCategory
+        newCategory,
+        tasks
       ),
     onMutate: async ({ userId, goalData }) => {
       await queryClient.cancelQueries({ queryKey: ["goals"] });

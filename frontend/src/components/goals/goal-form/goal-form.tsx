@@ -53,6 +53,7 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
         goalTitle={formData.title}
         description={formData.description}
         milestones={formData.milestones}
+        onTasksChange={setters.setTasks}
       />
     </form>
   );

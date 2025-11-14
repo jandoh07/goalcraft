@@ -124,6 +124,7 @@ const GoalCategories = ({
               className={cn(
                 "w-full h-12 justify-start text-left font-normal gap-2 border-0 hover:text-foreground",
                 categoryOption.bgColor,
+                "dark:bg-input/30 dark:hover:bg-input/50",
                 isSelected &&
                   "ring-2 ring-offset-2 ring-offset-background ring-primary"
               )}
@@ -139,9 +140,9 @@ const GoalCategories = ({
         })}
         <div className="relative">
           <DropdownMenu>
-            <DropdownMenuTrigger className="h-12 w-full rounded-lg flex items-center justify-center bg-gray-100 hover:bg-gray-200">
+            <DropdownMenuTrigger className="h-12 w-full rounded-lg flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-input/30 dark:hover:bg-input/50">
               <div className="flex items-center gap-2">
-                <PlusCircle className="size-5 shrink-0 text-gray-600" />
+                <PlusCircle className="size-5 shrink-0 text-gray-600 dark:text-gray-400" />
                 <span className="truncate font-semibold text-sm">
                   Other / Custom
                 </span>

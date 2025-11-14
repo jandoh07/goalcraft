@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flashLiteModel } from "@/lib/firebase/firebase";
 import { aiPrompts } from "@/constants/ai";
 import { Milestone } from "@/types";
@@ -11,6 +11,7 @@ interface TasksProps {
   goalTitle: string;
   description?: string;
   milestones?: Milestone[];
+  onTasksChange?: (tasks: AcceptedTasks[]) => void;
 }
 
 export type AcceptedTasks = {
@@ -22,7 +23,12 @@ export type AcceptedTasks = {
   isAIGenerated?: boolean;
 };
 
-const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
+const Tasks = ({
+  goalTitle,
+  description,
+  milestones,
+  onTasksChange,
+}: TasksProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<
@@ -36,6 +42,13 @@ const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
     }[]
   >([]);
   const [acceptedTasks, setAcceptedTasks] = useState<AcceptedTasks[]>([]);
+
+  // Notify parent component whenever accepted tasks change
+  useEffect(() => {
+    if (onTasksChange) {
+      onTasksChange(acceptedTasks);
+    }
+  }, [acceptedTasks, onTasksChange]);
 
   const generateTasksWithAI = async () => {
     if (!goalTitle) return;

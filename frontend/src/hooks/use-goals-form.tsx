@@ -1,8 +1,8 @@
 import { useAuth } from "@/contexts/auth-context";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAddGoal, useUpdateGoal } from "./use-goals";
 import { toast } from "sonner";
-import { Goal, Milestone } from "@/types";
+import { Goal, Milestone, Task } from "@/types";
 
 const useGoalsForm = ({
   initialData,
@@ -27,6 +27,33 @@ const useGoalsForm = ({
     initialData?.milestones || []
   );
   const [newCategory, setNewCategory] = useState<string | undefined>(undefined);
+  const [tasks, setTasks] = useState<
+    Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "goalId">[]
+  >([]);
+
+  // Handler to update tasks from Tasks component
+  const handleTasksChange = useCallback(
+    (
+      acceptedTasks: Array<{
+        id: string;
+        title: string;
+        isRecurring: boolean;
+        frequency: string;
+        reason: string;
+      }>
+    ) => {
+      const formattedTasks = acceptedTasks.map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ({ id, reason, ...task }) => ({
+          ...task,
+          status: "in-progress" as const,
+        })
+      );
+      setTasks(formattedTasks);
+    },
+    []
+  );
+
   const { user, refreshUser } = useAuth();
   const addGoalMutation = useAddGoal();
   const updateGoalMutation = useUpdateGoal();
@@ -48,6 +75,7 @@ const useGoalsForm = ({
     setDueDate(undefined);
     setMilestones([]);
     setNewCategory(undefined);
+    setTasks([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,13 +90,19 @@ const useGoalsForm = ({
     };
 
     if (mode === "add") {
-      addGoalMutation.mutate({
-        userId: user?.uid || "",
-        goalData,
-        newCategory,
-      });
-
-      if (addGoalMutation.isSuccess && newCategory) refreshUser();
+      addGoalMutation.mutate(
+        {
+          userId: user?.uid || "",
+          goalData,
+          newCategory,
+          tasks,
+        },
+        {
+          onSuccess: () => {
+            if (newCategory) refreshUser();
+          },
+        }
+      );
 
       toast.success(
         isOnline
@@ -124,6 +158,7 @@ const useGoalsForm = ({
       setDueDate,
       setMilestones,
       setNewCategory,
+      setTasks: handleTasksChange,
     },
     handleSubmit,
     handleAddNew,
