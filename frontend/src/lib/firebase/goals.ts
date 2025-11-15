@@ -158,6 +158,8 @@ export const addGoal = async (
         updatedAt: now,
         userId,
         goalId: goalRef.id,
+        goalTitle: goalData.title,
+        goalCategory: goalData.category,
         status: "pending",
       });
     });

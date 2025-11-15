@@ -37,6 +37,8 @@ const useGoalsForm = ({
       acceptedTasks: Array<{
         id: string;
         title: string;
+        dueDate?: Date;
+        time?: string;
         isRecurring: boolean;
         frequency: string;
         reason: string;
@@ -44,8 +46,9 @@ const useGoalsForm = ({
     ) => {
       const formattedTasks = acceptedTasks.map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        ({ id, reason, ...task }) => ({
+        ({ id, reason, time, ...task }) => ({
           ...task,
+          time: time ? time : "",
           status: "in-progress" as const,
         })
       );

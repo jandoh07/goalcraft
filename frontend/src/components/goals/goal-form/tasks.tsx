@@ -17,6 +17,8 @@ interface TasksProps {
 export type AcceptedTasks = {
   id: string;
   title: string;
+  dueDate?: Date;
+  time?: string;
   isRecurring: boolean;
   frequency: string;
   reason: string;
@@ -35,6 +37,8 @@ const Tasks = ({
     {
       id: string;
       title: string;
+      dueDate?: Date;
+      time?: string;
       isRecurring: boolean;
       frequency: string;
       reason: string;
@@ -71,6 +75,9 @@ const Tasks = ({
       const parsed = JSON.parse(jsonText);
 
       if (parsed.tasks && Array.isArray(parsed.tasks)) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day
+        
         const newTasks = parsed.tasks.map(
           (task: {
             title: string;
@@ -80,6 +87,7 @@ const Tasks = ({
           }) => ({
             id: Date.now().toString() + Math.random(),
             title: task.title,
+            dueDate: today,
             isRecurring: task.isRecurring,
             frequency: task.frequency || "",
             reason: task.reason,
