@@ -16,9 +16,7 @@ const useGoalsForm = ({
   setOpen: (open: boolean) => void;
 }) => {
   const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
+  const [relevance, setRelevance] = useState(initialData?.relevance || "");
   const [category, setCategory] = useState(initialData?.category || "");
   const [dueDate, setDueDate] = useState<Date | undefined>(
     initialData?.dueDate
@@ -64,7 +62,7 @@ const useGoalsForm = ({
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
-      setDescription(initialData.description || "");
+      setRelevance(initialData.relevance || "");
       setCategory(initialData.category || "");
       setDueDate(initialData.dueDate);
       setMilestones(initialData.milestones || []);
@@ -73,7 +71,7 @@ const useGoalsForm = ({
 
   const resetForm = () => {
     setTitle("");
-    setDescription("");
+    setRelevance("");
     setCategory("");
     setDueDate(undefined);
     setMilestones([]);
@@ -86,7 +84,7 @@ const useGoalsForm = ({
     const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     const goalData = {
       title,
-      description,
+      relevance,
       category,
       dueDate,
       milestones,
@@ -149,14 +147,14 @@ const useGoalsForm = ({
   return {
     formData: {
       title,
-      description,
+      relevance,
       category,
       dueDate,
       milestones,
     },
     setters: {
       setTitle,
-      setDescription,
+      setRelevance,
       setCategory,
       setDueDate,
       setMilestones,

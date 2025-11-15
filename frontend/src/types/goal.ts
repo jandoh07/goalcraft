@@ -2,7 +2,7 @@ export interface Goal {
   id?: string;
   userId: string;
   title: string;
-  description?: string;
+  relevance?: string;
   category: string;
   dueDate?: Date;
   status: "in-progress" | "completed";

@@ -18,6 +18,7 @@ const GoalTitle = ({ title, setTitle, initialTitle }: GoalTitleProps) => {
         placeholder="Enter your goal title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        required
       />
       <AISuggestion
         value={title}

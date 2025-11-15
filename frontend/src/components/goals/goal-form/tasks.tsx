@@ -9,7 +9,7 @@ import TaskCard from "./task-card";
 
 interface TasksProps {
   goalTitle: string;
-  description?: string;
+  relevance?: string;
   milestones?: Milestone[];
   onTasksChange?: (tasks: AcceptedTasks[]) => void;
 }
@@ -27,7 +27,7 @@ export type AcceptedTasks = {
 
 const Tasks = ({
   goalTitle,
-  description,
+  relevance,
   milestones,
   onTasksChange,
 }: TasksProps) => {
@@ -62,7 +62,7 @@ const Tasks = ({
       const milestoneTitles = milestones?.map((m) => m.title);
       const prompt = aiPrompts.taskSuggestionBasic(
         goalTitle,
-        description,
+        relevance,
         milestoneTitles as [string] | undefined
       );
 
@@ -77,7 +77,7 @@ const Tasks = ({
       if (parsed.tasks && Array.isArray(parsed.tasks)) {
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Set to start of day
-        
+
         const newTasks = parsed.tasks.map(
           (task: {
             title: string;
