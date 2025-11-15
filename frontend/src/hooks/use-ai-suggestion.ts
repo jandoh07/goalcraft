@@ -6,7 +6,9 @@ import { useEffect, useState, useCallback } from "react";
 const AUTO_TRIGGER_PROMPTS = ["goalTitleSuggestion"];
 
 // Prompt types that should only trigger manually (via button click)
-const MANUAL_TRIGGER_PROMPTS = ["goalDescriptionPlaceholderGeneration"];
+const MANUAL_TRIGGER_PROMPTS: (keyof typeof aiPrompts)[] = [
+  "goalRelevanceGeneration",
+];
 
 const useAISuggestion = ({
   value,
@@ -32,7 +34,7 @@ const useAISuggestion = ({
     // Don't trigger if user just accepted a suggestion (only for certain prompt types)
     if (
       (promptType === "goalTitleSuggestion" ||
-        promptType === "goalDescriptionPlaceholderGeneration") &&
+        promptType === "goalRelevanceGeneration") &&
       lastAcceptedSuggestion &&
       value.includes(lastAcceptedSuggestion.slice(0, 10))
     ) {
@@ -49,9 +51,8 @@ const useAISuggestion = ({
         case "goalTitleSuggestion":
           suggestionPrompt = aiPrompts.goalTitleSuggestion(value);
           break;
-        case "goalDescriptionPlaceholderGeneration":
-          suggestionPrompt =
-            aiPrompts.goalDescriptionPlaceholderGeneration(value);
+        case "goalRelevanceGeneration":
+          suggestionPrompt = aiPrompts.goalRelevanceGeneration(value);
           break;
         default:
           console.warn(`Unsupported prompt type: ${promptType}`);

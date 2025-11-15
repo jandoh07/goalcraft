@@ -44,7 +44,7 @@ const AISuggestion = ({
           className="px-2 py-1 text-xs text-accent underline rounded-2xl cursor-pointer bg-accent/10 hover:bg-accent/20 font-medium"
           onClick={generateSuggestion}
         >
-          {manualTriggerButtonLabel || "Generate description with AI"}
+          {manualTriggerButtonLabel || "Generate relevance with AI"}
         </button>
       </div>
     );

@@ -5,10 +5,10 @@ import { ComponentProps } from "react";
 import useGoalsForm from "@/hooks/use-goals-form";
 import Milestones from "./milestones";
 import GoalTitle from "./goal-title";
-import GoalDescription from "./goal-description";
 import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date-picker";
 import GoalCategories from "./goal-categories";
 import Tasks from "./tasks";
+import GoalRelevance from "./goal-relevance";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -29,9 +29,9 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
         setTitle={setters.setTitle}
         initialTitle={initialData?.title}
       />
-      <GoalDescription
-        description={formData.description}
-        setDescription={setters.setDescription}
+      <GoalRelevance
+        relevance={formData.relevance}
+        setRelevance={setters.setRelevance}
         title={formData.title}
       />
       <GoalCategories
@@ -51,8 +51,9 @@ export default function GoalForm({ className, goalForm }: GoalFormProps) {
       />
       <Tasks
         goalTitle={formData.title}
-        description={formData.description}
+        relevance={formData.relevance}
         milestones={formData.milestones}
+        onTasksChange={setters.setTasks}
       />
     </form>
   );

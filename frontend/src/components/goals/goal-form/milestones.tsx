@@ -123,6 +123,14 @@ const Milestones = ({
                   }
                   className="h-9"
                 />
+                {/* <Textarea
+                  placeholder="Milestone title"
+                  value={milestone.title}
+                  onChange={(e) =>
+                    updateMilestone(milestone.id!, "title", e.target.value)
+                  }
+                  className="h-9"
+                /> */}
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -170,7 +178,7 @@ const Milestones = ({
       )}
 
       {toggleAddMilestone && (
-        <div className="space-y-4">
+        <div className="mt-4 p-4 border rounded-lg bg-secondary/50 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="milestone-title">Milestone Title</Label>
             <Input
@@ -209,23 +217,24 @@ const Milestones = ({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button
+            <button
               type="button"
-              variant="ghost"
+              className="px-3 py-1.5 text-xs rounded-lg hover:bg-secondary"
               onClick={() => {
                 setToggleAddMilestone(false);
                 setNewMilestone(null);
               }}
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
+              className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 font-medium"
               onClick={addMilestone}
               disabled={!newMilestone?.title.trim() || !newMilestone?.weight}
             >
               Add Milestone
-            </Button>
+            </button>
           </div>
         </div>
       )}

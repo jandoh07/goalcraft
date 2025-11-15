@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flashLiteModel } from "@/lib/firebase/firebase";
 import { aiPrompts } from "@/constants/ai";
 import { Milestone } from "@/types";
@@ -9,26 +9,36 @@ import TaskCard from "./task-card";
 
 interface TasksProps {
   goalTitle: string;
-  description?: string;
+  relevance?: string;
   milestones?: Milestone[];
+  onTasksChange?: (tasks: AcceptedTasks[]) => void;
 }
 
 export type AcceptedTasks = {
   id: string;
   title: string;
+  dueDate?: Date;
+  time?: string;
   isRecurring: boolean;
   frequency: string;
   reason: string;
   isAIGenerated?: boolean;
 };
 
-const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
+const Tasks = ({
+  goalTitle,
+  relevance,
+  milestones,
+  onTasksChange,
+}: TasksProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState<
     {
       id: string;
       title: string;
+      dueDate?: Date;
+      time?: string;
       isRecurring: boolean;
       frequency: string;
       reason: string;
@@ -36,6 +46,13 @@ const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
     }[]
   >([]);
   const [acceptedTasks, setAcceptedTasks] = useState<AcceptedTasks[]>([]);
+
+  // Notify parent component whenever accepted tasks change
+  useEffect(() => {
+    if (onTasksChange) {
+      onTasksChange(acceptedTasks);
+    }
+  }, [acceptedTasks, onTasksChange]);
 
   const generateTasksWithAI = async () => {
     if (!goalTitle) return;
@@ -45,7 +62,7 @@ const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
       const milestoneTitles = milestones?.map((m) => m.title);
       const prompt = aiPrompts.taskSuggestionBasic(
         goalTitle,
-        description,
+        relevance,
         milestoneTitles as [string] | undefined
       );
 
@@ -58,6 +75,9 @@ const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
       const parsed = JSON.parse(jsonText);
 
       if (parsed.tasks && Array.isArray(parsed.tasks)) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day
+
         const newTasks = parsed.tasks.map(
           (task: {
             title: string;
@@ -67,6 +87,7 @@ const Tasks = ({ goalTitle, description, milestones }: TasksProps) => {
           }) => ({
             id: Date.now().toString() + Math.random(),
             title: task.title,
+            dueDate: today,
             isRecurring: task.isRecurring,
             frequency: task.frequency || "",
             reason: task.reason,

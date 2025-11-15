@@ -35,8 +35,8 @@ const Header = ({ goal }: HeaderProps) => {
         </div>
       </div>
 
-      {goal.description && (
-        <p className="text-sm text-muted-foreground">{goal.description}</p>
+      {goal.relevance && (
+        <p className="text-sm text-muted-foreground">{goal.relevance}</p>
       )}
 
       {/* Dates */}
