@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import GoalCard from "@/components/goals/goal-card";
 import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";

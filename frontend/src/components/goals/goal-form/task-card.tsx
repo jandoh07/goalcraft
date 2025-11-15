@@ -38,6 +38,8 @@ const TaskCard = ({
         setAcceptedTasks={setAcceptedTasks}
         setShowForm={setIsEditing}
         initialTaskTitle={task.title}
+        initialDueDate={task.dueDate}
+        initialTime={task.time}
         initialIsRecurring={task.isRecurring}
         initialFrequency={task.frequency}
       />
@@ -58,9 +60,10 @@ const TaskCard = ({
                       task.frequency?.slice(1)
                   : "One-time"}
               </p>
-              {!task.isRecurring && (
+              {task.dueDate && (
                 <p className="text-xs text-secondary-foreground border border-border rounded-lg px-2 inline-block">
-                  Due: Today
+                  Due: {task.dueDate.toLocaleDateString()}
+                  {task.time && ` at ${task.time}`}
                 </p>
               )}
             </div>

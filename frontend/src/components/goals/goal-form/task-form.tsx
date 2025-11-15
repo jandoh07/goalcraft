@@ -11,12 +11,26 @@ import { Switch } from "@/components/ui/switch";
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
 import { AcceptedTasks } from "./tasks";
 
+// Helper to get today's date in YYYY-MM-DD format
+const getTodayString = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+};
+
+// Helper to convert Date to YYYY-MM-DD format
+const dateToString = (date?: Date) => {
+  if (!date) return getTodayString();
+  return date.toISOString().split("T")[0];
+};
+
 interface TaskFormProps {
   editingTaskId: string | null;
   setEditingTaskId: (id: string | null) => void;
   setAcceptedTasks: Dispatch<SetStateAction<AcceptedTasks[]>>;
   setShowForm: Dispatch<SetStateAction<boolean>>;
   initialTaskTitle?: string;
+  initialDueDate?: Date;
+  initialTime?: string;
   initialIsRecurring?: boolean;
   initialFrequency?: string;
 }
@@ -27,23 +41,32 @@ const TaskForm = ({
   setAcceptedTasks,
   setShowForm,
   initialTaskTitle = "",
+  initialDueDate,
+  initialTime = "",
   initialIsRecurring = false,
   initialFrequency = "",
 }: TaskFormProps) => {
   const [taskTitle, setTaskTitle] = useState(initialTaskTitle);
-  const [dueDate, setDueDate] = useState("");
-  const [dueTime, setDueTime] = useState("");
+  const [dueDate, setDueDate] = useState(
+    initialDueDate ? dateToString(initialDueDate) : getTodayString()
+  );
+  const [dueTime, setDueTime] = useState(initialTime);
   const [isRecurring, setIsRecurring] = useState(initialIsRecurring);
   const [frequency, setFrequency] = useState(initialFrequency);
 
   // Update form when editing a different task
   useEffect(() => {
     setTaskTitle(initialTaskTitle);
+    setDueDate(initialDueDate ? dateToString(initialDueDate) : getTodayString());
+    setDueTime(initialTime);
     setIsRecurring(initialIsRecurring);
     setFrequency(initialFrequency);
-  }, [initialTaskTitle, initialIsRecurring, initialFrequency]);
+  }, [initialTaskTitle, initialDueDate, initialTime, initialIsRecurring, initialFrequency]);
 
   const handleUpdateTask = () => {
+    // Convert date string to Date object
+    const dueDateObj = dueDate ? new Date(dueDate) : undefined;
+
     if (editingTaskId) {
       setAcceptedTasks((prev) =>
         prev.map((task) =>
@@ -51,6 +74,8 @@ const TaskForm = ({
             ? {
                 ...task,
                 title: taskTitle,
+                dueDate: dueDateObj,
+                time: dueTime || undefined,
                 isRecurring,
                 frequency,
               }
@@ -64,6 +89,8 @@ const TaskForm = ({
         {
           id: Date.now().toString(),
           title: taskTitle,
+          dueDate: dueDateObj,
+          time: dueTime || undefined,
           isRecurring,
           frequency,
           reason: "Manually added task.",
@@ -72,7 +99,7 @@ const TaskForm = ({
     }
     setShowForm(false);
     setTaskTitle("");
-    setDueDate("");
+    setDueDate(getTodayString());
     setDueTime("");
     setIsRecurring(false);
     setFrequency("");
@@ -147,7 +174,7 @@ const TaskForm = ({
             setShowForm(false);
             setEditingTaskId(null);
             setTaskTitle("");
-            setDueDate("");
+            setDueDate(getTodayString());
             setDueTime("");
             setIsRecurring(false);
             setFrequency("");

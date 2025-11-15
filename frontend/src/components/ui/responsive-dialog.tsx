@@ -64,7 +64,7 @@ const ResponsiveDialog = ({
       <>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
-            className="sm:max-w-[550px] max-h-[90vh] flex flex-col"
+            className="sm:max-w-[600px] max-h-[90vh] flex flex-col"
             aria-describedby={description ? undefined : "dialog-content"}
           >
             <DialogHeader>
@@ -104,9 +104,15 @@ const ResponsiveDialog = ({
     );
   }
 
+  //TODO: check docs https://vaul.emilkowal.ski/api repositionInputs can help with input fields being hidden by keyboard
   return (
     <>
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer
+        open={open}
+        onOpenChange={setOpen}
+        modal={true}
+        shouldScaleBackground={false}
+      >
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle className="sr-only">{title}</DrawerTitle>

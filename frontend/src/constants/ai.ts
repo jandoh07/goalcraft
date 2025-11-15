@@ -99,47 +99,47 @@ export const aiPrompts = {
         }
         \`\`\`
         `,
-  goalDescriptionPlaceholderGeneration: (goal_title: string) => `
-        You are an AI assistant that helps users write better goal descriptions.
+  goalRelevanceGeneration: (goal_title: string) => `
+        You are an AI assistant that generates natural, one-line example descriptions for SMART goals.
 
-        Your task: Generate a short, one-line *example placeholder* (starting with "e.g.,") for the description field of a SMART goal.
+        Your task:
+        Write a complete, fully-formed sentence starting with "e.g.," that:
+        - Gives a specific context for the goal
+        - States the personal motivation or reason it matters
+        - Sounds like a real user speaking
+        - Is under 20 words
+        - Contains NO ellipses ("...") and NO quotation marks
+        - Does NOT repeat the goal title
 
-        The placeholder should:
-        - Give a clear *specific context* for the goal (the “what” or “where”)
-        - Hint at the *motivation or reason* behind it (the “why”)
-        - Be natural, encouraging, and under 15 words
-        - Follow this pattern:
-          "e.g., [specific context related to the goal]... [reason or motivation]..."
-
-        Do NOT repeat the goal title directly. Make it sound human and relatable.
+        The output should feel like an actual description, not a hint or template.
 
         ---
         Examples:
-        Goal Title: "Grow YouTube channel to 1000 subscribers"
-        → e.g., "For my gardening videos... I want to inspire more people..."
+        Goal: "Grow YouTube channel to 1000 subscribers"
+        e.g., I want to share helpful gardening videos and build a community around my hobby.
 
-        Goal Title: "Run a 5k race"
-        → e.g., "Preparing for the city marathon... I want to challenge myself..."
+        Goal: "Run a 5k race"
+        e.g., I want to improve my fitness and challenge myself in a real event.
 
-        Goal Title: "Save $1,000"
-        → e.g., "For a new laptop... I need it for my freelance work..."
+        Goal: "Save $1,000"
+        e.g., I am saving for a new laptop that I need for school and personal projects.
 
-        Goal Title: "Learn Python"
-        → e.g., "To build my first web app... It’ll boost my tech career..."
+        Goal: "Learn Python"
+        e.g., I want to learn Python to build real apps and advance my career.
+
         ---
-
-        Goal Title: "${goal_title}"
+        Goal: "${goal_title}"
         Response:
         `,
   taskSuggestionBasic: (
     goalTitle: string,
-    description?: string,
+    relevance?: string,
     milestones?: [string]
   ) => `You are a productivity coach helping a user turn their goal into practical, actionable tasks.
 
         **Goal Information:**
         * **Title:** "${goalTitle}"
-        {{#if description}}* **Description:** "${description}"{{/if}}
+        {{#if relevance}}* **Relevance:** "${relevance}"{{/if}}
         {{#if milestones}}* **Milestones:** ${milestones}{{/if}}
 
         ---

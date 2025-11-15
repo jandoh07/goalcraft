@@ -15,7 +15,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Goal } from "@/types";
+import { Goal, Task } from "@/types";
 
 const userGoalsQuery = (userId: string, status?: string) => {
   let q;
@@ -125,7 +125,8 @@ export const getGoal = async (goalId: string) => {
 export const addGoal = async (
   userId: string,
   goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">,
-  newCategory?: string
+  newCategory?: string,
+  tasks?: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "goalId">[]
 ) => {
   const batch = writeBatch(db);
   const now = Timestamp.now();
@@ -144,6 +145,23 @@ export const addGoal = async (
     const userRef = doc(db, "users", userId);
     batch.update(userRef, {
       customCategories: arrayUnion(newCategory),
+    });
+  }
+
+  if (tasks && tasks.length > 0) {
+    tasks.forEach((task) => {
+      const taskRef = doc(collection(db, "tasks"));
+      batch.set(taskRef, {
+        ...task,
+        dueDate: task.dueDate ? Timestamp.fromDate(task.dueDate) : null,
+        createdAt: now,
+        updatedAt: now,
+        userId,
+        goalId: goalRef.id,
+        goalTitle: goalData.title,
+        goalCategory: goalData.category,
+        status: "pending",
+      });
     });
   }
 
