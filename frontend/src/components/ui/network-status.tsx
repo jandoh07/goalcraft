@@ -1,30 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CloudOff, Wifi } from "lucide-react";
+import { WifiOff, Wifi, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * Network status indicator component
- * Shows when app is offline and using cached data
+ * Shows when app is offline and syncing when back online
  */
 export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
-  const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Set initial state
     setIsOnline(navigator.onLine);
 
     const handleOnline = () => {
       setIsOnline(true);
-      setShowOfflineMessage(false);
+      setIsSyncing(true);
+      setShowIndicator(true);
+      setIsExpanded(true);
+
+      // Stop syncing after 2 seconds
+      setTimeout(() => {
+        setIsSyncing(false);
+      }, 2000);
+
+      // Hide indicator after 4 seconds total
+      setTimeout(() => {
+        setShowIndicator(false);
+      }, 4000);
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setShowOfflineMessage(true);
+      setIsSyncing(false);
+      setShowIndicator(true);
+      setIsExpanded(true);
     };
 
     window.addEventListener("online", handleOnline);
@@ -36,27 +52,88 @@ export default function NetworkStatus() {
     };
   }, []);
 
-  // Don't show anything if online
-  if (isOnline && !showOfflineMessage) return null;
+  useEffect(() => {
+    if (!showIndicator) return;
 
-  // Show "Back online" message briefly
-  if (isOnline && showOfflineMessage) {
-    setTimeout(() => setShowOfflineMessage(false), 3000);
-    return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-green-500 text-white px-4 py-2 text-center text-sm flex items-center justify-center gap-2 animate-in slide-in-from-top">
-        <Wifi className="h-4 w-4" />
-        <span>Back online! Changes synced successfully.</span>
-      </div>
-    );
-  }
+    setIsExpanded(true);
+    const timer = setTimeout(() => {
+      setIsExpanded(false);
+    }, 3000);
 
-  // Show offline message
+    return () => clearTimeout(timer);
+  }, [showIndicator, isOnline]);
+
+  if (!showIndicator) return null;
+
+  const getStyles = () => {
+    if (!isOnline) {
+      return {
+        bg: "bg-yellow-500",
+        hover: "hover:bg-yellow-600",
+      };
+    }
+    if (isSyncing) {
+      return {
+        bg: "bg-green-500",
+        hover: "hover:bg-green-600",
+      };
+    }
+    return {
+      bg: "bg-green-500",
+      hover: "hover:bg-green-600",
+    };
+  };
+
+  const getIcon = () => {
+    if (!isOnline) {
+      return <WifiOff className="h-4 w-4 shrink-0" />;
+    }
+    if (isSyncing) {
+      return <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />;
+    }
+    return <Wifi className="h-4 w-4 shrink-0" />;
+  };
+
+  const getMessage = () => {
+    if (!isOnline) {
+      return "Changes won't sync";
+    }
+    if (isSyncing) {
+      return "Syncing changes...";
+    }
+    return "Back online";
+  };
+
+  const styles = getStyles();
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-2 text-center text-sm flex items-center justify-center gap-2 animate-in slide-in-from-top">
-      <CloudOff className="h-4 w-4" />
-      <span>
-        You&apos;re offline. Changes will sync when you&apos;re back online.
-      </span>
-    </div>
+    <motion.button
+      className={`fixed top-3 md:top-4 right-10 md:right-4 z-50 ${styles.bg} text-white rounded-full shadow-lg ${styles.hover} flex items-center gap-2 overflow-hidden transition-colors`}
+      animate={{
+        paddingLeft: isExpanded ? "1rem" : "0.5rem",
+        paddingRight: isExpanded ? "1rem" : "0.5rem",
+        paddingTop: "0.5rem",
+        paddingBottom: "0.5rem",
+      }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
+      {getIcon()}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.span
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "auto", opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="text-xs whitespace-nowrap"
+          >
+            {getMessage()}
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <span className="sr-only">{getMessage()}</span>
+    </motion.button>
   );
 }
