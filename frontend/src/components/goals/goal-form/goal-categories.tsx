@@ -141,7 +141,7 @@ const GoalCategories = ({
         <div className="relative">
           <DropdownMenu>
             <DropdownMenuTrigger className="h-12 w-full rounded-lg flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-input/30 dark:hover:bg-input/50">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-1 justify-start items-center gap-2 px-3">
                 <PlusCircle className="size-5 shrink-0 text-gray-600 dark:text-gray-400" />
                 <span className="truncate font-semibold text-sm">
                   Other / Custom

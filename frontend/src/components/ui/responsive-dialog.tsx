@@ -104,9 +104,15 @@ const ResponsiveDialog = ({
     );
   }
 
+  //TODO: check docs https://vaul.emilkowal.ski/api repositionInputs can help with input fields being hidden by keyboard
   return (
     <>
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer
+        open={open}
+        onOpenChange={setOpen}
+        modal={true}
+        shouldScaleBackground={false}
+      >
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle className="sr-only">{title}</DrawerTitle>
