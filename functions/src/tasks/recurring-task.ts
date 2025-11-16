@@ -1,16 +1,10 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-// <-- CHANGE: Add imports for date-fns and date-fns-tz
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { addDays, addWeeks, addMonths, startOfDay } from "date-fns";
 import { db } from "../config/admin";
 
-// <-- CHANGE: This helper function is now time-zone-aware
-/**
- * Calculates the next run time, normalized to 12:00 AM
- * in the task's specific time zone.
- */
 const calculateNextRun = (
   frequency: string,
   fromDate: Date,
