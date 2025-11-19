@@ -1,4 +1,5 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -6,6 +7,11 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Home() {
   const targetSectionRef = useRef<HTMLElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+
+  const utmSource = searchParams.get("utm_source") || "direct";
+  const utmMedium = searchParams.get("utm_medium") || "unknown";
+  const utmCampaign = searchParams.get("utm_campaign") || "unknown";
 
   const scrollToTop = () => {
     if (targetSectionRef.current) {
@@ -32,7 +38,12 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          source: utmSource,
+          medium: utmMedium,
+          campaign: utmCampaign,
+        }),
       });
 
       const data = await res.json();

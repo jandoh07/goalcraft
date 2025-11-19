@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const { email, source, medium, campaign } = await req.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -18,7 +18,10 @@ export async function POST(req: Request) {
         "X-Kit-Api-Key": apiKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email_address: email }),
+      body: JSON.stringify({
+        email_address: email,
+        fields: { source, medium, campaign },
+      }),
     });
 
     const createData = await createRes.json();
@@ -30,7 +33,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Create Subscriber Response:", createData);
     const subscriberId = createData.subscriber?.id;
     if (!subscriberId) {
       return NextResponse.json(
