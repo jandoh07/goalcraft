@@ -79,7 +79,7 @@ function WaitlistContent() {
       />
       <main className="max-w-4xl mx-auto px-4" ref={targetSectionRef}>
         <div
-          className="h-screen md:flex flex-col items-center justify-center"
+          className="h-screen flex flex-col items-center justify-center"
           id="hero"
         >
           {/* Hero Section */}
