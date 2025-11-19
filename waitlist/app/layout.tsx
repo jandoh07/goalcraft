@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { CSPostHogProvider } from "./provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,6 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://goalcraft.dev"
+  ),
   title: {
     default: "GoalCraft - Set Better Goals. Achieve More.",
     template: "%s | GoalCraft",
@@ -68,11 +72,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <CSPostHogProvider>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          {children}
+        </body>
+      </CSPostHogProvider>
     </html>
   );
 }
