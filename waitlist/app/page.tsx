@@ -1,10 +1,11 @@
 "use client";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default function Home() {
+function WaitlistContent() {
   const targetSectionRef = useRef<HTMLElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
@@ -449,5 +450,19 @@ export default function Home() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <WaitlistContent />
+    </Suspense>
   );
 }
