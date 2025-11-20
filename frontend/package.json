@@ -57,7 +57,7 @@
     "@vitest/ui": "^4.0.4",
     "esbuild": "^0.25.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.6",
+    "eslint-config-next": "16.0.3",
     "jsdom": "^27.0.1",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
