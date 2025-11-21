@@ -5,7 +5,7 @@ import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { addDays, addWeeks, addMonths, startOfDay } from "date-fns";
 import { db } from "../config/admin";
 
-//TODO: switch to dispatch and workers when user base grows
+// TODO: switch to dispatch and workers when user base grows
 const calculateNextRun = (
   frequency: string,
   fromDate: Date,
@@ -96,7 +96,7 @@ export const handleRecurringTasks = onSchedule(
             userId: masterTask.userId,
             type: "auto_pause",
             title: "Recurring Task Paused",
-            message: `We paused "${masterTask.title}" because it hasn't been completed recently.`,
+            message: `We've paused "${masterTask.title}" after 4 consecutive missed completions. You can resume it anytime.`,
             resourceId: doc.id,
             isRead: false,
             createdAt: now,

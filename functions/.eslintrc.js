@@ -34,5 +34,15 @@ module.exports = {
     "require-jsdoc": 0,
     "valid-jsdoc": 0,
     "quote-props": 0, // Disable quote-props rule
+    "max-len": [
+      "error",
+      {
+        code: 120,
+        ignoreUrls: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
+        ignoreRegExpLiterals: true,
+      },
+    ],
   },
 };
