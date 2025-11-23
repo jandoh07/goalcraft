@@ -138,13 +138,12 @@ const NotificationSidebar = () => {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  //   onClick={() => handleNotificationClick(notification)}
                   className={`w-full p-4 text-left transition-colors hover:bg-accent/10 ${
                     !notification.isRead ? "bg-muted/50" : ""
                   }`}
                 >
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 mt-1">
+                    <div className="shrink-0 mt-1">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -153,7 +152,7 @@ const NotificationSidebar = () => {
                           {notification.title}
                         </h3>
                         {!notification.isRead && (
-                          <span className="flex-shrink-0 size-2 bg-primary rounded-full mt-1.5"></span>
+                          <span className="shrink-0 size-2 bg-primary rounded-full mt-1.5"></span>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
