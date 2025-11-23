@@ -22,11 +22,9 @@ export interface Task {
   priority?: "high" | "medium" | "low" | "";
   status: "in-progress" | "completed";
   subtasks?: SubTask[];
-  isRecurring?: boolean;
   frequency?: string;
   nextRun?: Date;
   timeZone?: string;
-  recurringStatus?: "active" | "paused";
   recurringMasterId?: string;
   createdAt: Date;
   updatedAt: Date;

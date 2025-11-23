@@ -25,11 +25,7 @@ const userTasksQuery = (
 ) => {
   let q;
   const tasksCollection = collection(db, "tasks");
-  const baseQuery = query(
-    tasksCollection,
-    where("userId", "==", userId),
-    where("isRecurring", "==", false)
-  );
+  const baseQuery = query(tasksCollection, where("userId", "==", userId));
 
   if (filters?.status) {
     q = query(
@@ -109,7 +105,9 @@ export const subscribeToUserTasks = (
 };
 
 export const addTask = async (
-  taskData: Omit<Task, "id" | "createdAt" | "updatedAt">
+  taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> & {
+    isRecurring?: boolean;
+  }
 ) => {
   const now = Timestamp.now();
 
