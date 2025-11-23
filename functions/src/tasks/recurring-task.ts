@@ -40,7 +40,7 @@ export const handleRecurringTasks = onSchedule(
     const nowJs = now.toDate();
 
     const snapshot = await db
-      .collection("tasks")
+      .collection("masterTasks")
       .where("recurringStatus", "==", "active")
       .where("nextRun", "<=", now)
       .limit(500)

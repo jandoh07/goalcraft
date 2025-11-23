@@ -93,7 +93,7 @@ async function seed() {
   const batch = db.batch();
 
   Object.entries(seedData.tasks).forEach(([id, data]) => {
-    const ref = db.collection("tasks").doc(id);
+    const ref = db.collection("masterTasks").doc(id);
     batch.set(ref, data);
   });
 
