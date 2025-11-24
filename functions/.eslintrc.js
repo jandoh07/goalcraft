@@ -22,6 +22,7 @@ module.exports = {
     "/lib/**/*", // Ignore built files.
     "/generated/**/*", // Ignore generated files.
     ".eslintrc.js", // Ignore this config file itself
+    "jest.config.js", // Ignore Jest config file
   ],
   plugins: ["@typescript-eslint", "import"],
   rules: {

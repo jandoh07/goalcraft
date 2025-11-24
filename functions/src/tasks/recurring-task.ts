@@ -1,35 +1,13 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { addDays, addWeeks, addMonths, startOfDay } from "date-fns";
 import { db } from "../config/admin";
+import {
+  calculateNextRun,
+  calculateTaskDueDate,
+} from "../utils/recurring-task-utils";
 
 // TODO: switch to dispatch and workers when user base grows
-const calculateNextRun = (
-  frequency: string,
-  fromDate: Date,
-  timeZone: string
-): Date => {
-  const zonedDate = toZonedTime(fromDate, timeZone);
-
-  let nextRun: Date;
-  switch (frequency) {
-    case "weekly":
-      nextRun = addWeeks(zonedDate, 1);
-      break;
-    case "monthly":
-      nextRun = addMonths(zonedDate, 1);
-      break;
-    case "daily":
-    default:
-      nextRun = addDays(zonedDate, 1);
-  }
-
-  const normalizedNextRun = startOfDay(nextRun);
-
-  return fromZonedTime(normalizedNextRun, timeZone);
-};
 
 export const handleRecurringTasks = onSchedule(
   { schedule: "*/15 * * * *", timeZone: "Etc/UTC", memory: "512MiB" },
@@ -79,6 +57,7 @@ export const handleRecurringTasks = onSchedule(
 
         batch.update(doc.ref, {
           recurringStatus: "paused",
+          pausedReason: "auto-pause-inactivity",
           updatedAt: now,
         });
 
@@ -121,31 +100,50 @@ export const handleRecurringTasks = onSchedule(
       const timeZone = masterTask.timeZone || "Etc/UTC";
       const lastRunDate = masterTask.nextRun.toDate();
       let nextValidRun = lastRunDate;
+      let taskDueDate: Date;
       let safetyCounter = 0;
 
-      while (nextValidRun <= nowJs) {
-        nextValidRun = calculateNextRun(
-          masterTask.frequency,
-          nextValidRun,
+      try {
+        while (nextValidRun <= nowJs) {
+          nextValidRun = calculateNextRun(
+            masterTask.frequency,
+            nextValidRun,
+            timeZone
+          );
+
+          safetyCounter++;
+          if (safetyCounter > 100) {
+            logger.warn(
+              `Safety counter exceeded for task ${masterTaskId}, breaking loop.`
+            );
+            break;
+          }
+        }
+
+        taskDueDate = calculateTaskDueDate(
+          masterTask.nextRun.toDate(),
           timeZone
         );
+      } catch (error) {
+        logger.error(
+          `Timezone error for task ${masterTaskId} with timezone "${timeZone}". Falling back to UTC.`,
+          error
+        );
 
-        safetyCounter++;
-        if (safetyCounter > 100) {
-          logger.warn(
-            `Safety counter exceeded for task ${masterTaskId}, breaking loop.`
+        // Fallback to UTC calculations
+        nextValidRun = lastRunDate;
+        while (nextValidRun <= nowJs) {
+          nextValidRun = calculateNextRun(
+            masterTask.frequency,
+            nextValidRun,
+            "Etc/UTC"
           );
-          break;
+          safetyCounter++;
+          if (safetyCounter > 100) break;
         }
-      }
-
-      const originalDueDate = masterTask.nextRun.toDate();
-      let taskDueDate = originalDueDate;
-
-      if (originalDueDate <= nowJs) {
-        taskDueDate = calculateNextRun(masterTask.frequency, nowJs, timeZone);
-        logger.info(
-          `Task ${masterTaskId} dueDate was in the past (${originalDueDate.toISOString()}), calculated new dueDate: ${taskDueDate.toISOString()}`
+        taskDueDate = calculateTaskDueDate(
+          masterTask.nextRun.toDate(),
+          "Etc/UTC"
         );
       }
 
