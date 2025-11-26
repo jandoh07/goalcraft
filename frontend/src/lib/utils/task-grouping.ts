@@ -100,7 +100,7 @@ export const getGroupLabel = (group: TaskGroup, count: number): string => {
  * @param dueDate - The task's due date
  * @returns The task group type
  */
-export const getTaskType = (dueDate?: Date): TaskGroup => {
+export const getTaskType = (dueDate?: Date | null): TaskGroup => {
   if (!dueDate) return "no-date";
 
   const now = new Date();

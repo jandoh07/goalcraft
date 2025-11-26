@@ -1,7 +1,7 @@
 "use client";
 import { Task } from "@/types";
 import { Badge } from "../ui/badge";
-import { Flag, GitBranch } from "lucide-react";
+import { Flag, GitBranch, Repeat } from "lucide-react";
 import GoalIcon from "../goals/goal-icon";
 import { useToggleTaskStatus } from "@/hooks/use-tasks";
 
@@ -66,6 +66,11 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
         </p>
         <p className="text-sm">{task.description}</p>
         <div className="flex items-center justify-start gap-2 overflow-x-auto custom-scrollbar">
+          {task.recurringMasterId && (
+            <Badge className="text-[0.6rem]" variant={"outline"}>
+              <Repeat />
+            </Badge>
+          )}
           {task.priority && (
             <Badge
               className={`capitalize text-xs ${

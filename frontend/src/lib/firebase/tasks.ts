@@ -15,6 +15,8 @@ import {
   arrayUnion,
   arrayRemove,
   writeBatch,
+  deleteField,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { calculateNextRun } from "../utils/calculate-next-run-date";
@@ -126,7 +128,7 @@ export const addTask = async (
     );
 
     const batch = writeBatch(db);
-    const masterTaskRef = doc(collection(db, "tasks"));
+    const masterTaskRef = doc(collection(db, "masterTasks"));
     const instanceTaskRef = doc(collection(db, "tasks"));
 
     const masterTask = {
@@ -170,16 +172,41 @@ export const addTask = async (
   }
 };
 
-export const updateTask = async (taskId: string, updates: Partial<Task>) => {
+export const updateTask = async (
+  taskId: string,
+  updates: Partial<Task> & { stopRecurring?: boolean }
+) => {
   const docRef = doc(db, "tasks", taskId);
   const updateData: DocumentData = {
     ...updates,
     updatedAt: Timestamp.now(),
   };
+
   if (updates.dueDate) {
     updateData.dueDate = Timestamp.fromDate(updates.dueDate);
   }
-  await updateDoc(docRef, updateData);
+
+  if (updates.priority === null) {
+    updateData.priority = deleteField();
+  }
+  if (updates.dueDate === null) {
+    updateData.dueDate = deleteField();
+  }
+
+  if (updates.stopRecurring && updates.recurringMasterId) {
+    const batch = writeBatch(db);
+    const masterTaskRef = doc(db, "masterTasks", updates.recurringMasterId);
+
+    batch.update(docRef, updateData);
+    batch.update(masterTaskRef, {
+      recurringStatus: "stopped",
+      updatedAt: Timestamp.now(),
+    });
+
+    await batch.commit();
+  } else {
+    await updateDoc(docRef, updateData);
+  }
 };
 
 export const removeTask = async (taskId: string) => {
@@ -210,6 +237,33 @@ export const deleteSubtask = async (taskId: string, subtask: SubTask) => {
 
   await updateDoc(taskRef, {
     subtasks: arrayRemove(subtask),
+    updatedAt: Timestamp.now(),
+  });
+};
+
+export const getMasterTask = async (masterTaskId: string) => {
+  const docRef = doc(db, "masterTasks", masterTaskId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return null;
+
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt?.toDate(),
+    updatedAt: data.updatedAt?.toDate(),
+    nextRun: data.nextRun?.toDate(),
+  } as Task;
+};
+
+export const updateTaskRecurrence = async (
+  masterTaskId: string,
+  recurringStatus: string
+) => {
+  const masterTaskRef = doc(db, "masterTasks", masterTaskId);
+  await updateDoc(masterTaskRef, {
+    recurringStatus: recurringStatus,
+    pausedReason: recurringStatus === "paused" ? "manual-pause" : "",
     updatedAt: Timestamp.now(),
   });
 };

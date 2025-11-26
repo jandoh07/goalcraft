@@ -14,34 +14,36 @@ const RecurringTask = ({
   frequency,
   setFrequency,
   recurringMasterId,
-  setRecurringMasterId,
+  setStopRecurring,
+  stopRecurring,
 }: {
   isRecurring: boolean;
   setIsRecurring: (value: boolean) => void;
   frequency: string;
   setFrequency: (value: string) => void;
   recurringMasterId?: string;
-  setRecurringMasterId: (value: string) => void;
+  setStopRecurring: (value: boolean) => void;
+  stopRecurring: boolean;
 }) => {
-  const isSwitchOn = !!recurringMasterId || isRecurring;
+  // For new tasks: show switch based on isRecurring
+  // For existing recurring tasks: show switch as on if not stopped
+  const isSwitchOn = recurringMasterId 
+    ? !stopRecurring 
+    : isRecurring;
 
   const handleCheckedChange = (checked: boolean) => {
     if (checked) {
-      // --- When turning ON ---
-      // This is for "add mode"
       setIsRecurring(true);
-      // Default to daily if no frequency is set
+      setStopRecurring(false);
       if (!frequency) {
         setFrequency("daily");
       }
     } else {
-      // --- When turning OFF ---
-      // This is for "edit mode"
-      // You must clear both states to stop the recurrence.
-      // Your parent component should see this change and show a
-      // "Stop Recurrence?" confirmation dialog.
       setIsRecurring(false);
-      setRecurringMasterId("");
+      // Only set stopRecurring if this is an existing recurring task
+      if (recurringMasterId) {
+        setStopRecurring(true);
+      }
     }
   };
 

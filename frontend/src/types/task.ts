@@ -17,9 +17,9 @@ export interface Task {
   goalCategory?: string;
   title: string;
   description?: string;
-  dueDate?: Date;
+  dueDate?: Date | null;
   time?: string;
-  priority?: "high" | "medium" | "low" | "";
+  priority?: "high" | "medium" | "low" | "" | null;
   status: "in-progress" | "completed";
   subtasks?: SubTask[];
   frequency?: string;
