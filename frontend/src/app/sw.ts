@@ -103,13 +103,37 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          // Delete old workbox precaches (they have revision hashes)
-          if (
-            cacheName.startsWith("workbox-precache") &&
-            !cacheName.includes("v")
-          ) {
-            return caches.delete(cacheName);
+        cacheNames.map(async (cacheName) => {
+          // For workbox precache, clean up old revision entries
+          if (cacheName.includes("precache")) {
+            const cache = await caches.open(cacheName);
+            const requests = await cache.keys();
+
+            // Group entries by URL (without revision)
+            const urlGroups = new Map<string, Request[]>();
+
+            for (const request of requests) {
+              const url = new URL(request.url);
+              // Remove the revision param to get base URL
+              url.searchParams.delete("__WB_REVISION__");
+              const baseUrl = url.toString();
+
+              if (!urlGroups.has(baseUrl)) {
+                urlGroups.set(baseUrl, []);
+              }
+              urlGroups.get(baseUrl)!.push(request);
+            }
+
+            // For each URL group, keep only the newest entry
+            for (const [, groupRequests] of urlGroups) {
+              if (groupRequests.length > 1) {
+                // Sort by the revision timestamp (if numeric) or just keep the last one
+                const toDelete = groupRequests.slice(0, -1);
+                for (const req of toDelete) {
+                  await cache.delete(req);
+                }
+              }
+            }
           }
           return null;
         })
