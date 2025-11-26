@@ -1,42 +1,16 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as logger from "firebase-functions/logger";
 import { Timestamp } from "firebase-admin/firestore";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { addDays, addWeeks, addMonths, startOfDay } from "date-fns";
 import { db } from "../config/admin";
+import {
+  calculateNextRun,
+  calculateTaskDueDate,
+} from "../utils/recurring-task-utils";
 
-const calculateNextRun = (
-  frequency: string,
-  fromDate: Date,
-  timeZone: string
-): Date => {
-  // 1. Convert the JS Date to a "zoned time" object
-  const zonedDate = toZonedTime(fromDate, timeZone);
+// TODO: switch to dispatch and workers when user base grows
 
-  // 2. Find the start of the *next* day in that time zone
-  let nextRun: Date;
-  switch (frequency) {
-    case "weekly":
-      nextRun = addWeeks(zonedDate, 1);
-      break;
-    case "monthly":
-      nextRun = addMonths(zonedDate, 1);
-      break;
-    case "daily":
-    default:
-      nextRun = addDays(zonedDate, 1);
-  }
-
-  // 3. Normalize to the start of that day (00:00) *in that time zone*
-  const normalizedNextRun = startOfDay(nextRun);
-
-  // 4. Convert back to a standard JS Date (which is always UTC)
-  return fromZonedTime(normalizedNextRun, timeZone);
-};
-
-// This is your function, now updated with time zone logic
 export const handleRecurringTasks = onSchedule(
-  { schedule: "5 * * * *", timeZone: "Etc/UTC" }, // Runs hourly
+  { schedule: "*/15 * * * *", timeZone: "Etc/UTC", memory: "512MiB" },
   async () => {
     logger.info("Starting recurring tasks check...");
 
@@ -44,9 +18,10 @@ export const handleRecurringTasks = onSchedule(
     const nowJs = now.toDate();
 
     const snapshot = await db
-      .collection("tasks")
+      .collection("masterTasks")
       .where("recurringStatus", "==", "active")
       .where("nextRun", "<=", now)
+      .limit(500)
       .get();
 
     if (snapshot.empty) {
@@ -59,6 +34,7 @@ export const handleRecurringTasks = onSchedule(
     let batch = db.batch();
     let opCount = 0;
     let tasksCreated = 0;
+    let tasksPaused = 0;
     const promises: Promise<FirebaseFirestore.WriteResult[]>[] = [];
 
     for (const doc of snapshot.docs) {
@@ -72,48 +48,127 @@ export const handleRecurringTasks = onSchedule(
         continue;
       }
 
-      // --- TIME ZONE LOGIC ---
-      // <-- CHANGE: Get the task's time zone. Default to UTC if not found.
+      const currentMissedStreak = masterTask.consecutiveUncompleted || 0;
+
+      if (currentMissedStreak >= 4) {
+        logger.info(
+          `Task ${masterTaskId} ("${masterTask.title}") paused due to missed streak: ${currentMissedStreak}`
+        );
+
+        batch.update(doc.ref, {
+          recurringStatus: "paused",
+          pausedReason: "auto-pause-inactivity",
+          updatedAt: now,
+        });
+
+        tasksPaused++;
+        opCount++;
+
+        if (masterTask.userId) {
+          const notifRef = db.collection("notifications").doc();
+
+          logger.info(
+            `Creating auto-pause notification for user ${masterTask.userId} for task ${masterTaskId}`
+          );
+
+          batch.set(notifRef, {
+            userId: masterTask.userId,
+            type: "auto_pause",
+            title: "Recurring Task Paused",
+            message: `We've paused "${masterTask.title}" after 4 consecutive missed completions. You can resume it anytime.`,
+            resourceId: doc.id,
+            isRead: false,
+            createdAt: now,
+          });
+
+          opCount++;
+        } else {
+          logger.warn(
+            `Task ${masterTaskId} has no userId, skipping notification creation`
+          );
+        }
+
+        if (opCount > 490) {
+          promises.push(batch.commit());
+          batch = db.batch();
+          opCount = 0;
+        }
+
+        continue;
+      }
+
       const timeZone = masterTask.timeZone || "Etc/UTC";
-
-      const lastRunDate = masterTask.nextRun.toDate(); // Renamed for clarity
-
+      const lastRunDate = masterTask.nextRun.toDate();
       let nextValidRun = lastRunDate;
-      while (nextValidRun <= nowJs) {
-        // <-- CHANGE: Pass the time zone to the helper
-        nextValidRun = calculateNextRun(
-          masterTask.frequency,
-          nextValidRun,
+      let taskDueDate: Date;
+      let safetyCounter = 0;
+
+      try {
+        while (nextValidRun <= nowJs) {
+          nextValidRun = calculateNextRun(
+            masterTask.frequency,
+            nextValidRun,
+            timeZone
+          );
+
+          safetyCounter++;
+          if (safetyCounter > 100) {
+            logger.warn(
+              `Safety counter exceeded for task ${masterTaskId}, breaking loop.`
+            );
+            break;
+          }
+        }
+
+        taskDueDate = calculateTaskDueDate(
+          masterTask.nextRun.toDate(),
           timeZone
         );
+      } catch (error) {
+        logger.error(
+          `Timezone error for task ${masterTaskId} with timezone "${timeZone}". Falling back to UTC.`,
+          error
+        );
+
+        // Fallback to UTC calculations
+        nextValidRun = lastRunDate;
+        while (nextValidRun <= nowJs) {
+          nextValidRun = calculateNextRun(
+            masterTask.frequency,
+            nextValidRun,
+            "Etc/UTC"
+          );
+          safetyCounter++;
+          if (safetyCounter > 100) break;
+        }
+        taskDueDate = calculateTaskDueDate(
+          masterTask.nextRun.toDate(),
+          "Etc/UTC"
+        );
       }
-      // --- END TIME ZONE LOGIC ---
 
       const newTask = {
         ...masterTask,
         isRecurring: false,
-        dueDate: masterTask.nextRun, // The date it was *supposed* to run
+        dueDate: Timestamp.fromDate(taskDueDate),
         status: "in-progress",
         createdAt: now,
         updatedAt: now,
-        recurringMasterId: masterTaskId, // Link to the master
+        recurringMasterId: masterTaskId,
       };
 
-      // Remove properties that should not be on an instance task
       const taskInstance: Record<string, unknown> = newTask;
       delete taskInstance.nextRun;
       delete taskInstance.recurringStatus;
-
-      // <-- CHANGE: Also delete the timeZone from the instance
+      delete taskInstance.consecutiveUncompleted;
       delete taskInstance.timeZone;
 
-      // Add the new task instance to the batch
       const newTaskRef = db.collection("tasks").doc();
       batch.set(newTaskRef, taskInstance);
 
-      // Update the master task with the next future run date
       batch.update(doc.ref, {
         nextRun: Timestamp.fromDate(nextValidRun),
+        consecutiveUncompleted: currentMissedStreak + 1,
         updatedAt: now,
       });
 
@@ -134,7 +189,7 @@ export const handleRecurringTasks = onSchedule(
     await Promise.all(promises);
 
     logger.info(
-      `Recurring tasks processed ✅ - Created: ${tasksCreated} new instances.`
+      `Recurring tasks processed ✅ - Created: ${tasksCreated} new instances, Paused: ${tasksPaused} tasks.`
     );
   }
 );

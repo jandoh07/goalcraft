@@ -74,6 +74,16 @@ const seedData = {
       status: "in-progress",
       userId: "testUser4",
     },
+    instance_uncompleted_4_days: {
+      title: "TEST 7: Uncompleted for 4 Days (Should be paused)",
+      isRecurring: false,
+      recurringStatus: "active",
+      status: "in-progress",
+      userId: "testUser5",
+      frequency: "daily",
+      nextRun: Timestamp.fromDate(new Date("2025-10-27T00:00:00.000Z")),
+      consecutiveUncompleted: 4,
+    },
   },
 };
 
@@ -83,7 +93,7 @@ async function seed() {
   const batch = db.batch();
 
   Object.entries(seedData.tasks).forEach(([id, data]) => {
-    const ref = db.collection("tasks").doc(id);
+    const ref = db.collection("masterTasks").doc(id);
     batch.set(ref, data);
   });
 

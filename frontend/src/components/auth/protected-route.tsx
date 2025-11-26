@@ -2,8 +2,7 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function ProtectedRoute({
   children,
@@ -12,7 +11,23 @@ export default function ProtectedRoute({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const offline = typeof navigator !== "undefined" && !navigator.onLine;
+  const [offline, setOffline] = useState(false);
+
+  // Track online/offline state after hydration to avoid mismatch
+  useEffect(() => {
+    setOffline(!navigator.onLine);
+
+    const handleOnline = () => setOffline(false);
+    const handleOffline = () => setOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!loading && !user && !offline) {
@@ -20,24 +35,7 @@ export default function ProtectedRoute({
     }
   }, [user, loading, router, offline]);
 
-  if (offline) {
-    return <>{children}</>;
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
+  // Always render children to avoid hydration mismatch
+  // The redirect will happen via useEffect if needed
   return <>{children}</>;
 }

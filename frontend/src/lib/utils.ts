@@ -36,9 +36,7 @@ export const removeEmptyFields = <T extends InputObject>(
 ): Partial<T> => {
   return Object.fromEntries(
     Object.entries(obj).filter(([, value]) => {
-      // Keep the value if it's not an empty string
-      // Also handles null/undefined and keeps falsy values like 0 or false
-      return value !== "" && value !== null && value !== undefined;
+      return value !== undefined;
     })
   ) as Partial<T>;
 };

@@ -1,6 +1,11 @@
 import { AssociatedGoal, SubTask, Task } from "@/types";
 import { useEffect, useState } from "react";
-import { useAddTask, useDeleteTask, useUpdateTask } from "./use-tasks";
+import {
+  useAddTask,
+  useDeleteTask,
+  useGetMasterTask,
+  useUpdateTask,
+} from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -29,9 +34,7 @@ const useTasksForm = ({
     initialData?.subtasks || []
   );
   const [newSubtask, setNewSubtask] = useState("");
-  const [isRecurring, setIsRecurring] = useState(
-    initialData?.isRecurring || false
-  );
+  const [isRecurring, setIsRecurring] = useState(false);
   const [dueDate, setDueDate] = useState<Date | undefined>(
     initialData?.dueDate || undefined
   );
@@ -39,10 +42,18 @@ const useTasksForm = ({
   const [recurringMasterId, setRecurringMasterId] = useState(
     initialData?.recurringMasterId || ""
   );
+  const [stopRecurring, setStopRecurring] = useState(false);
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+
+  // Fetch master task if in edit mode and task has a recurringMasterId
+  const { data: masterTask } = useGetMasterTask(
+    mode === "edit" && initialData?.recurringMasterId
+      ? initialData.recurringMasterId
+      : ""
+  );
 
   const resetForm = () => {
     setTitle("");
@@ -58,6 +69,7 @@ const useTasksForm = ({
     setFrequency("");
     setDueDate(undefined);
     setRecurringMasterId("");
+    setStopRecurring(false);
   };
 
   useEffect(() => {
@@ -69,9 +81,8 @@ const useTasksForm = ({
         goalTitle: initialData.goalTitle || "",
       });
       setTime(initialData.time || "");
-      setPriority(initialData.priority || "low");
+      setPriority(initialData.priority || "");
       setSubtasks(initialData.subtasks || []);
-      setIsRecurring(initialData.isRecurring || false);
       setFrequency(initialData.frequency || "");
       setDueDate(initialData.dueDate || undefined);
       setRecurringMasterId(initialData.recurringMasterId || "");
@@ -79,6 +90,15 @@ const useTasksForm = ({
       resetForm();
     }
   }, [initialData]);
+
+  // Set isRecurring based on master task's recurringStatus
+  useEffect(() => {
+    if (mode === "edit" && masterTask) {
+      const recurringStatus = (masterTask as { recurringStatus?: string })
+        ?.recurringStatus;
+      setIsRecurring(recurringStatus === "active");
+    }
+  }, [mode, masterTask]);
 
   const addSubtask = () => {
     if (newSubtask.trim()) {
@@ -101,13 +121,15 @@ const useTasksForm = ({
     description,
     goalId: associatedGoal?.goalId,
     goalTitle: associatedGoal?.goalTitle,
-    dueDate: dueDate,
+    dueDate: dueDate || null,
     time,
-    priority,
+    priority: priority || null,
     subtasks,
     isRecurring,
     frequency,
     status: "in-progress" as const,
+    recurringMasterId,
+    stopRecurring,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,6 +191,7 @@ const useTasksForm = ({
       isRecurring,
       frequency,
       recurringMasterId,
+      stopRecurring,
     },
     setters: {
       setTitle,
@@ -180,6 +203,7 @@ const useTasksForm = ({
       setIsRecurring,
       setFrequency,
       setRecurringMasterId,
+      setStopRecurring,
     },
     subtasks: {
       items: subtasks,

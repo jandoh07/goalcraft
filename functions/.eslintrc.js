@@ -22,6 +22,7 @@ module.exports = {
     "/lib/**/*", // Ignore built files.
     "/generated/**/*", // Ignore generated files.
     ".eslintrc.js", // Ignore this config file itself
+    "jest.config.js", // Ignore Jest config file
   ],
   plugins: ["@typescript-eslint", "import"],
   rules: {
@@ -34,5 +35,15 @@ module.exports = {
     "require-jsdoc": 0,
     "valid-jsdoc": 0,
     "quote-props": 0, // Disable quote-props rule
+    "max-len": [
+      "error",
+      {
+        code: 120,
+        ignoreUrls: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
+        ignoreRegExpLiterals: true,
+      },
+    ],
   },
 };

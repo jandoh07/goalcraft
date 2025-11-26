@@ -5,6 +5,8 @@ import {
   removeTask,
   subscribeToUserTasks,
   toggleTaskStatus,
+  getMasterTask,
+  updateTaskRecurrence,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
@@ -218,6 +220,63 @@ export const useToggleTaskStatus = () => {
       context?.previousQueries.forEach((data, queryKey) => {
         queryClient.setQueryData(queryKey, data);
       });
+    },
+  });
+};
+
+export const useGetMasterTask = (masterTaskId: string) => {
+  return useQuery({
+    queryKey: ["masterTask", masterTaskId],
+    queryFn: () => getMasterTask(masterTaskId),
+    enabled: !!masterTaskId,
+    staleTime: 0,
+  });
+};
+
+export const useUpdateTaskRecurrence = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      masterTaskId,
+      recurringStatus,
+    }: {
+      masterTaskId: string;
+      recurringStatus: string;
+    }) => updateTaskRecurrence(masterTaskId, recurringStatus),
+    onMutate: async ({ masterTaskId, recurringStatus }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["masterTask", masterTaskId],
+      });
+
+      const previousMasterTask = queryClient.getQueryData<Task>([
+        "masterTask",
+        masterTaskId,
+      ]);
+
+      if (previousMasterTask) {
+        const updatedMasterTask = {
+          ...previousMasterTask,
+          recurringStatus,
+          updatedAt: new Date(),
+        };
+        queryClient.setQueryData(
+          ["masterTask", masterTaskId],
+          updatedMasterTask
+        );
+      }
+
+      return { previousMasterTask };
+    },
+    onError: (err, variables, context) => {
+      console.error("Failed to update task recurrence:", err);
+
+      // Rollback master task query
+      if (context?.previousMasterTask) {
+        queryClient.setQueryData(
+          ["masterTask", variables.masterTaskId],
+          context.previousMasterTask
+        );
+      }
     },
   });
 };

@@ -17,16 +17,14 @@ export interface Task {
   goalCategory?: string;
   title: string;
   description?: string;
-  dueDate?: Date;
+  dueDate?: Date | null;
   time?: string;
-  priority?: "high" | "medium" | "low" | "";
+  priority?: "high" | "medium" | "low" | "" | null;
   status: "in-progress" | "completed";
   subtasks?: SubTask[];
-  isRecurring?: boolean;
   frequency?: string;
   nextRun?: Date;
   timeZone?: string;
-  recurringStatus?: "active" | "paused";
   recurringMasterId?: string;
   createdAt: Date;
   updatedAt: Date;
