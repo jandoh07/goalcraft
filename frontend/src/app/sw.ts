@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { clientsClaim } from "workbox-core";
+import { clientsClaim, skipWaiting } from "workbox-core";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
@@ -11,6 +11,10 @@ import {
 } from "workbox-strategies";
 
 declare const self: ServiceWorkerGlobalScope;
+
+// Take control immediately on install/update
+skipWaiting();
+clientsClaim();
 
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
@@ -44,12 +48,12 @@ registerRoute(
 
 registerRoute(
   ({ request }) => request.destination === "script",
-  new CacheFirst({
+  new StaleWhileRevalidate({
     cacheName: "js-chunks",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
   })
@@ -57,12 +61,12 @@ registerRoute(
 
 registerRoute(
   ({ request }) => request.destination === "style",
-  new CacheFirst({
+  new StaleWhileRevalidate({
     cacheName: "styles",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
   })
@@ -93,6 +97,26 @@ registerRoute(
     ],
   })
 );
+
+// Clear old caches on activation
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          // Delete old workbox precaches (they have revision hashes)
+          if (
+            cacheName.startsWith("workbox-precache") &&
+            !cacheName.includes("v")
+          ) {
+            return caches.delete(cacheName);
+          }
+          return null;
+        })
+      );
+    })
+  );
+});
 
 // Push notification handlers
 self.addEventListener("push", (event) => {
@@ -136,6 +160,3 @@ self.addEventListener("notificationclick", (event) => {
       })
   );
 });
-
-self.skipWaiting();
-clientsClaim();

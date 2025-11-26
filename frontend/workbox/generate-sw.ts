@@ -2,6 +2,13 @@ import { injectManifest } from "workbox-build";
 import { build } from "esbuild";
 import { readdirSync, unlinkSync } from "fs";
 import { join } from "path";
+import { createHash } from "crypto";
+
+// Generate a hash based on build time for cache busting
+const BUILD_HASH = createHash("md5")
+  .update(Date.now().toString())
+  .digest("hex")
+  .slice(0, 8);
 
 // Auto-discover routes from app directory
 function getAppRoutes(dir: string, baseRoute = ""): string[] {
@@ -60,7 +67,7 @@ async function buildSW() {
   // Create manifest entries for all routes
   const routeEntries = routes.map((route) => ({
     url: route,
-    revision: Date.now().toString(), // Use timestamp for versioning
+    revision: BUILD_HASH, // Use build hash for consistent versioning
   }));
 
   await injectManifest({
