@@ -52,6 +52,7 @@ const TaskCard = ({ type, onClick, task }: TaskCardProps) => {
             toggleTaskStatus.mutate({
               taskId: task.id || "",
               currentStatus: task.status,
+              goalId: task.goalId,
             })
           }
         />

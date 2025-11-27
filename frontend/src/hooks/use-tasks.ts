@@ -179,10 +179,12 @@ export const useToggleTaskStatus = () => {
     mutationFn: ({
       taskId,
       currentStatus,
+      goalId,
     }: {
       taskId: string;
       currentStatus: string;
-    }) => toggleTaskStatus(taskId, currentStatus),
+      goalId?: string;
+    }) => toggleTaskStatus(taskId, currentStatus, goalId),
     onMutate: async ({ taskId, currentStatus }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
 
