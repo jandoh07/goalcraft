@@ -6,6 +6,7 @@ import {
   subscribeToUserTasks,
   toggleTaskStatus,
   getMasterTask,
+  getMasterTasksByIds,
   updateTaskRecurrence,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
@@ -231,6 +232,15 @@ export const useGetMasterTask = (masterTaskId: string) => {
     queryKey: ["masterTask", masterTaskId],
     queryFn: () => getMasterTask(masterTaskId),
     enabled: !!masterTaskId,
+    staleTime: 0,
+  });
+};
+
+export const useGetNonNegotiables = (masterTaskIds: string[]) => {
+  return useQuery({
+    queryKey: ["nonNegotiables", masterTaskIds],
+    queryFn: () => getMasterTasksByIds(masterTaskIds),
+    enabled: masterTaskIds.length > 0,
     staleTime: 0,
   });
 };

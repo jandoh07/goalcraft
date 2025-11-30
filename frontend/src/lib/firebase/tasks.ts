@@ -1,7 +1,6 @@
 import { SubTask, Task } from "@/types";
 import {
   collection,
-  addDoc,
   getDocs,
   doc,
   updateDoc,
@@ -325,6 +324,39 @@ export const getMasterTask = async (masterTaskId: string) => {
     updatedAt: data.updatedAt?.toDate(),
     nextRun: data.nextRun?.toDate(),
   } as Task;
+};
+
+export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
+  if (!masterTaskIds.length) return [];
+
+  const masterTasks: Task[] = [];
+
+  // Firestore 'in' query supports max 30 items, so we batch if needed
+  const chunks = [];
+  for (let i = 0; i < masterTaskIds.length; i += 30) {
+    chunks.push(masterTaskIds.slice(i, i + 30));
+  }
+
+  for (const chunk of chunks) {
+    const q = query(
+      collection(db, "masterTasks"),
+      where("__name__", "in", chunk)
+    );
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      masterTasks.push({
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        nextRun: data.nextRun?.toDate(),
+      } as Task);
+    });
+  }
+
+  return masterTasks;
 };
 
 export const updateTaskRecurrence = async (
