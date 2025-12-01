@@ -2,7 +2,7 @@
 
 import { Goal } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
-import { useGetTasks, useGetNonNegotiables } from "@/hooks/use-tasks";
+import { useGetTasks, useGetNonNegotiablesByGoalId } from "@/hooks/use-tasks";
 import { useMemo } from "react";
 import Milestones from "./milestones";
 import GoalTasks from "./goal-tasks";
@@ -19,13 +19,9 @@ const GoalDetails = ({ goal }: GoalDetailsProps) => {
     goalId: goal.id,
   });
 
-  // Get non-negotiable master task IDs from goal
-  const nonNegotiableIds = useMemo(() => {
-    return goal.nonNegotiables?.map((nn) => nn.id) || [];
-  }, [goal.nonNegotiables]);
-
+  // Get non-negotiables (recurring master tasks) for this goal
   const { data: nonNegotiables, isLoading: isLoadingNonNegotiables } =
-    useGetNonNegotiables(nonNegotiableIds);
+    useGetNonNegotiablesByGoalId(goal.id || "", user?.uid || "");
 
   const stats = useMemo(() => {
     if (!allTasks) return { total: 0, completed: 0, pending: 0 };

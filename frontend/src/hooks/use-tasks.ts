@@ -8,6 +8,7 @@ import {
   getMasterTask,
   getMasterTasksByIds,
   updateTaskRecurrence,
+  getNonNegotiablesByGoalId,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
@@ -241,6 +242,18 @@ export const useGetNonNegotiables = (masterTaskIds: string[]) => {
     queryKey: ["nonNegotiables", masterTaskIds],
     queryFn: () => getMasterTasksByIds(masterTaskIds),
     enabled: masterTaskIds.length > 0,
+    staleTime: 0,
+  });
+};
+
+export const useGetNonNegotiablesByGoalId = (
+  goalId: string,
+  userId: string
+) => {
+  return useQuery({
+    queryKey: ["nonNegotiables", "goal", goalId, userId],
+    queryFn: () => getNonNegotiablesByGoalId(goalId, userId),
+    enabled: !!goalId && !!userId,
     staleTime: 0,
   });
 };

@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Goal, Task } from "@/types";
+import { calculateNextRun } from "../utils/calculate-next-run-date";
 
 const userGoalsQuery = (userId: string, status?: string) => {
   let q;
@@ -126,20 +127,21 @@ export const addGoal = async (
   userId: string,
   goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">,
   newCategory?: string,
-  tasks?: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "goalId">[]
+  tasks?: (Omit<
+    Task,
+    "id" | "createdAt" | "updatedAt" | "userId" | "goalId"
+  > & {
+    isRecurring?: boolean;
+  })[]
 ) => {
   const batch = writeBatch(db);
   const now = Timestamp.now();
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const goalRef = doc(collection(db, "goals"));
-  batch.set(goalRef, {
-    ...goalData,
-    dueDate: goalData.dueDate ? Timestamp.fromDate(goalData.dueDate) : null,
-    createdAt: now,
-    updatedAt: now,
-    userId,
-    status: "in-progress",
-  });
+
+  // Count tasks for goal stats
+  let totalTasks = 0;
 
   if (newCategory) {
     const userRef = doc(db, "users", userId);
@@ -150,20 +152,83 @@ export const addGoal = async (
 
   if (tasks && tasks.length > 0) {
     tasks.forEach((task) => {
-      const taskRef = doc(collection(db, "tasks"));
-      batch.set(taskRef, {
-        ...task,
-        dueDate: task.dueDate ? Timestamp.fromDate(task.dueDate) : null,
-        createdAt: now,
-        updatedAt: now,
-        userId,
-        goalId: goalRef.id,
-        goalTitle: goalData.title,
-        goalCategory: goalData.category,
-        status: "pending",
-      });
+      const isRecurringWithFrequency = task.isRecurring && task.frequency;
+
+      if (isRecurringWithFrequency) {
+        // Create master task for recurring tasks with frequency
+        const masterTaskRef = doc(collection(db, "masterTasks"));
+        const instanceTaskRef = doc(collection(db, "tasks"));
+
+        const nextRunDate = calculateNextRun(
+          task.frequency!,
+          task.dueDate!,
+          timeZone
+        );
+
+        // Master task (template for recurring instances)
+        batch.set(masterTaskRef, {
+          title: task.title,
+          frequency: task.frequency,
+          time: task.time || null,
+          isRecurring: true,
+          recurringStatus: "active",
+          timeZone: timeZone,
+          nextRun: Timestamp.fromDate(nextRunDate),
+          userId,
+          goalId: goalRef.id,
+          goalTitle: goalData.title,
+          goalCategory: goalData.category,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        // First instance task
+        batch.set(instanceTaskRef, {
+          title: task.title,
+          dueDate: task.dueDate ? Timestamp.fromDate(task.dueDate) : null,
+          time: task.time || null,
+          recurringMasterId: masterTaskRef.id,
+          userId,
+          goalId: goalRef.id,
+          goalTitle: goalData.title,
+          goalCategory: goalData.category,
+          status: "in-progress",
+          createdAt: now,
+          updatedAt: now,
+        });
+      } else {
+        // Regular one-time task
+        const taskRef = doc(collection(db, "tasks"));
+        batch.set(taskRef, {
+          title: task.title,
+          dueDate: task.dueDate ? Timestamp.fromDate(task.dueDate) : null,
+          time: task.time || null,
+          isRecurring: false,
+          userId,
+          goalId: goalRef.id,
+          goalTitle: goalData.title,
+          goalCategory: goalData.category,
+          status: "in-progress",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      totalTasks++;
     });
   }
+
+  // Set goal with task counts
+  batch.set(goalRef, {
+    ...goalData,
+    dueDate: goalData.dueDate ? Timestamp.fromDate(goalData.dueDate) : null,
+    createdAt: now,
+    updatedAt: now,
+    userId,
+    status: "in-progress",
+    totalTasks,
+    completedTasks: 0,
+  });
 
   await batch.commit();
   return goalRef.id;

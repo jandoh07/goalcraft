@@ -138,7 +138,7 @@ const Tasks = ({
   const hasAIGeneratedTasks = tasks.some((t) => t.isAIGenerated);
 
   return (
-    <div className="mb-3">
+    <div className="mb-3 overflow-hidden">
       <div className="flex items-center justify-between">
         <Label>Add Tasks Associated with This Goal</Label>
         <button
@@ -196,18 +196,40 @@ const Tasks = ({
         </div>
       )}
 
-      {/* Accepted Tasks */}
-      {acceptedTasks.length > 0 && (
+      {/* Non-Negotiables (Recurring tasks with frequency) */}
+      {acceptedTasks.filter((t) => t.isRecurring && t.frequency).length > 0 && (
         <div className="mt-4 space-y-3">
-          <p className="text-xs text-muted-foreground">Accepted tasks</p>
-          {acceptedTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              setAcceptedTasks={setAcceptedTasks}
-              handleDeleteTask={handleDeleteTask}
-            />
-          ))}
+          <p className="text-xs text-muted-foreground font-medium">
+            Non-Negotiables
+          </p>
+          {acceptedTasks
+            .filter((t) => t.isRecurring && t.frequency)
+            .map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                setAcceptedTasks={setAcceptedTasks}
+                handleDeleteTask={handleDeleteTask}
+              />
+            ))}
+        </div>
+      )}
+
+      {/* Regular Tasks (non-recurring or without frequency) */}
+      {acceptedTasks.filter((t) => !t.isRecurring || !t.frequency).length >
+        0 && (
+        <div className="mt-4 space-y-3">
+          <p className="text-xs text-muted-foreground">Tasks</p>
+          {acceptedTasks
+            .filter((t) => !t.isRecurring || !t.frequency)
+            .map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                setAcceptedTasks={setAcceptedTasks}
+                handleDeleteTask={handleDeleteTask}
+              />
+            ))}
         </div>
       )}
       <div className="flex items-center justify-end mt-3">

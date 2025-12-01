@@ -370,3 +370,37 @@ export const updateTaskRecurrence = async (
     updatedAt: Timestamp.now(),
   });
 };
+
+export const getNonNegotiablesByGoalId = async (
+  goalId: string,
+  userId: string
+) => {
+  if (!goalId || !userId) return [];
+
+  try {
+    const q = query(
+      collection(db, "masterTasks"),
+      where("userId", "==", userId),
+      where("goalId", "==", goalId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const masterTasks: Task[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      masterTasks.push({
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        nextRun: data.nextRun?.toDate(),
+      } as Task);
+    });
+
+    return masterTasks;
+  } catch (error) {
+    console.error("Error fetching non-negotiables:", error);
+    throw error;
+  }
+};

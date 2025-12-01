@@ -8,15 +8,10 @@ export interface Goal {
   status: "in-progress" | "completed";
   progress?: number;
   milestones?: Milestone[];
-  nonNegotiables?: NonNegotiable[];
   totalTasks?: number;
   completedTasks?: number;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface NonNegotiable {
-  id: string;
 }
 
 export interface Milestone {
