@@ -34,7 +34,7 @@ const SignUp = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/goals");
+      router.replace("/");
     }
   }, [user, authLoading, router]);
 
