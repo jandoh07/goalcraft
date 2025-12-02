@@ -3,14 +3,18 @@ import { build } from "esbuild";
 import { readdirSync, unlinkSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
+import { execSync } from "child_process";
 
-// Generate a hash based on build time for cache busting
-const BUILD_HASH = createHash("md5")
-  .update(Date.now().toString())
-  .digest("hex")
-  .slice(0, 8);
+let BUILD_ID: string;
+try {
+  BUILD_ID = execSync("git rev-parse --short HEAD").toString().trim();
+} catch (e) {
+  console.warn("Git commit hash not found, using timestamp as build ID.", e);
+  BUILD_ID = Date.now().toString();
+}
 
-// Auto-discover routes from app directory
+const BUILD_HASH = createHash("md5").update(BUILD_ID).digest("hex").slice(0, 8);
+
 function getAppRoutes(dir: string, baseRoute = ""): string[] {
   const routes: string[] = [];
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -19,12 +23,16 @@ function getAppRoutes(dir: string, baseRoute = ""): string[] {
     const fullPath = join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      // Skip special Next.js directories
       if (
         entry.name.startsWith("_") ||
-        (entry.name.startsWith("(") && entry.name.endsWith(")"))
+        entry.name.startsWith(".") ||
+        entry.name.includes("[") // Skip dynamic folders like [id]
       ) {
-        // Route groups like (dashboard) don't affect URL
+        continue;
+      }
+
+      // Handle Route Groups (marketing) -> /
+      if (entry.name.startsWith("(") && entry.name.endsWith(")")) {
         const subRoutes = getAppRoutes(fullPath, baseRoute);
         routes.push(...subRoutes);
       } else {
@@ -38,7 +46,6 @@ function getAppRoutes(dir: string, baseRoute = ""): string[] {
       entry.name === "page.jsx" ||
       entry.name === "page.js"
     ) {
-      // Found a page - add this route
       routes.push(baseRoute || "/");
     }
   }
@@ -59,29 +66,30 @@ async function buildSW() {
     minify: true,
   });
 
-  // Auto-discover routes
   const appDir = "src/app";
   const routes = getAppRoutes(appDir);
-  console.log("📍 Discovered routes:", routes);
+  console.log("📍 Discovered Static Routes:", routes);
 
-  // Create manifest entries for all routes
   const routeEntries = routes.map((route) => ({
     url: route,
-    revision: BUILD_HASH, // Use build hash for consistent versioning
+    revision: BUILD_HASH,
   }));
 
   await injectManifest({
     swSrc: tempSwPath,
     swDest: "public/sw.js",
-    globDirectory: "next/static",
+    globDirectory: ".next/static",
     globPatterns: ["**/*.{js,css,woff2}"],
+    modifyURLPrefix: {
+      "": "_next/static/",
+    },
     additionalManifestEntries: [...routeEntries],
   });
 
   unlinkSync(tempSwPath);
-
-  console.log("✅ Service worker bundled, injected, and generated.");
-  console.log(`📦 Precached ${routeEntries.length} routes`);
+  console.log(
+    `✅ Service worker generated with ${routeEntries.length} static routes.`
+  );
 }
 
 buildSW();

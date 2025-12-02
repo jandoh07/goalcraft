@@ -12,23 +12,22 @@ import {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Take control immediately on install/update
 skipWaiting();
 clientsClaim();
-
-precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+precacheAndRoute(self.__WB_MANIFEST);
 
 registerRoute(
   ({ url }) => url.searchParams.has("_rsc"),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: "rsc-payloads",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
+    networkTimeoutSeconds: 3,
   })
 );
 
@@ -39,34 +38,21 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
-    networkTimeoutSeconds: 3,
   })
 );
 
 registerRoute(
-  ({ request }) => request.destination === "script",
+  ({ request }) =>
+    request.destination === "script" || request.destination === "style",
   new StaleWhileRevalidate({
-    cacheName: "js-chunks",
+    cacheName: "static-resources",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
-      }),
-    ],
-  })
-);
-
-registerRoute(
-  ({ request }) => request.destination === "style",
-  new StaleWhileRevalidate({
-    cacheName: "styles",
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
@@ -79,7 +65,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 150,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
@@ -92,62 +78,14 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 365 * 24 * 60 * 60,
+        maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
       }),
     ],
   })
 );
 
-// Clear old caches on activation
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map(async (cacheName) => {
-          // For workbox precache, clean up old revision entries
-          if (cacheName.includes("precache")) {
-            const cache = await caches.open(cacheName);
-            const requests = await cache.keys();
-
-            // Group entries by URL (without revision)
-            const urlGroups = new Map<string, Request[]>();
-
-            for (const request of requests) {
-              const url = new URL(request.url);
-              // Remove the revision param to get base URL
-              url.searchParams.delete("__WB_REVISION__");
-              const baseUrl = url.toString();
-
-              if (!urlGroups.has(baseUrl)) {
-                urlGroups.set(baseUrl, []);
-              }
-              urlGroups.get(baseUrl)!.push(request);
-            }
-
-            // For each URL group, keep only the newest entry
-            for (const [, groupRequests] of urlGroups) {
-              if (groupRequests.length > 1) {
-                // Sort by the revision timestamp (if numeric) or just keep the last one
-                const toDelete = groupRequests.slice(0, -1);
-                for (const req of toDelete) {
-                  await cache.delete(req);
-                }
-              }
-            }
-          }
-          return null;
-        })
-      );
-    })
-  );
-});
-
-// Push notification handlers
 self.addEventListener("push", (event) => {
-  if (!event.data) {
-    console.log("This push event has no data.");
-    return;
-  }
+  if (!event.data) return;
 
   const data = event.data.json();
   const title = data.title || "GoalCraft";
@@ -165,7 +103,6 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
   const urlToOpen = event.notification.data.url;
 
   event.waitUntil(
