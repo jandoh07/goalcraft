@@ -10,7 +10,7 @@ const tabItems = [
     id: 1,
     label: "Goals",
     icon: Goal,
-    href: "/goals",
+    href: "/",
   },
   {
     id: 2,

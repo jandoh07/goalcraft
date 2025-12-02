@@ -122,7 +122,7 @@ const GoalTasks = ({
 
   return (
     <div className="mb-4">
-      <div className="border-b">
+      <div className="border-b overflow-x-auto custom-scrollbar">
         <div className="flex gap-4">
           {tabs.map((tab) => (
             <button
