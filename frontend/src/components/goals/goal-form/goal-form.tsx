@@ -9,6 +9,7 @@ import { NaturalLanguageDatePicker } from "@/components/ui/natural-language-date
 import GoalCategories from "./goal-categories";
 import Tasks from "./tasks";
 import GoalRelevance from "./goal-relevance";
+import { Form } from "@/components/ui/form";
 
 interface GoalFormProps extends ComponentProps<"form"> {
   setOpen: (isOpen: boolean) => void;
@@ -16,45 +17,53 @@ interface GoalFormProps extends ComponentProps<"form"> {
 }
 
 export default function GoalForm({ className, goalForm }: GoalFormProps) {
-  const { handleSubmit, formData, setters, initialData } = goalForm;
+  const { form, onSubmit, handleTasksChange, initialData, mode } = goalForm;
+
+  const title = form.watch("title");
+  const relevance = form.watch("relevance");
+  const category = form.watch("category");
+  const dueDate = form.watch("dueDate");
+  const milestones = form.watch("milestones");
 
   return (
-    <form
-      id="goal-form"
-      className={cn("grid items-start gap-6", className)}
-      onSubmit={handleSubmit}
-    >
-      <GoalTitle
-        title={formData.title}
-        setTitle={setters.setTitle}
-        initialTitle={initialData?.title}
-      />
-      <GoalRelevance
-        relevance={formData.relevance}
-        setRelevance={setters.setRelevance}
-        title={formData.title}
-      />
-      <GoalCategories
-        category={formData.category}
-        setCategory={setters.setCategory}
-        onNewCategory={setters.setNewCategory}
-      />
-      <NaturalLanguageDatePicker
-        date={formData.dueDate}
-        setDate={setters.setDueDate}
-        defaultValue={goalForm.mode === "add" ? "In 3 months" : ""}
-      />
-      <Milestones
-        milestones={formData.milestones}
-        setMilestones={setters.setMilestones}
-        goalTitle={formData.title}
-      />
-      <Tasks
-        goalTitle={formData.title}
-        relevance={formData.relevance}
-        milestones={formData.milestones}
-        onTasksChange={setters.setTasks}
-      />
-    </form>
+    <Form {...form}>
+      <form
+        id="goal-form"
+        className={cn("grid items-start gap-6", className)}
+        onSubmit={onSubmit}
+      >
+        <GoalTitle
+          title={title}
+          setTitle={(value) => form.setValue("title", value)}
+          initialTitle={initialData?.title}
+        />
+        <GoalRelevance
+          relevance={relevance || ""}
+          setRelevance={(value) => form.setValue("relevance", value)}
+          title={title}
+        />
+        <GoalCategories
+          category={category}
+          setCategory={(value) => form.setValue("category", value)}
+          onNewCategory={(value) => form.setValue("newCategory", value)}
+        />
+        <NaturalLanguageDatePicker
+          date={dueDate}
+          setDate={(value) => form.setValue("dueDate", value)}
+          defaultValue={mode === "add" ? "In 3 months" : ""}
+        />
+        <Milestones
+          milestones={milestones || []}
+          setMilestones={(value) => form.setValue("milestones", value)}
+          goalTitle={title}
+        />
+        <Tasks
+          goalTitle={title}
+          relevance={relevance}
+          milestones={milestones}
+          onTasksChange={handleTasksChange}
+        />
+      </form>
+    </Form>
   );
 }
