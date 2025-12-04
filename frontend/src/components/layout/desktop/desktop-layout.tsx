@@ -17,22 +17,35 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconUserCircle,
-} from "@tabler/icons-react";
+import { IconDotsVertical, IconLogout } from "@tabler/icons-react";
 import Image from "next/image";
-import { ListTodo, Goal, ChartLine, Bell, Sparkles } from "lucide-react";
+import {
+  ListTodo,
+  Goal,
+  ChartLine,
+  Bell,
+  Sparkles,
+  Settings,
+  Info,
+  ExternalLink,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
+  LogIn,
+} from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import NotificationSidebar from "@/components/notifications/notifications-sidebar";
 import { useNotification } from "@/contexts/notification-context";
+import { useTheme } from "next-themes";
 
 const sidebarItems = [
   {
@@ -57,9 +70,20 @@ const sidebarItems = [
 
 const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout, isAnonymous } = useAuth();
   const { openNotifications, notifications } = useNotification();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  const handleLogOut = async () => {
+    try {
+      await logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
 
   return (
     <>
@@ -107,25 +131,43 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                         size="lg"
                         className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                       >
-                        <Avatar className="h-8 w-8 rounded-lg grayscale">
-                          <AvatarImage
-                            src={user?.photoURL || ""}
-                            alt={user?.name || "User Profile Picture"}
-                          />
-                          <AvatarFallback className="rounded-lg">
-                            CN
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                          <span className="truncate font-medium">
-                            {user?.name || "User"}
-                          </span>
-                          <span className="text-muted-foreground truncate text-xs">
-                            {user?.subscription === "premium"
-                              ? "Premium Plan"
-                              : "Free Plan"}
-                          </span>
-                        </div>
+                        {isAnonymous ? (
+                          <>
+                            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+                              <LogIn className="size-4 text-primary" />
+                            </div>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                              <span className="truncate font-medium">
+                                Login / Sign Up
+                              </span>
+                              <span className="text-muted-foreground truncate text-xs">
+                                Create an account
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Avatar className="h-8 w-8 rounded-lg grayscale">
+                              <AvatarImage
+                                src={user?.photoURL || ""}
+                                alt={user?.name || "User Profile Picture"}
+                              />
+                              <AvatarFallback className="rounded-lg">
+                                CN
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                              <span className="truncate font-medium">
+                                {user?.name || "User"}
+                              </span>
+                              <span className="text-muted-foreground truncate text-xs">
+                                {user?.subscription === "premium"
+                                  ? "Premium Plan"
+                                  : "Free Plan"}
+                              </span>
+                            </div>
+                          </>
+                        )}
                         <IconDotsVertical className="ml-auto size-4" />
                       </SidebarMenuButton>
                     </DropdownMenuTrigger>
@@ -135,33 +177,151 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                       align="end"
                       sideOffset={4}
                     >
-                      <DropdownMenuItem disabled>
-                        {user?.email}
-                      </DropdownMenuItem>
-                      {user?.subscription !== "premium" && (
+                      {isAnonymous ? (
                         <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Sparkles />
-                            Upgrade to Pro
+                          <DropdownMenuItem asChild>
+                            <Link href="/login" className="cursor-pointer">
+                              <LogIn className="size-4" />
+                              Login
+                            </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href="/signup" className="cursor-pointer">
+                              <Sparkles className="size-4" />
+                              Sign Up
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      ) : (
+                        <>
+                          <DropdownMenuItem disabled>
+                            {user?.email}
+                          </DropdownMenuItem>
+                          {user?.subscription !== "premium" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <Sparkles />
+                                Upgrade to Pro
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </>
                       )}
                       <DropdownMenuGroup>
-                        <DropdownMenuItem>
-                          <IconUserCircle />
-                          Account
+                        <DropdownMenuItem asChild>
+                          <Link href="/settings" className="cursor-pointer">
+                            <Settings />
+                            Settings
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <IconCreditCard />
-                          Billing
-                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Palette />
+                            Theme
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem
+                              onClick={() => setTheme("light")}
+                              className="flex justify-between items-center cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Sun className="size-4" />
+                                Light
+                              </span>
+                              {theme === "light" && (
+                                <span className="text-primary">✓</span>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setTheme("dark")}
+                              className="flex justify-between items-center cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Moon className="size-4" />
+                                Dark
+                              </span>
+                              {theme === "dark" && (
+                                <span className="text-primary">✓</span>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setTheme("system")}
+                              className="flex justify-between items-center cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <Monitor className="size-4" />
+                                System
+                              </span>
+                              {theme === "system" && (
+                                <span className="text-primary">✓</span>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Info />
+                            Learn More
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href="/about"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex justify-between items-center w-45 cursor-pointer"
+                              >
+                                About GoalCraft
+                                <ExternalLink />
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href="/blog"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex justify-between items-center w-45 cursor-pointer"
+                              >
+                                Blog
+                                <ExternalLink />
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href="/privacy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex justify-between items-center w-45 cursor-pointer"
+                              >
+                                Privacy Policy
+                                <ExternalLink />
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href="/terms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex justify-between items-center w-45 cursor-pointer"
+                              >
+                                Terms & Conditions
+                                <ExternalLink />
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                       </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <IconLogout />
-                        Log out
-                      </DropdownMenuItem>
+                      {!isAnonymous && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={handleLogOut}>
+                            <IconLogout />
+                            Log out
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </SidebarMenuItem>

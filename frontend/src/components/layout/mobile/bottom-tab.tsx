@@ -25,7 +25,7 @@ const tabItems = [
     id: 4,
     label: "Profile",
     icon: User,
-    href: "/profile",
+    href: "/settings",
   },
 ];
 
@@ -42,19 +42,6 @@ const BottomTab = () => {
             pathname === item.href ? "text-accent" : "text-foreground"
           }`}
         >
-          {/* {item.label === "Profile" ? (
-            <Avatar>
-              <AvatarImage
-                src={user?.photoURL || ""}
-                alt="User Profile Picture"
-              />
-              <AvatarFallback>
-                {avatarFallbackInitial(user?.name, user?.displayName || "")}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <item.icon className="size-6 my-1" />
-          )} */}
           <item.icon className="size-6 my-1" />
           <span className="text-xs">{item.label}</span>
         </Link>
