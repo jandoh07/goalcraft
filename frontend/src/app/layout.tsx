@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: APP_DEFAULT_TITLE,
     // startUpImage: [],
   },
@@ -59,6 +59,16 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   robots: isStaging ? "noindex, nofollow" : "index, follow",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+  ),
+  alternates: {
+    canonical: "./",
+  },
+  icons: {
+    icon: "/web-app-manifest-192x192.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -69,6 +79,10 @@ export const viewport: Viewport = {
       color: "oklch(0.2781 0.0296 256.85)",
     },
   ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

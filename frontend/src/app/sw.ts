@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { clientsClaim } from "workbox-core";
+import { clientsClaim, skipWaiting } from "workbox-core";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
@@ -12,19 +12,22 @@ import {
 
 declare const self: ServiceWorkerGlobalScope;
 
-precacheAndRoute(self.__WB_MANIFEST);
+skipWaiting();
+clientsClaim();
 cleanupOutdatedCaches();
+precacheAndRoute(self.__WB_MANIFEST);
 
 registerRoute(
   ({ url }) => url.searchParams.has("_rsc"),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: "rsc-payloads",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
+    networkTimeoutSeconds: 3,
   })
 );
 
@@ -35,34 +38,23 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
-    networkTimeoutSeconds: 3,
   })
 );
 
 registerRoute(
-  ({ request }) => request.destination === "script",
-  new CacheFirst({
-    cacheName: "js-chunks",
+  ({ request, url }) =>
+    (request.destination === "script" || request.destination === "style") &&
+    url.origin === self.location.origin,
+
+  new StaleWhileRevalidate({
+    cacheName: "static-resources",
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
-      }),
-    ],
-  })
-);
-
-registerRoute(
-  ({ request }) => request.destination === "style",
-  new CacheFirst({
-    cacheName: "styles",
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
@@ -75,7 +67,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 150,
-        maxAgeSeconds: 60 * 24 * 60 * 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
@@ -88,18 +80,14 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 365 * 24 * 60 * 60,
+        maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
       }),
     ],
   })
 );
 
-// Push notification handlers
 self.addEventListener("push", (event) => {
-  if (!event.data) {
-    console.log("This push event has no data.");
-    return;
-  }
+  if (!event.data) return;
 
   const data = event.data.json();
   const title = data.title || "GoalCraft";
@@ -117,7 +105,6 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
   const urlToOpen = event.notification.data.url;
 
   event.waitUntil(
@@ -136,6 +123,3 @@ self.addEventListener("notificationclick", (event) => {
       })
   );
 });
-
-self.skipWaiting();
-clientsClaim();

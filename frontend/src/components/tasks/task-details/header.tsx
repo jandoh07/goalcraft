@@ -45,6 +45,7 @@ const Header = ({ task, setMode, setDialogOpen }: HeaderProps) => {
                 toggleTaskStatus.mutate({
                   taskId: task.id || "",
                   currentStatus: task.status,
+                  goalId: task.goalId,
                 })
               }
             />

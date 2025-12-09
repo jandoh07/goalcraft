@@ -1,7 +1,6 @@
 import { SubTask, Task } from "@/types";
 import {
   collection,
-  addDoc,
   getDocs,
   doc,
   updateDoc,
@@ -17,6 +16,7 @@ import {
   writeBatch,
   deleteField,
   getDoc,
+  increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { calculateNextRun } from "../utils/calculate-next-run-date";
@@ -157,18 +157,40 @@ export const addTask = async (
 
     batch.set(masterTaskRef, masterTask);
     batch.set(instanceTaskRef, instanceTask);
+
+    // Update goal task counts if task has a goalId
+    if (taskData.goalId) {
+      const goalRef = doc(db, "goals", taskData.goalId);
+      batch.update(goalRef, {
+        totalTasks: increment(1),
+      });
+    }
+
     await batch.commit();
 
     return instanceTaskRef.id;
   } else {
-    const docRef = await addDoc(collection(db, "tasks"), {
+    const batch = writeBatch(db);
+    const taskRef = doc(collection(db, "tasks"));
+
+    batch.set(taskRef, {
       ...taskData,
       isRecurring: false,
       dueDate: taskData.dueDate ? Timestamp.fromDate(taskData.dueDate) : null,
       createdAt: now,
       updatedAt: now,
     });
-    return docRef.id;
+
+    // Update goal task counts if task has a goalId
+    if (taskData.goalId) {
+      const goalRef = doc(db, "goals", taskData.goalId);
+      batch.update(goalRef, {
+        totalTasks: increment(1),
+      });
+    }
+
+    await batch.commit();
+    return taskRef.id;
   }
 };
 
@@ -210,17 +232,65 @@ export const updateTask = async (
 };
 
 export const removeTask = async (taskId: string) => {
-  await deleteDoc(doc(db, "tasks", taskId));
+  // First get the task to check if it has a goalId
+  const taskRef = doc(db, "tasks", taskId);
+  const taskSnap = await getDoc(taskRef);
+
+  if (taskSnap.exists()) {
+    const taskData = taskSnap.data();
+
+    if (taskData.goalId) {
+      // Use batch to delete task and update goal counts
+      const batch = writeBatch(db);
+      const goalRef = doc(db, "goals", taskData.goalId);
+
+      batch.delete(taskRef);
+      batch.update(goalRef, {
+        totalTasks: increment(-1),
+        ...(taskData.status === "completed" && {
+          completedTasks: increment(-1),
+        }),
+      });
+
+      await batch.commit();
+    } else {
+      await deleteDoc(taskRef);
+    }
+  } else {
+    await deleteDoc(taskRef);
+  }
 };
 
 export const toggleTaskStatus = async (
   taskId: string,
-  currentStatus: string
+  currentStatus: string,
+  goalId?: string
 ) => {
   const newStatus = currentStatus === "completed" ? "in-progress" : "completed";
-  await updateTask(taskId, {
-    status: newStatus as "in-progress" | "completed",
-  });
+  const taskRef = doc(db, "tasks", taskId);
+
+  if (goalId) {
+    // Use batch to update task and goal counts
+    const batch = writeBatch(db);
+    const goalRef = doc(db, "goals", goalId);
+
+    batch.update(taskRef, {
+      status: newStatus,
+      updatedAt: Timestamp.now(),
+    });
+
+    // If completing, increment completedTasks; if uncompleting, decrement
+    batch.update(goalRef, {
+      completedTasks: increment(newStatus === "completed" ? 1 : -1),
+    });
+
+    await batch.commit();
+  } else {
+    await updateDoc(taskRef, {
+      status: newStatus,
+      updatedAt: Timestamp.now(),
+    });
+  }
 };
 
 export const addSubtask = async (taskId: string, subtask: SubTask) => {
@@ -256,6 +326,39 @@ export const getMasterTask = async (masterTaskId: string) => {
   } as Task;
 };
 
+export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
+  if (!masterTaskIds.length) return [];
+
+  const masterTasks: Task[] = [];
+
+  // Firestore 'in' query supports max 30 items, so we batch if needed
+  const chunks = [];
+  for (let i = 0; i < masterTaskIds.length; i += 30) {
+    chunks.push(masterTaskIds.slice(i, i + 30));
+  }
+
+  for (const chunk of chunks) {
+    const q = query(
+      collection(db, "masterTasks"),
+      where("__name__", "in", chunk)
+    );
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      masterTasks.push({
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        nextRun: data.nextRun?.toDate(),
+      } as Task);
+    });
+  }
+
+  return masterTasks;
+};
+
 export const updateTaskRecurrence = async (
   masterTaskId: string,
   recurringStatus: string
@@ -266,4 +369,38 @@ export const updateTaskRecurrence = async (
     pausedReason: recurringStatus === "paused" ? "manual-pause" : "",
     updatedAt: Timestamp.now(),
   });
+};
+
+export const getNonNegotiablesByGoalId = async (
+  goalId: string,
+  userId: string
+) => {
+  if (!goalId || !userId) return [];
+
+  try {
+    const q = query(
+      collection(db, "masterTasks"),
+      where("userId", "==", userId),
+      where("goalId", "==", goalId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const masterTasks: Task[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      masterTasks.push({
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        nextRun: data.nextRun?.toDate(),
+      } as Task);
+    });
+
+    return masterTasks;
+  } catch (error) {
+    console.error("Error fetching non-negotiables:", error);
+    throw error;
+  }
 };

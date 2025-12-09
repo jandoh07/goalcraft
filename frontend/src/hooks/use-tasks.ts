@@ -6,7 +6,9 @@ import {
   subscribeToUserTasks,
   toggleTaskStatus,
   getMasterTask,
+  getMasterTasksByIds,
   updateTaskRecurrence,
+  getNonNegotiablesByGoalId,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
@@ -179,10 +181,12 @@ export const useToggleTaskStatus = () => {
     mutationFn: ({
       taskId,
       currentStatus,
+      goalId,
     }: {
       taskId: string;
       currentStatus: string;
-    }) => toggleTaskStatus(taskId, currentStatus),
+      goalId?: string;
+    }) => toggleTaskStatus(taskId, currentStatus, goalId),
     onMutate: async ({ taskId, currentStatus }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
 
@@ -229,6 +233,27 @@ export const useGetMasterTask = (masterTaskId: string) => {
     queryKey: ["masterTask", masterTaskId],
     queryFn: () => getMasterTask(masterTaskId),
     enabled: !!masterTaskId,
+    staleTime: 0,
+  });
+};
+
+export const useGetNonNegotiables = (masterTaskIds: string[]) => {
+  return useQuery({
+    queryKey: ["nonNegotiables", masterTaskIds],
+    queryFn: () => getMasterTasksByIds(masterTaskIds),
+    enabled: masterTaskIds.length > 0,
+    staleTime: 0,
+  });
+};
+
+export const useGetNonNegotiablesByGoalId = (
+  goalId: string,
+  userId: string
+) => {
+  return useQuery({
+    queryKey: ["nonNegotiables", "goal", goalId, userId],
+    queryFn: () => getNonNegotiablesByGoalId(goalId, userId),
+    enabled: !!goalId && !!userId,
     staleTime: 0,
   });
 };

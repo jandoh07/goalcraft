@@ -2,7 +2,7 @@
 
 import { Goal } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
-import { useGetTasks } from "@/hooks/use-tasks";
+import { useGetTasks, useGetNonNegotiablesByGoalId } from "@/hooks/use-tasks";
 import { useMemo } from "react";
 import Milestones from "./milestones";
 import GoalTasks from "./goal-tasks";
@@ -18,6 +18,10 @@ const GoalDetails = ({ goal }: GoalDetailsProps) => {
   const { data: allTasks, isLoading } = useGetTasks(user?.uid || "", {
     goalId: goal.id,
   });
+
+  // Get non-negotiables (recurring master tasks) for this goal
+  const { data: nonNegotiables, isLoading: isLoadingNonNegotiables } =
+    useGetNonNegotiablesByGoalId(goal.id || "", user?.uid || "");
 
   const stats = useMemo(() => {
     if (!allTasks) return { total: 0, completed: 0, pending: 0 };
@@ -43,7 +47,13 @@ const GoalDetails = ({ goal }: GoalDetailsProps) => {
           <Milestones goal={goal} />
         </TabsContent>
         <TabsContent value="tasks">
-          <GoalTasks allTasks={allTasks} stats={stats} isLoading={isLoading} />
+          <GoalTasks
+            allTasks={allTasks}
+            stats={stats}
+            isLoading={isLoading}
+            nonNegotiables={nonNegotiables}
+            isLoadingNonNegotiables={isLoadingNonNegotiables}
+          />
         </TabsContent>
       </Tabs>
     </div>

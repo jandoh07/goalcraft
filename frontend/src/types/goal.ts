@@ -8,6 +8,8 @@ export interface Goal {
   status: "in-progress" | "completed";
   progress?: number;
   milestones?: Milestone[];
+  totalTasks?: number;
+  completedTasks?: number;
   createdAt: Date;
   updatedAt: Date;
 }

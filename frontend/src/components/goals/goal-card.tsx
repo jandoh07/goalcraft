@@ -18,8 +18,6 @@ import { toast } from "sonner";
 import ResponsiveDialog from "../ui/responsive-dialog";
 import GoalDetails from "./goal-details/goal-details";
 import GoalIcon from "./goal-icon";
-import { useGetTasks } from "@/hooks/use-tasks";
-import { useAuth } from "@/contexts/auth-context";
 
 const GoalCard = ({
   goal,
@@ -33,11 +31,11 @@ const GoalCard = ({
   const deleteGoalMutation = useDeleteGoal();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const { user } = useAuth();
-  const allGoalTasks = useGetTasks(user?.uid || "", { goalId: goal.id });
-  const completedTasks =
-    allGoalTasks.data?.filter((task) => task.status === "completed").length ||
-    0;
+
+  // Use embedded task counts from goal document
+  const totalTasks = goal.totalTasks || 0;
+  const completedTasks = goal.completedTasks || 0;
+
   const isOverdue = goal.dueDate
     ? new Date(goal.dueDate) < new Date() && goal.status !== "completed"
     : false;
@@ -132,9 +130,9 @@ const GoalCard = ({
             </div>
             <Progress value={goal.progress || 0} className="h-2" />
             <p className="text-xs text-muted-foreground">
-              {allGoalTasks.data?.length === 0
-                ? "No task completed for this goal yet"
-                : `${completedTasks} of ${allGoalTasks.data?.length} tasks completed`}
+              {totalTasks === 0
+                ? "No tasks for this goal yet"
+                : `${completedTasks} of ${totalTasks} tasks completed`}
             </p>
           </div>
         </CardContent>

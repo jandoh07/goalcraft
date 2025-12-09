@@ -1,8 +1,44 @@
 import { useAuth } from "@/contexts/auth-context";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useAddGoal, useUpdateGoal } from "./use-goals";
 import { toast } from "sonner";
 import { Goal, Milestone, Task } from "@/types";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Define the form schema with zod
+const goalFormSchema = z.object({
+  title: z.string().min(1, "Goal title is required"),
+  relevance: z.string().default(""),
+  category: z.string().min(1, "Category is required"),
+  dueDate: z.date().optional(),
+  milestones: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        title: z.string(),
+        weight: z.number(),
+        completed: z.boolean().optional(),
+      })
+    )
+    .default([]),
+  newCategory: z.string().optional(),
+  tasks: z
+    .array(
+      z.object({
+        title: z.string(),
+        dueDate: z.date().optional(),
+        time: z.string().optional(),
+        isRecurring: z.boolean(),
+        frequency: z.string().optional(),
+        status: z.enum(["in-progress", "completed", "pending"]),
+      })
+    )
+    .default([]),
+});
+
+export type GoalFormValues = z.infer<typeof goalFormSchema>;
 
 const useGoalsForm = ({
   initialData,
@@ -15,19 +51,37 @@ const useGoalsForm = ({
   mode: "add" | "edit";
   setOpen: (open: boolean) => void;
 }) => {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [relevance, setRelevance] = useState(initialData?.relevance || "");
-  const [category, setCategory] = useState(initialData?.category || "");
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    initialData?.dueDate
-  );
-  const [milestones, setMilestones] = useState<Milestone[]>(
-    initialData?.milestones || []
-  );
-  const [newCategory, setNewCategory] = useState<string | undefined>(undefined);
-  const [tasks, setTasks] = useState<
-    Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "goalId">[]
-  >([]);
+  const { user, refreshUser } = useAuth();
+  const addGoalMutation = useAddGoal();
+  const updateGoalMutation = useUpdateGoal();
+
+  const form = useForm({
+    resolver: zodResolver(goalFormSchema),
+    defaultValues: {
+      title: initialData?.title || "",
+      relevance: initialData?.relevance || "",
+      category: initialData?.category || "",
+      dueDate: initialData?.dueDate,
+      milestones: initialData?.milestones || [],
+      newCategory: undefined as string | undefined,
+      tasks: [] as GoalFormValues["tasks"],
+    },
+  });
+
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        title: initialData.title || "",
+        relevance: initialData.relevance || "",
+        category: initialData.category || "",
+        dueDate: initialData.dueDate,
+        milestones: initialData.milestones || [],
+        newCategory: undefined,
+        tasks: [],
+      });
+    }
+  }, [initialData, form]);
 
   // Handler to update tasks from Tasks component
   const handleTasksChange = useCallback(
@@ -44,50 +98,37 @@ const useGoalsForm = ({
     ) => {
       const formattedTasks = acceptedTasks.map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        ({ id, reason, time, ...task }) => ({
+        ({ id, reason, ...task }) => ({
           ...task,
-          time: time ? time : "",
+          time: task.time || "",
           status: "in-progress" as const,
         })
       );
-      setTasks(formattedTasks);
+      form.setValue("tasks", formattedTasks);
     },
-    []
+    [form]
   );
 
-  const { user, refreshUser } = useAuth();
-  const addGoalMutation = useAddGoal();
-  const updateGoalMutation = useUpdateGoal();
+  const resetForm = useCallback(() => {
+    form.reset({
+      title: "",
+      relevance: "",
+      category: "",
+      dueDate: undefined,
+      milestones: [],
+      newCategory: undefined,
+      tasks: [],
+    });
+  }, [form]);
 
-  useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title || "");
-      setRelevance(initialData.relevance || "");
-      setCategory(initialData.category || "");
-      setDueDate(initialData.dueDate);
-      setMilestones(initialData.milestones || []);
-    }
-  }, [initialData]);
-
-  const resetForm = () => {
-    setTitle("");
-    setRelevance("");
-    setCategory("");
-    setDueDate(undefined);
-    setMilestones([]);
-    setNewCategory(undefined);
-    setTasks([]);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = form.handleSubmit((data) => {
     const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     const goalData = {
-      title,
-      relevance,
-      category,
-      dueDate,
-      milestones,
+      title: data.title,
+      relevance: data.relevance,
+      category: data.category,
+      dueDate: data.dueDate,
+      milestones: data.milestones as Milestone[],
     };
 
     if (mode === "add") {
@@ -95,12 +136,15 @@ const useGoalsForm = ({
         {
           userId: user?.uid || "",
           goalData,
-          newCategory,
-          tasks,
+          newCategory: data.newCategory,
+          tasks: data.tasks as Omit<
+            Task,
+            "id" | "createdAt" | "updatedAt" | "userId" | "goalId"
+          >[],
         },
         {
           onSuccess: () => {
-            if (newCategory) refreshUser();
+            if (data.newCategory) refreshUser();
           },
         }
       );
@@ -124,7 +168,7 @@ const useGoalsForm = ({
       setOpen(false);
       resetForm();
     }
-  };
+  });
 
   const handleAddNew = () => {
     setInitialData(undefined);
@@ -132,36 +176,15 @@ const useGoalsForm = ({
     setOpen(true);
   };
 
+  // For external form submission (e.g., from dialog submit button)
   const handleExternalFormSubmit = () => {
-    if (typeof document === "undefined") return;
-
-    const form = document.getElementById("goal-form");
-
-    if (form) {
-      form.dispatchEvent(
-        new Event("submit", { cancelable: true, bubbles: true })
-      );
-    }
+    onSubmit();
   };
 
   return {
-    formData: {
-      title,
-      relevance,
-      category,
-      dueDate,
-      milestones,
-    },
-    setters: {
-      setTitle,
-      setRelevance,
-      setCategory,
-      setDueDate,
-      setMilestones,
-      setNewCategory,
-      setTasks: handleTasksChange,
-    },
-    handleSubmit,
+    form,
+    handleTasksChange,
+    onSubmit,
     handleAddNew,
     handleExternalFormSubmit,
     mutation: mode === "add" ? addGoalMutation : updateGoalMutation,

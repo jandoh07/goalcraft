@@ -155,7 +155,7 @@ const NotificationSidebar = () => {
                           <span className="shrink-0 size-2 bg-primary rounded-full mt-1.5"></span>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">

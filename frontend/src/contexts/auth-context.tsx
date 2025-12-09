@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { UserCredential } from "firebase/auth";
+import { UserCredential, signInAnonymously } from "firebase/auth";
 import { useTheme } from "next-themes";
 import { AppUser } from "@/types";
 import {
@@ -17,6 +17,7 @@ import { auth } from "@/lib/firebase/firebase";
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
+  isAnonymous: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
@@ -37,9 +38,9 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  // Function to refresh user data from Firestore
   const refreshUser = async () => {
     if (auth.currentUser) {
       const updatedUser = await fetchUserData(auth.currentUser, theme);
@@ -48,9 +49,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Set up auth state listener with real-time Firestore sync
   useEffect(() => {
-    const cleanup = setupAuthListener(setUser, setTheme, setLoading, theme);
+    const cleanup = setupAuthListener(
+      async (authUser) => {
+        if (authUser) {
+          setUser(authUser);
+          setIsAnonymous(auth.currentUser?.isAnonymous || false);
+        } else {
+          try {
+            await signInAnonymously(auth);
+          } catch (error) {
+            console.error("Error signing in anonymously:", error);
+            setUser(null);
+            setIsAnonymous(false);
+          }
+        }
+      },
+      setTheme,
+      setLoading,
+      theme
+    );
     return cleanup;
   }, [theme, setTheme]);
 
@@ -74,6 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     loading,
+    isAnonymous,
     signIn,
     signUp,
     signInWithGoogle,

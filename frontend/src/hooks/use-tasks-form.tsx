@@ -1,5 +1,5 @@
-import { AssociatedGoal, SubTask, Task } from "@/types";
-import { useEffect, useState } from "react";
+import { SubTask, Task } from "@/types";
+import { useCallback, useEffect, useState } from "react";
 import {
   useAddTask,
   useDeleteTask,
@@ -8,6 +8,30 @@ import {
 } from "./use-tasks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Define the form schema with zod
+const taskFormSchema = z.object({
+  title: z.string().min(1, "Task title is required"),
+  description: z.string().default(""),
+  associatedGoal: z
+    .object({
+      goalId: z.string(),
+      goalTitle: z.string(),
+    })
+    .default({ goalId: "", goalTitle: "" }),
+  dueDate: z.date().optional(),
+  time: z.string().default(""),
+  priority: z.enum(["high", "medium", "low", ""]).default(""),
+  isRecurring: z.boolean().default(false),
+  frequency: z.string().default(""),
+  recurringMasterId: z.string().default(""),
+  stopRecurring: z.boolean().default(false),
+});
+
+export type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 const useTasksForm = ({
   initialData,
@@ -18,35 +42,34 @@ const useTasksForm = ({
   mode: "add" | "edit";
   openDialog: (isOpen: boolean) => void;
 }) => {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
-  const [associatedGoal, setAssociatedGoal] = useState<AssociatedGoal>({
-    goalId: initialData?.goalId || "",
-    goalTitle: initialData?.goalTitle || "",
-  });
-  const [time, setTime] = useState(initialData?.time || "");
-  const [priority, setPriority] = useState<"high" | "medium" | "low" | "">(
-    initialData?.priority || ""
-  );
   const [subtasks, setSubtasks] = useState<SubTask[]>(
     initialData?.subtasks || []
   );
   const [newSubtask, setNewSubtask] = useState("");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    initialData?.dueDate || undefined
-  );
-  const [frequency, setFrequency] = useState(initialData?.frequency || "");
-  const [recurringMasterId, setRecurringMasterId] = useState(
-    initialData?.recurringMasterId || ""
-  );
-  const [stopRecurring, setStopRecurring] = useState(false);
+
   const { user } = useAuth();
   const addTaskMutation = useAddTask();
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
+
+  const form = useForm({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: initialData?.title || "",
+      description: initialData?.description || "",
+      associatedGoal: {
+        goalId: initialData?.goalId || "",
+        goalTitle: initialData?.goalTitle || "",
+      },
+      dueDate: initialData?.dueDate || undefined,
+      time: initialData?.time || "",
+      priority: (initialData?.priority || "") as "high" | "medium" | "low" | "",
+      isRecurring: false,
+      frequency: initialData?.frequency || "",
+      recurringMasterId: initialData?.recurringMasterId || "",
+      stopRecurring: false,
+    },
+  });
 
   // Fetch master task if in edit mode and task has a recurringMasterId
   const { data: masterTask } = useGetMasterTask(
@@ -55,50 +78,57 @@ const useTasksForm = ({
       : ""
   );
 
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setAssociatedGoal({
-      goalId: "",
-      goalTitle: "",
+  const resetForm = useCallback(() => {
+    form.reset({
+      title: "",
+      description: "",
+      associatedGoal: { goalId: "", goalTitle: "" },
+      dueDate: undefined,
+      time: "",
+      priority: "",
+      isRecurring: false,
+      frequency: "",
+      recurringMasterId: "",
+      stopRecurring: false,
     });
-    setTime("");
-    setPriority("");
     setSubtasks([]);
-    setIsRecurring(false);
-    setFrequency("");
-    setDueDate(undefined);
-    setRecurringMasterId("");
-    setStopRecurring(false);
-  };
+    setNewSubtask("");
+  }, [form]);
 
   useEffect(() => {
     if (initialData) {
-      setTitle(initialData.title || "");
-      setDescription(initialData.description || "");
-      setAssociatedGoal({
-        goalId: initialData.goalId || "",
-        goalTitle: initialData.goalTitle || "",
+      form.reset({
+        title: initialData.title || "",
+        description: initialData.description || "",
+        associatedGoal: {
+          goalId: initialData.goalId || "",
+          goalTitle: initialData.goalTitle || "",
+        },
+        dueDate: initialData.dueDate || undefined,
+        time: initialData.time || "",
+        priority: (initialData.priority || "") as
+          | "high"
+          | "medium"
+          | "low"
+          | "",
+        frequency: initialData.frequency || "",
+        recurringMasterId: initialData.recurringMasterId || "",
+        stopRecurring: false,
       });
-      setTime(initialData.time || "");
-      setPriority(initialData.priority || "");
       setSubtasks(initialData.subtasks || []);
-      setFrequency(initialData.frequency || "");
-      setDueDate(initialData.dueDate || undefined);
-      setRecurringMasterId(initialData.recurringMasterId || "");
     } else {
       resetForm();
     }
-  }, [initialData]);
+  }, [initialData, form, resetForm]);
 
   // Set isRecurring based on master task's recurringStatus
   useEffect(() => {
     if (mode === "edit" && masterTask) {
       const recurringStatus = (masterTask as { recurringStatus?: string })
         ?.recurringStatus;
-      setIsRecurring(recurringStatus === "active");
+      form.setValue("isRecurring", recurringStatus === "active");
     }
-  }, [mode, masterTask]);
+  }, [mode, masterTask, form]);
 
   const addSubtask = () => {
     if (newSubtask.trim()) {
@@ -116,25 +146,24 @@ const useTasksForm = ({
     setSubtasks(subtasks.filter((subtask) => subtask.id !== id));
   };
 
-  const taskData = {
-    title,
-    description,
-    goalId: associatedGoal?.goalId,
-    goalTitle: associatedGoal?.goalTitle,
-    dueDate: dueDate || null,
-    time,
-    priority: priority || null,
-    subtasks,
-    isRecurring,
-    frequency,
-    status: "in-progress" as const,
-    recurringMasterId,
-    stopRecurring,
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = form.handleSubmit((data) => {
     const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+
+    const taskData = {
+      title: data.title,
+      description: data.description,
+      goalId: data.associatedGoal?.goalId,
+      goalTitle: data.associatedGoal?.goalTitle,
+      dueDate: data.dueDate || null,
+      time: data.time,
+      priority: data.priority || null,
+      subtasks,
+      isRecurring: data.isRecurring,
+      frequency: data.frequency,
+      status: "in-progress" as const,
+      recurringMasterId: data.recurringMasterId,
+      stopRecurring: data.stopRecurring,
+    };
 
     const payload = {
       userId: user?.uid || "",
@@ -163,7 +192,7 @@ const useTasksForm = ({
           : "Task updated! Will sync when online."
       );
     }
-  };
+  });
 
   const handleDeleteTask = (
     taskId: string,
@@ -181,30 +210,7 @@ const useTasksForm = ({
   };
 
   return {
-    formData: {
-      title,
-      description,
-      associatedGoal,
-      dueDate,
-      time,
-      priority,
-      isRecurring,
-      frequency,
-      recurringMasterId,
-      stopRecurring,
-    },
-    setters: {
-      setTitle,
-      setDescription,
-      setAssociatedGoal,
-      setDueDate,
-      setTime,
-      setPriority,
-      setIsRecurring,
-      setFrequency,
-      setRecurringMasterId,
-      setStopRecurring,
-    },
+    form,
     subtasks: {
       items: subtasks,
       newSubtask,
@@ -213,7 +219,7 @@ const useTasksForm = ({
       removeSubtask,
     },
     mutation: mode === "add" ? addTaskMutation : updateTaskMutation,
-    handleSubmit,
+    onSubmit,
     handleDeleteTask,
     mode,
   };
