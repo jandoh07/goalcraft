@@ -27,13 +27,13 @@ const QuickAddTask = () => {
   };
 
   return (
-    <div className="my-5 border border-border rounded-xl flex justify-between items-center gap-3 px-2 shadow-sm bg-secondary overflow-hidden">
+    <div className="my-5 border border-border rounded-xl flex justify-between items-center gap-3 px-2 shadow-sm bg-secondary overflow-hidden min-h-12">
       <input
         type="text"
         placeholder="Quick add task.."
         value={taskTitle}
         onChange={(e) => setTaskTitle(e.target.value)}
-        className="w-full outline-none px-1 py-3"
+        className="w-full outline-none px-1 py-3 bg-transparent"
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             handleQuickAddTask();
