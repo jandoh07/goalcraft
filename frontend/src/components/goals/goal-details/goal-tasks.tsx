@@ -139,7 +139,7 @@ const GoalTasks = ({
           ))}
           <button
             onClick={() => setActiveTab("non-negotiable")}
-            className={`pb-2 px-1 text-sm font-medium transition-colors border-b-2 ${
+            className={`pb-2 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === "non-negotiable"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
