@@ -1,7 +1,6 @@
 "use client";
 
 import MobileHeader from "@/components/layout/mobile/header";
-import QuickAddTask from "@/components/tasks/quick-add-task";
 import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
@@ -15,6 +14,7 @@ import useTasksForm from "@/hooks/use-tasks-form";
 import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
 import TaskGroupHeader from "@/components/tasks/task-group-header";
 import TaskDetails from "@/components/tasks/task-details/task-details";
+import DateStrip from "@/components/tasks/date-strip";
 
 type Groupkey =
   | "overdue"
@@ -26,6 +26,7 @@ type Groupkey =
 
 const Tasks = () => {
   const [open, setOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { user, loading: authLoading } = useAuth();
   const tasks = useGetTasks(user?.uid || "");
   const taskDialog = useTaskDialog(setOpen);
@@ -37,10 +38,26 @@ const Tasks = () => {
 
   const isFullyLoaded = !authLoading && !tasks.isLoading;
 
-  const groupedTasks = useMemo(() => {
+  // Filter tasks by selected date
+  const filteredTasks = useMemo(() => {
     if (!tasks.data) return null;
-    return groupTasksByDate(tasks.data);
-  }, [tasks.data]);
+    if (!selectedDate) return tasks.data;
+
+    return tasks.data.filter((task) => {
+      if (!task.dueDate) return false;
+      const taskDate = new Date(task.dueDate);
+      return (
+        taskDate.getDate() === selectedDate.getDate() &&
+        taskDate.getMonth() === selectedDate.getMonth() &&
+        taskDate.getFullYear() === selectedDate.getFullYear()
+      );
+    });
+  }, [tasks.data, selectedDate]);
+
+  const groupedTasks = useMemo(() => {
+    if (!filteredTasks) return null;
+    return groupTasksByDate(filteredTasks);
+  }, [filteredTasks]);
 
   const renderTaskGroup = (
     groupKey: Groupkey,
@@ -75,11 +92,18 @@ const Tasks = () => {
         </div>
       ) : (
         <>
-          <QuickAddTask />
+          <DateStrip
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            className="mb-3"
+          />
+          {/* <QuickAddTask /> */}
           <div className="pb-50 md:pb-5">
-            {tasks.isSuccess && tasks.data?.length === 0 ? (
+            {tasks.isSuccess && filteredTasks?.length === 0 ? (
               <div className="text-center text-muted-foreground mt-10">
-                <p className="mb-2">No tasks found.</p>
+                <p className="mb-2">
+                  {selectedDate ? "No tasks for this date." : "No tasks found."}
+                </p>
               </div>
             ) : (
               groupedTasks && (
