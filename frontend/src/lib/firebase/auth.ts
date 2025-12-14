@@ -32,7 +32,7 @@ export const fetchUserData = async (
         subscription: firestoreData.subscription || "free",
         createdAt: firestoreData.createdAt?.toDate(),
         theme: firestoreData.theme || "system",
-        pushNotifications: firestoreData.pushNotifications ?? true,
+        pushNotifications: firestoreData.pushNotifications ?? false,
         customCategories: firestoreData.customCategories || [],
       } as AppUser;
     } else {
@@ -41,7 +41,7 @@ export const fetchUserData = async (
         ...authUser,
         subscription: "free",
         theme: fallbackTheme,
-        pushNotifications: true,
+        pushNotifications: false,
       } as AppUser;
     }
   } catch (error) {
@@ -51,7 +51,7 @@ export const fetchUserData = async (
       ...authUser,
       subscription: "free",
       theme: fallbackTheme,
-      pushNotifications: true,
+      pushNotifications: false,
     } as AppUser;
   }
 };
@@ -81,7 +81,7 @@ export const signUp = async (
       createdAt: new Date(),
       subscription: "free",
       theme,
-      pushNotifications: true,
+      pushNotifications: false,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
@@ -97,7 +97,7 @@ export const signUp = async (
         createdAt: new Date(),
         subscription: "free",
         theme,
-        pushNotifications: true,
+        pushNotifications: false,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       return userCredential;
@@ -124,7 +124,7 @@ export const signInWithGoogle = async (theme: string) => {
         photoURL: user.photoURL,
         subscription: "free",
         theme,
-        pushNotifications: true,
+        pushNotifications: false,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
 
@@ -145,7 +145,7 @@ export const signInWithGoogle = async (theme: string) => {
             photoURL: user.photoURL,
             subscription: "free",
             theme,
-            pushNotifications: true,
+            pushNotifications: false,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           });
         }
@@ -171,7 +171,7 @@ export const signInWithGoogle = async (theme: string) => {
           photoURL: user.photoURL,
           subscription: "free",
           theme,
-          pushNotifications: true,
+          pushNotifications: false,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
       }
@@ -218,8 +218,11 @@ export const setupAuthListener = (
             subscription: firestoreData.subscription || "free",
             createdAt: firestoreData.createdAt?.toDate(),
             theme: firestoreData.theme || "system",
-            pushNotifications: firestoreData.pushNotifications ?? true,
+            pushNotifications: firestoreData.pushNotifications ?? false,
             customCategories: firestoreData.customCategories || [],
+            timezone:
+              firestoreData.timezone ||
+              Intl.DateTimeFormat().resolvedOptions().timeZone,
           } as AppUser;
 
           setUser(updatedUser);
