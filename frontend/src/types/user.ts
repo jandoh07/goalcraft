@@ -9,3 +9,11 @@ export interface AppUser extends User {
   customCategories?: string[];
   timezone?: string;
 }
+
+export interface FcmToken {
+  id: string;
+  token: string;
+  deviceType: "desktop" | "mobile" | "tablet";
+  userAgent: string;
+  createdAt: Date;
+}
