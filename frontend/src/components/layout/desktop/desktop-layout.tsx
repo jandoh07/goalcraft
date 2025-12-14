@@ -158,7 +158,7 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                               <span className="truncate font-medium">
-                                {user?.name || "User"}
+                                {user?.name || user?.email}
                               </span>
                               <span className="text-muted-foreground truncate text-xs">
                                 {user?.subscription === "premium"
