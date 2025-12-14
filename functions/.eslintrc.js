@@ -35,6 +35,7 @@ module.exports = {
     "require-jsdoc": 0,
     "valid-jsdoc": 0,
     "quote-props": 0, // Disable quote-props rule
+    "operator-linebreak": 0, // Disable operator-linebreak rule
     "max-len": [
       "error",
       {
