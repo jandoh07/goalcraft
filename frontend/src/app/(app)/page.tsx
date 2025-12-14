@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import GoalCard from "@/components/goals/goal-card";
 import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";
@@ -19,8 +20,35 @@ import ArrowDown from "../../../public/arrow-down.svg";
 import ArrowDownMobile from "../../../public/arrow-down-mobile.svg";
 const indieFlower = Indie_Flower({ subsets: ["latin"], weight: "400" });
 
-const Goals = () => {
-  const [open, setOpen] = useState(false);
+const GoalsContent = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const modeParam = searchParams.get("mode") as "add" | "edit" | null;
+  const open = modeParam === "add" || modeParam === "edit";
+
+  const updateURL = useCallback(
+    (newMode: string | null) => {
+      if (newMode === null) {
+        router.push("?", { scroll: false });
+        return;
+      }
+      const newParams = new URLSearchParams();
+      newParams.set("mode", newMode);
+      router.push(`?${newParams.toString()}`, { scroll: false });
+    },
+    [router]
+  );
+
+  const setOpen = useCallback(
+    (isOpen: boolean) => {
+      if (!isOpen) {
+        updateURL(null);
+      }
+    },
+    [updateURL]
+  );
+
   const { user, isAnonymous, loading: authLoading } = useAuth();
   const [goalFilter, setGoalFilter] = useState<
     "all" | "in-progress" | "completed" | "overdue"
@@ -33,6 +61,17 @@ const Goals = () => {
     mode: initialData ? "edit" : "add",
     setOpen,
   });
+
+  const handleAddNew = () => {
+    setInitialData(undefined);
+    goalsForm.form.reset();
+    updateURL("add");
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setInitialData(goal);
+    updateURL("edit");
+  };
 
   // Wait for both auth and goals to be loaded before determining showOnboarding
   const isFullyLoaded = !authLoading && !isLoading;
@@ -99,12 +138,7 @@ const Goals = () => {
               </div>
             ) : goals && goals.length > 0 ? (
               goals.map((goal) => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  setOpen={setOpen}
-                  setInitialData={setInitialData}
-                />
+                <GoalCard key={goal.id} goal={goal} onEdit={handleEditGoal} />
               ))
             ) : !showOnboarding ? (
               <p className="text-center text-muted-foreground mt-20">
@@ -112,7 +146,7 @@ const Goals = () => {
               </p>
             ) : null}
           </div>
-          <AddButton onClick={goalsForm.handleAddNew} />
+          <AddButton onClick={handleAddNew} />
           <ResponsiveDialog
             open={open}
             setOpen={setOpen}
@@ -131,6 +165,20 @@ const Goals = () => {
         </>
       )}
     </div>
+  );
+};
+
+const Goals = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex justify-center items-center h-full">
+          <Spinner className="size-8 text-primary" />
+        </div>
+      }
+    >
+      <GoalsContent />
+    </Suspense>
   );
 };
 
