@@ -5,7 +5,7 @@ import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
 import { useGetTasks } from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
@@ -24,16 +24,15 @@ type Groupkey =
   | "later"
   | "no-date";
 
-const Tasks = () => {
-  const [open, setOpen] = useState(false);
+const TasksContent = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { user, loading: authLoading } = useAuth();
   const tasks = useGetTasks(user?.uid || "");
-  const taskDialog = useTaskDialog(setOpen);
+  const taskDialog = useTaskDialog();
   const taskForm = useTasksForm({
     initialData: taskDialog.activeTask,
     mode: taskDialog.activeTask ? "edit" : "add",
-    openDialog: setOpen,
+    openDialog: (open) => taskDialog.handleClose(open),
   });
 
   const isFullyLoaded = !authLoading && !tasks.isLoading;
@@ -120,7 +119,7 @@ const Tasks = () => {
           </div>
           <AddButton onClick={taskDialog.handleAddNew} />
           <ResponsiveDialog
-            open={open}
+            open={taskDialog.open}
             setOpen={taskDialog.handleClose}
             title={taskDialog.getTitle()}
             description={taskDialog.getDescription()}
@@ -138,7 +137,11 @@ const Tasks = () => {
               <TaskDetails
                 setMode={taskDialog.setMode}
                 task={taskDialog.activeTask}
-                setDialogOpen={setOpen}
+                setDialogOpen={(open) => {
+                  const value =
+                    typeof open === "function" ? open(taskDialog.open) : open;
+                  taskDialog.handleClose(value);
+                }}
               />
             ) : (
               <TaskForm taskForm={taskForm} />
@@ -147,6 +150,20 @@ const Tasks = () => {
         </>
       )}
     </div>
+  );
+};
+
+const Tasks = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex justify-center items-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <TasksContent />
+    </Suspense>
   );
 };
 

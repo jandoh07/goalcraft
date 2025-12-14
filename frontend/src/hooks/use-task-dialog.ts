@@ -1,29 +1,55 @@
 import { Task } from "@/types";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export const useTaskDialog = (
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>
-) => {
+export const useTaskDialog = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const modeParam = searchParams.get("mode") as "add" | "edit" | "view" | null;
+
   const [activeTask, setActiveTask] = useState<Task | undefined>(undefined);
-  const [mode, setMode] = useState<"add" | "edit" | "view">("view");
+
+  // Derive dialog open state from URL params
+  const open =
+    modeParam === "add" || modeParam === "edit" || modeParam === "view";
+  const mode = modeParam || "view";
+
+  const updateURL = useCallback(
+    (newMode: string | null) => {
+      if (newMode === null) {
+        // Clear all params
+        router.push("?", { scroll: false });
+        return;
+      }
+
+      const newParams = new URLSearchParams();
+      newParams.set("mode", newMode);
+
+      router.push(`?${newParams.toString()}`, { scroll: false });
+    },
+    [router]
+  );
 
   const handleTaskClick = (data: Task) => {
     setActiveTask(data);
-    setOpen(true);
-    setMode("view");
+    updateURL("view");
   };
 
   const handleAddNew = () => {
     setActiveTask(undefined);
-    setOpen(true);
-    setMode("add");
+    updateURL("add");
   };
 
   const handleClose = (isOpen: boolean) => {
-    setOpen(isOpen);
     if (!isOpen) {
+      updateURL(null);
       setTimeout(() => setActiveTask(undefined), 300);
     }
+  };
+
+  const setMode = (newMode: "add" | "edit" | "view") => {
+    updateURL(newMode);
   };
 
   const handleExternalFormSubmit = () => {
@@ -74,6 +100,7 @@ export const useTaskDialog = (
   };
 
   return {
+    open,
     activeTask,
     handleTaskClick,
     handleAddNew,
