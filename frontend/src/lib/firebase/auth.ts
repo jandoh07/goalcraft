@@ -82,6 +82,7 @@ export const signUp = async (
       subscription: "free",
       theme,
       pushNotifications: true,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
     return userCredential;
@@ -97,6 +98,7 @@ export const signUp = async (
         subscription: "free",
         theme,
         pushNotifications: true,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       return userCredential;
     }
@@ -123,6 +125,7 @@ export const signInWithGoogle = async (theme: string) => {
         subscription: "free",
         theme,
         pushNotifications: true,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
 
       return userCredential;
@@ -143,6 +146,7 @@ export const signInWithGoogle = async (theme: string) => {
             subscription: "free",
             theme,
             pushNotifications: true,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           });
         }
         return userCredential;
@@ -168,6 +172,7 @@ export const signInWithGoogle = async (theme: string) => {
           subscription: "free",
           theme,
           pushNotifications: true,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
       }
     } catch (error) {
