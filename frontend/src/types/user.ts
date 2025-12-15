@@ -7,4 +7,13 @@ export interface AppUser extends User {
   theme?: "dark" | "light" | "system";
   pushNotifications?: boolean;
   customCategories?: string[];
+  timezone?: string;
+}
+
+export interface FcmToken {
+  id: string;
+  token: string;
+  deviceType: "desktop" | "mobile" | "tablet";
+  userAgent: string;
+  createdAt: Date;
 }

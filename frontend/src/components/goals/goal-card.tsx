@@ -21,12 +21,10 @@ import GoalIcon from "./goal-icon";
 
 const GoalCard = ({
   goal,
-  setInitialData,
-  setOpen,
+  onEdit,
 }: {
   goal: Goal;
-  setInitialData: React.Dispatch<React.SetStateAction<Goal | undefined>>;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onEdit: (goal: Goal) => void;
 }) => {
   const deleteGoalMutation = useDeleteGoal();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -54,8 +52,7 @@ const GoalCard = ({
   };
 
   const handleGoalEdit = () => {
-    setInitialData(goal);
-    setOpen(true);
+    onEdit(goal);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
