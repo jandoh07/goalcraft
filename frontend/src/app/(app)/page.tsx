@@ -7,7 +7,9 @@ import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
-import GoalForm from "@/components/goals/goal-form/goal-form";
+import GoalDialogContent, {
+  type DialogMode,
+} from "@/components/goals/goal-dialog-content";
 import { Spinner } from "@/components/ui/spinner";
 import { useGoals } from "@/hooks/use-goals";
 import { useAuth } from "@/contexts/auth-context";
@@ -55,6 +57,7 @@ const GoalsContent = () => {
   >("in-progress");
   const { data: goals, isLoading } = useGoals(user?.uid || "", goalFilter);
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
+  const [dialogMode, setDialogMode] = useState<DialogMode>("ai");
   const goalsForm = useGoalsForm({
     initialData,
     setInitialData,
@@ -64,6 +67,7 @@ const GoalsContent = () => {
 
   const handleAddNew = () => {
     setInitialData(undefined);
+    setDialogMode("ai");
     goalsForm.form.reset();
     updateURL("add");
   };
@@ -159,8 +163,14 @@ const GoalsContent = () => {
             submitLabel={initialData ? "Update Goal" : "Add Goal"}
             onSubmit={goalsForm.handleExternalFormSubmit}
             isSubmitting={goalsForm.mutation.isPending}
+            hideSubmitButton={!initialData && dialogMode === "ai"}
           >
-            <GoalForm setOpen={setOpen} goalForm={goalsForm} />
+            <GoalDialogContent
+              setOpen={setOpen}
+              goalForm={goalsForm}
+              isEditMode={!!initialData}
+              onModeChange={setDialogMode}
+            />
           </ResponsiveDialog>
         </>
       )}
