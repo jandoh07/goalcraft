@@ -15,12 +15,6 @@ import { useGoals } from "@/hooks/use-goals";
 import { useAuth } from "@/contexts/auth-context";
 import { Goal } from "@/types";
 import useGoalsForm from "@/hooks/use-goals-form";
-import Updates from "@/components/goals/updates";
-import { Indie_Flower } from "next/font/google";
-import ArrowTop from "../../../../public/arrow-top.svg";
-import ArrowDown from "../../../../public/arrow-down.svg";
-import ArrowDownMobile from "../../../../public/arrow-down-mobile.svg";
-const indieFlower = Indie_Flower({ subsets: ["latin"], weight: "400" });
 
 const GoalsContent = () => {
   const router = useRouter();
@@ -77,9 +71,7 @@ const GoalsContent = () => {
     updateURL("edit");
   };
 
-  // Wait for both auth and goals to be loaded before determining showOnboarding
   const isFullyLoaded = !authLoading && !isLoading;
-  const showOnboarding = isFullyLoaded && goals?.length === 0;
 
   const getEmptyStateMessage = () => {
     switch (goalFilter) {
@@ -106,36 +98,8 @@ const GoalsContent = () => {
         </div>
       ) : (
         <>
-          <Updates />
-
-          {/* Onboarding prompt for new/anonymous users */}
-          {showOnboarding && !isLoading && (
-            <div
-              className={`${indieFlower.className} relative mt-2 md:mt-8 flex-1 min-h-0`}
-            >
-              <div className="absolute -top-6 left-0 md:left-8 flex items-end text-primary">
-                <ArrowTop className="size-30 text-foreground" />
-                <h2 className="text-xl font-semibold text-foreground mb-2 -ml-2">
-                  New here? Check this out!
-                </h2>
-              </div>
-              <div className="absolute -bottom-2 right-8 md:right-16 flex items-start gap-1 text-primary">
-                <p className="text-xl font-semibold text-foreground mt-4">
-                  Or set your first goal to get started
-                </p>
-                <ArrowDown className="size-30 text-foreground hidden md:block" />
-                <ArrowDownMobile className="size-30 text-foreground md:hidden" />
-              </div>
-            </div>
-          )}
-
-          {!showOnboarding && (
-            <GoalsHeader
-              setGoalFilter={setGoalFilter}
-              goalFilter={goalFilter}
-            />
-          )}
-          <div className={`${!showOnboarding ? "pb-50" : "pb-32"} md:pb-5`}>
+          <GoalsHeader setGoalFilter={setGoalFilter} goalFilter={goalFilter} />
+          <div className={`pb-50 md:pb-5`}>
             {isLoading ? (
               <div className="flex justify-center items-center w-full h-32">
                 <Spinner />
@@ -144,11 +108,11 @@ const GoalsContent = () => {
               goals.map((goal) => (
                 <GoalCard key={goal.id} goal={goal} onEdit={handleEditGoal} />
               ))
-            ) : !showOnboarding ? (
+            ) : (
               <p className="text-center text-muted-foreground mt-20">
                 {getEmptyStateMessage()}
               </p>
-            ) : null}
+            )}
           </div>
           <AddButton onClick={handleAddNew} />
           <ResponsiveDialog
