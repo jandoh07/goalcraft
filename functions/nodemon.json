@@ -1,0 +1,5 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json,prompt",
+  "exec": "npx tsx --env-file=.env src/index.ts"
+}

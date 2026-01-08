@@ -9,7 +9,13 @@ typings/
 node_modules/
 *.local
 
+# Environment variables
+.env
+.env.*
+
 firebase-debug.log
 firestore-debug.log
 firebase-errors.log
 pubsub-debug.log
+
+.genkit/
