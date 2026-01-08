@@ -1,4 +1,4 @@
-import { genkit, z } from "genkit";
+import { genkit, z, MessageData } from "genkit";
 import { googleAI } from "@genkit-ai/google-genai";
 import { onCallGenkit } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
@@ -23,7 +23,7 @@ const Phase1InputSchema = z.object({
   history: z.array(z.any()).optional(),
 });
 
-let historyLog: any[] = [];
+let historyLog: MessageData[] = [];
 
 export const phase1Flow = ai.defineFlow(
   {
