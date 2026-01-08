@@ -37,7 +37,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  LogIn,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,7 +69,7 @@ const sidebarItems = [
 
 const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const { user, logout, isAnonymous } = useAuth();
+  const { user, logout } = useAuth();
   const { openNotifications, notifications } = useNotification();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const router = useRouter();
@@ -131,43 +130,25 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                         size="lg"
                         className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                       >
-                        {isAnonymous ? (
-                          <>
-                            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
-                              <LogIn className="size-4 text-primary" />
-                            </div>
-                            <div className="grid flex-1 text-left text-sm leading-tight">
-                              <span className="truncate font-medium">
-                                Login / Sign Up
-                              </span>
-                              <span className="text-muted-foreground truncate text-xs">
-                                Create an account
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Avatar className="h-8 w-8 rounded-lg grayscale">
-                              <AvatarImage
-                                src={user?.photoURL || ""}
-                                alt={user?.name || "User Profile Picture"}
-                              />
-                              <AvatarFallback className="rounded-lg">
-                                CN
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="grid flex-1 text-left text-sm leading-tight">
-                              <span className="truncate font-medium">
-                                {user?.name || user?.email}
-                              </span>
-                              <span className="text-muted-foreground truncate text-xs">
-                                {user?.subscription === "premium"
-                                  ? "Premium Plan"
-                                  : "Free Plan"}
-                              </span>
-                            </div>
-                          </>
-                        )}
+                        <Avatar className="h-8 w-8 rounded-lg grayscale">
+                          <AvatarImage
+                            src={user?.photoURL || ""}
+                            alt={user?.name || "User Profile Picture"}
+                          />
+                          <AvatarFallback className="rounded-lg">
+                            CN
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-medium">
+                            {user?.name || user?.email}
+                          </span>
+                          <span className="text-muted-foreground truncate text-xs">
+                            {user?.subscription === "premium"
+                              ? "Premium Plan"
+                              : "Free Plan"}
+                          </span>
+                        </div>
                         <IconDotsVertical className="ml-auto size-4" />
                       </SidebarMenuButton>
                     </DropdownMenuTrigger>
@@ -177,36 +158,16 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                       align="end"
                       sideOffset={4}
                     >
-                      {isAnonymous ? (
+                      <DropdownMenuItem disabled>
+                        {user?.email}
+                      </DropdownMenuItem>
+                      {user?.subscription !== "premium" && (
                         <>
-                          <DropdownMenuItem asChild>
-                            <Link href="/login" className="cursor-pointer">
-                              <LogIn className="size-4" />
-                              Login
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/signup" className="cursor-pointer">
-                              <Sparkles className="size-4" />
-                              Sign Up
-                            </Link>
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                        </>
-                      ) : (
-                        <>
-                          <DropdownMenuItem disabled>
-                            {user?.email}
+                          <DropdownMenuItem>
+                            <Sparkles />
+                            Upgrade to Pro
                           </DropdownMenuItem>
-                          {user?.subscription !== "premium" && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <Sparkles />
-                                Upgrade to Pro
-                              </DropdownMenuItem>
-                            </>
-                          )}
                         </>
                       )}
                       <DropdownMenuGroup>
@@ -313,7 +274,7 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       </DropdownMenuGroup>
-                      {!isAnonymous && (
+                      {user && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={handleLogOut}>

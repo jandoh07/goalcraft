@@ -17,9 +17,9 @@ import { Goal } from "@/types";
 import useGoalsForm from "@/hooks/use-goals-form";
 import Updates from "@/components/goals/updates";
 import { Indie_Flower } from "next/font/google";
-import ArrowTop from "../../../public/arrow-top.svg";
-import ArrowDown from "../../../public/arrow-down.svg";
-import ArrowDownMobile from "../../../public/arrow-down-mobile.svg";
+import ArrowTop from "../../../../public/arrow-top.svg";
+import ArrowDown from "../../../../public/arrow-down.svg";
+import ArrowDownMobile from "../../../../public/arrow-down-mobile.svg";
 const indieFlower = Indie_Flower({ subsets: ["latin"], weight: "400" });
 
 const GoalsContent = () => {
@@ -51,7 +51,7 @@ const GoalsContent = () => {
     [updateURL]
   );
 
-  const { user, isAnonymous, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [goalFilter, setGoalFilter] = useState<
     "all" | "in-progress" | "completed" | "overdue"
   >("in-progress");
@@ -79,7 +79,7 @@ const GoalsContent = () => {
 
   // Wait for both auth and goals to be loaded before determining showOnboarding
   const isFullyLoaded = !authLoading && !isLoading;
-  const showOnboarding = isFullyLoaded && (isAnonymous || goals?.length === 0);
+  const showOnboarding = isFullyLoaded && goals?.length === 0;
 
   const getEmptyStateMessage = () => {
     switch (goalFilter) {
