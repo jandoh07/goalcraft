@@ -43,7 +43,7 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
               </SidebarMenu>
             </SidebarFooter>
           </Sidebar>
-          <main className="flex-1 flex flex-col bg-background">
+          <main className="flex-1 flex flex-col bg-background min-w-0">
             <LayoutHeader />
             <div className="flex-1 p-6">{children}</div>
           </main>
