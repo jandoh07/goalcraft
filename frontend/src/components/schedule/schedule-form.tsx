@@ -4,14 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TimeBlock } from "../../types/schedule";
+import { Trash2 } from "lucide-react";
 
 interface ScheduleFormProps {
   mode: "create" | "edit";
   initialBlock?: TimeBlock;
   initialDate?: Date;
   initialHour?: number;
-  onSubmit: (data: TimeBlock | Omit<TimeBlock, "id">) => void;
+  onSubmit: (
+    data: TimeBlock | Omit<TimeBlock, "id" | "createdAt" | "updatedAt">
+  ) => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
 export function ScheduleForm({
@@ -21,6 +25,7 @@ export function ScheduleForm({
   initialHour = 9,
   onSubmit,
   onCancel,
+  onDelete,
 }: ScheduleFormProps) {
   const [title, setTitle] = useState(initialBlock?.title || "");
   const [startHour, setStartHour] = useState(
@@ -74,12 +79,13 @@ export function ScheduleForm({
         color,
       });
     } else {
+      // userId will be added by the page component
       onSubmit({
-        id: Date.now().toString(),
         title,
         start,
         end,
         color,
+        userId: "", // placeholder, will be set in page
       });
     }
   };
@@ -179,13 +185,27 @@ export function ScheduleForm({
         </div>
       </div>
 
-      <div className="flex gap-2 justify-end pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          {mode === "create" ? "Create Block" : "Update Block"}
-        </Button>
+      <div className="flex gap-2 justify-between pt-4">
+        <div>
+          {onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {mode === "create" ? "Create Block" : "Update Block"}
+          </Button>
+        </div>
       </div>
     </form>
   );
