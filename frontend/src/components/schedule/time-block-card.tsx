@@ -4,15 +4,17 @@ import { TimeBlock, HOUR_HEIGHT } from "../../types/schedule";
 
 interface TimeBlockCardProps {
   block: TimeBlock;
+  onEdit: (block: TimeBlock) => void;
 }
 
-export function TimeBlockCard({ block }: TimeBlockCardProps) {
+export function TimeBlockCard({ block, onEdit }: TimeBlockCardProps) {
   const style = getBlockStyle(block);
   const durationMinutes = (block.end.getTime() - block.start.getTime()) / 60000;
   const isShort = durationMinutes <= 30;
 
   return (
     <div
+      onClick={() => onEdit(block)}
       className={cn(
         "absolute left-1 right-1 rounded-md border-l-4 px-2 py-1 cursor-pointer transition-all",
         "hover:shadow-md hover:scale-[1.02] hover:z-10",
