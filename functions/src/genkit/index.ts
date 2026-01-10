@@ -19,6 +19,7 @@ const ai = genkit({
 export const goalPhase1 = onCallGenkit(
   {
     secrets: [geminiApiKey],
+    enforceAppCheck: true,
   },
   phase1Flow(ai)
 );
@@ -26,6 +27,7 @@ export const goalPhase1 = onCallGenkit(
 export const goalPhase2 = onCallGenkit(
   {
     secrets: [geminiApiKey],
+    enforceAppCheck: true,
   },
   phase2Flow(ai)
 );
@@ -33,6 +35,7 @@ export const goalPhase2 = onCallGenkit(
 export const scheduleTimeblocking = onCallGenkit(
   {
     secrets: [geminiApiKey],
+    enforceAppCheck: true,
   },
   timeblockingFlow(ai)
 );
