@@ -13,6 +13,7 @@ import { ScheduleHeader } from "../../../components/schedule/schedule-header";
 import { TimeGrid } from "../../../components/schedule/time-grid";
 import { ScheduleModal } from "../../../components/schedule/schedule-modal";
 import { useScheduleModal } from "../../../hooks/use-schedule-modal";
+import { useSyncedScroll } from "../../../hooks/use-synced-scroll";
 import {
   useGetTimeBlocks,
   useAddTimeBlock,
@@ -32,6 +33,13 @@ export default function SchedulePage() {
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
+
+  const {
+    headerScrollRef,
+    gridScrollRef,
+    handleHeaderScroll,
+    handleGridScroll,
+  } = useSyncedScroll(weekStart);
 
   const weekStartTime = weekStart.getTime();
   const weekEndTime = weekEnd.getTime();
@@ -112,6 +120,8 @@ export default function SchedulePage() {
         weekStart={weekStart}
         onNavigate={navigateWeek}
         onToday={goToToday}
+        scrollRef={headerScrollRef}
+        onScroll={handleHeaderScroll}
       />
       <TimeGrid
         weekStart={weekStart}
@@ -119,6 +129,8 @@ export default function SchedulePage() {
         onCreateClick={openCreateModal}
         onEditClick={openEditModal}
         onBlockMove={handleBlockMove}
+        horizontalScrollRef={gridScrollRef}
+        onHorizontalScroll={handleGridScroll}
       />
       <ScheduleModal
         state={state}

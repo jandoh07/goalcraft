@@ -23,6 +23,8 @@ interface TimeGridProps {
   onCreateClick: (date: Date, hour: number) => void;
   onEditClick: (block: TimeBlock) => void;
   onBlockMove: (blockId: string, newDate: Date, newHour: number) => void;
+  horizontalScrollRef?: React.RefObject<HTMLDivElement | null>;
+  onHorizontalScroll?: () => void;
 }
 
 export function TimeGrid({
@@ -31,6 +33,8 @@ export function TimeGrid({
   onCreateClick,
   onEditClick,
   onBlockMove,
+  horizontalScrollRef,
+  onHorizontalScroll,
 }: TimeGridProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlock, setActiveBlock] = useState<TimeBlock | null>(null);
@@ -69,7 +73,9 @@ export function TimeGrid({
   const currentTimePosition =
     (currentTime.getHours() + currentTime.getMinutes() / 60) * HOUR_HEIGHT;
 
-  const handleDragStart = (event: { active: { data: { current?: { block?: TimeBlock } } } }) => {
+  const handleDragStart = (event: {
+    active: { data: { current?: { block?: TimeBlock } } };
+  }) => {
     const block = event.active.data.current?.block;
     if (block) {
       setActiveBlock(block);
@@ -88,8 +94,9 @@ export function TimeGrid({
     if (!targetDate) return;
 
     // Calculate new hour based on drag delta
-    const currentStartHour = block.start.getHours() + block.start.getMinutes() / 60;
-    const hourDelta = Math.round(delta.y / HOUR_HEIGHT * 2) / 2; // Snap to 30-min
+    const currentStartHour =
+      block.start.getHours() + block.start.getMinutes() / 60;
+    const hourDelta = Math.round((delta.y / HOUR_HEIGHT) * 2) / 2; // Snap to 30-min
     const newHour = Math.max(0, Math.min(23.5, currentStartHour + hourDelta));
 
     onBlockMove(block.id, targetDate, newHour);
@@ -110,7 +117,11 @@ export function TimeGrid({
         <div className="flex min-h-full">
           <TimeLabelsColumn />
 
-          <div className="flex flex-1 min-w-0">
+          <div
+            ref={horizontalScrollRef}
+            onScroll={onHorizontalScroll}
+            className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar"
+          >
             {Array.from({ length: 7 }).map((_, dayIndex) => {
               const date = addDays(weekStart, dayIndex);
               const isCurrentDay = isToday(date);

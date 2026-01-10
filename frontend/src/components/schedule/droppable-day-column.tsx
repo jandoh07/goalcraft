@@ -33,7 +33,7 @@ export function DroppableDayColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex-1 min-w-25 border-r last:border-r-0 relative",
+        "flex-1 min-w-50 md:min-w-25 border-r last:border-r-0 relative",
         isCurrentDay && "bg-primary/2",
         isOver && "bg-primary/10"
       )}

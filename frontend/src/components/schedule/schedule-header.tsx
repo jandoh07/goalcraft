@@ -3,23 +3,28 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MobileHeader from "@/components/layout/mobile/header";
+import { RefObject } from "react";
 
 interface ScheduleHeaderProps {
   weekStart: Date;
   onNavigate: (direction: "prev" | "next") => void;
   onToday: () => void;
+  scrollRef?: RefObject<HTMLDivElement | null>;
+  onScroll?: () => void;
 }
 
 export function ScheduleHeader({
   weekStart,
   onNavigate,
   onToday,
+  scrollRef,
+  onScroll,
 }: ScheduleHeaderProps) {
   return (
     <header className="shrink-0 border-b">
-      <div className="flex items-center justify-between p-3 md:p-4">
+      <MobileHeader title="Schedule" />
+      <div className="flex items-center justify-between p-3 md:p-4 pt-9 md:pt-0">
         <div className="flex items-center gap-2 md:gap-4">
-          <MobileHeader title="Schedule" />
           <h1 className="text-xl md:text-2xl font-bold hidden md:block">
             Schedule
           </h1>
@@ -37,7 +42,11 @@ export function ScheduleHeader({
         </Button>
       </div>
 
-      <DaysHeader weekStart={weekStart} />
+      <DaysHeader
+        weekStart={weekStart}
+        scrollRef={scrollRef}
+        onScroll={onScroll}
+      />
     </header>
   );
 }
@@ -79,12 +88,24 @@ function NavigationControls({
   );
 }
 
-function DaysHeader({ weekStart }: { weekStart: Date }) {
+function DaysHeader({
+  weekStart,
+  scrollRef,
+  onScroll,
+}: {
+  weekStart: Date;
+  scrollRef?: RefObject<HTMLDivElement | null>;
+  onScroll?: () => void;
+}) {
   return (
-    <div className="flex border-t overflow-hidden pr-2.5">
+    <div className="flex border-t overflow-hidden md:pr-2.5">
       <div className="w-14 md:w-16 shrink-0 border-r bg-transparent" />
 
-      <div className="flex flex-1 overflow-x-auto">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex flex-1 overflow-x-auto no-scrollbar"
+      >
         {Array.from({ length: 7 }).map((_, i) => {
           const date = addDays(weekStart, i);
           const isCurrentDay = isToday(date);
@@ -93,7 +114,7 @@ function DaysHeader({ weekStart }: { weekStart: Date }) {
             <div
               key={i}
               className={cn(
-                "flex-1 min-w-25 py-2 px-1 text-center border-r last:border-r-0 transition-colors",
+                "flex-1 min-w-50 md:min-w-25 py-2 px-1 text-center border-r last:border-r-0 transition-colors",
                 isCurrentDay && "bg-primary/5"
               )}
             >

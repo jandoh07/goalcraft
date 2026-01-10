@@ -2,7 +2,7 @@ import { HOUR_HEIGHT, HOURS } from "../../types/schedule";
 
 export function TimeLabelsColumn() {
   return (
-    <div className="w-14 md:w-16 shrink-0 sticky left-0 z-20 border-r pt-2">
+    <div className="w-14 md:w-16 shrink-0 sticky left-0 z-20 border-r pt-2 bg-background">
       <div className="relative" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
         {HOURS.map((hour) => (
           <div
