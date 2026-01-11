@@ -1,9 +1,15 @@
 import { Genkit, z } from "genkit";
 
 const ExistingBlockSchema = z.object({
+  id: z.string().describe("Unique identifier of the existing block"),
   title: z.string(),
   start: z.string(),
   end: z.string(),
+});
+
+const ChatMessageSchema = z.object({
+  role: z.string().describe("Either 'user' or 'assistant'"),
+  content: z.string().describe("The message content"),
 });
 
 const TimeblockingInputSchema = z.object({
@@ -12,7 +18,11 @@ const TimeblockingInputSchema = z.object({
   existingBlocks: z
     .array(ExistingBlockSchema)
     .optional()
-    .describe("Existing time blocks for conflict detection"),
+    .describe("Existing time blocks for conflict detection and modification"),
+  chatHistory: z
+    .array(ChatMessageSchema)
+    .optional()
+    .describe("Previous messages in this conversation for context"),
 });
 
 export const timeblockingFlow = (ai: Genkit) =>
@@ -29,6 +39,7 @@ export const timeblockingFlow = (ai: Genkit) =>
         userMessage: input.userMessage,
         currentDate: input.currentDate,
         existingBlocks: input.existingBlocks,
+        chatHistory: input.chatHistory,
       });
 
       for await (const chunk of stream) {
