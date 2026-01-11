@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   startOfWeek,
   endOfWeek,
@@ -12,8 +12,10 @@ import {
 import { ScheduleHeader } from "../../../components/schedule/schedule-header";
 import { TimeGrid } from "../../../components/schedule/time-grid";
 import { ScheduleModal } from "../../../components/schedule/schedule-modal";
+import { AIScheduleSheet } from "../../../components/schedule/ai-schedule-sheet";
 import { useScheduleModal } from "../../../hooks/use-schedule-modal";
 import { useSyncedScroll } from "../../../hooks/use-synced-scroll";
+import { useAISchedule } from "../../../hooks/use-ai-schedule";
 import {
   useGetTimeBlocks,
   useAddTimeBlock,
@@ -60,6 +62,37 @@ export default function SchedulePage() {
   const updateTimeBlock = useUpdateTimeBlock();
   const moveTimeBlock = useMoveTimeBlock();
   const deleteTimeBlock = useDeleteTimeBlock();
+
+  // AI Schedule integration with callbacks for create/update/delete operations
+  const {
+    generateSchedule,
+    isLoading: isAILoading,
+    error: aiError,
+    clearError: clearAIError,
+  } = useAISchedule({
+    userId: user?.uid ?? "",
+    existingBlocks: blocks,
+    callbacks: {
+      onCreate: (block) => addTimeBlock.mutate(block),
+      onUpdate: (blockId, updates) =>
+        updateTimeBlock.mutate({ timeBlockId: blockId, updates }),
+      onDelete: (blockId) => deleteTimeBlock.mutate(blockId),
+    },
+  });
+
+  const handleAISendMessage = useCallback(
+    async (message: string) => {
+      const result = await generateSchedule(message);
+      if (result) {
+        return {
+          message: result.message,
+          stats: result.stats,
+        };
+      }
+      return null;
+    },
+    [generateSchedule]
+  );
 
   const navigateWeek = (direction: "prev" | "next") => {
     setCurrentDate((d) =>
@@ -122,6 +155,14 @@ export default function SchedulePage() {
         onToday={goToToday}
         scrollRef={headerScrollRef}
         onScroll={handleHeaderScroll}
+        aiButton={
+          <AIScheduleSheet
+            isLoading={isAILoading}
+            error={aiError}
+            onSendMessage={handleAISendMessage}
+            onClearError={clearAIError}
+          />
+        }
       />
       <TimeGrid
         weekStart={weekStart}

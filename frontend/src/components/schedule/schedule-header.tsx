@@ -1,9 +1,9 @@
 import { format, addDays, isToday } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MobileHeader from "@/components/layout/mobile/header";
-import { RefObject } from "react";
+import { RefObject, ReactNode } from "react";
 
 interface ScheduleHeaderProps {
   weekStart: Date;
@@ -11,6 +11,7 @@ interface ScheduleHeaderProps {
   onToday: () => void;
   scrollRef?: RefObject<HTMLDivElement | null>;
   onScroll?: () => void;
+  aiButton?: ReactNode;
 }
 
 export function ScheduleHeader({
@@ -19,6 +20,7 @@ export function ScheduleHeader({
   onToday,
   scrollRef,
   onScroll,
+  aiButton,
 }: ScheduleHeaderProps) {
   return (
     <header className="shrink-0 border-b">
@@ -36,10 +38,7 @@ export function ScheduleHeader({
           </span>
         </div>
 
-        <Button size="sm" className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Block</span>
-        </Button>
+        {aiButton}
       </div>
 
       <DaysHeader

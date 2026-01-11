@@ -11,6 +11,7 @@ import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
 } from "firebase/app-check";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -50,5 +51,13 @@ export const db = initializeFirestore(app, {
     tabManager: persistentMultipleTabManager(),
   }),
 });
+
+export const functions = getFunctions(app);
+
+// Connect to emulator in development
+if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  // Uncomment the line below to use the Functions emulator
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
 
 export default app;
