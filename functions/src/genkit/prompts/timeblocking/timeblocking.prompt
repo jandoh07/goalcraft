@@ -23,6 +23,7 @@ output:
       end?: string, ISO 8601 datetime string for create or update
       color?: string, Tailwind CSS color class string for create or update
       description?: string, optional details for create or update
+      rrule?: string, RRule string for recurring blocks (e.g., "FREQ=DAILY" or "FREQ=WEEKLY;BYDAY=MO,WE,FR")
     message: string, a friendly response explaining what was done
     conflicts?(array):
       blockTitle: string
@@ -89,6 +90,23 @@ output:
      - Errands/Tasks: "bg-rose-500/20 border-rose-500 text-rose-700 dark:text-rose-300"
      - Rest/Sleep: "bg-indigo-500/20 border-indigo-500 text-indigo-700 dark:text-indigo-300"
      - Default: "bg-teal-500/20 border-teal-500 text-teal-700 dark:text-teal-300"
+  
+  9. RECURRING BLOCKS: When user requests repeating/recurring events:
+     - Add the "rrule" field with a valid RRule string
+     - Common patterns:
+       * Daily: "FREQ=DAILY"
+       * Every weekday: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+       * Weekly (same day): "FREQ=WEEKLY"
+       * Every other week: "FREQ=WEEKLY;INTERVAL=2"
+       * Monthly: "FREQ=MONTHLY"
+       * Specific days: "FREQ=WEEKLY;BYDAY=MO,WE,FR" (Mon, Wed, Fri)
+       * With end date: Add ";UNTIL=20260630T235959Z" to any pattern
+       * With count: Add ";COUNT=10" to limit occurrences
+     - The "start" time defines when the first occurrence begins
+     - Examples:
+       * "Add gym every weekday at 7am" → rrule: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+       * "Schedule standup daily at 9am" → rrule: "FREQ=DAILY"
+       * "Add piano practice on Tuesdays and Thursdays" → rrule: "FREQ=WEEKLY;BYDAY=TU,TH"
 </instructions>
 
 <constraints>
@@ -122,6 +140,15 @@ output:
   
   User: "Add a meeting at 2pm" (when there's already a block from 1:30pm to 3pm)
   Response: operations: [], conflicts: [{blockTitle: "Existing Block", reason: "Time slot 2:00 PM - 3:00 PM conflicts with 'Existing Block' (1:30 PM - 3:00 PM)"}], message: "I can't schedule that meeting at 2pm because it conflicts with 'Existing Block'. Would you like me to schedule it at 3pm instead, or at a different time?"
+  
+  User: "Add gym every weekday at 7am for 1 hour"
+  Response: operations: [{action: "create", title: "Gym", start: "...T07:00:00", end: "...T08:00:00", color: "bg-green-500/20...", rrule: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"}], message: "I've added a recurring Gym block every weekday at 7:00 AM."
+  
+  User: "Schedule daily standup at 9am"
+  Response: operations: [{action: "create", title: "Daily Standup", start: "...T09:00:00", end: "...T09:30:00", color: "bg-cyan-500/20...", rrule: "FREQ=DAILY"}], message: "I've added a Daily Standup every day at 9:00 AM."
+  
+  User: "Add piano practice on Tuesdays and Thursdays at 6pm"
+  Response: operations: [{action: "create", title: "Piano Practice", start: "...T18:00:00", end: "...T19:00:00", color: "bg-violet-500/20...", rrule: "FREQ=WEEKLY;BYDAY=TU,TH"}], message: "I've added Piano Practice on Tuesdays and Thursdays at 6:00 PM."
 </examples>
 
 {{role "user"}}
