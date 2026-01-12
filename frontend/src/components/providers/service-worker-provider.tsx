@@ -6,7 +6,9 @@ export function ServiceWorkerProvider() {
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/sw.js", {
+          updateViaCache: "none",
+        })
         .then(() => console.log("✅ Service worker registered"))
         .catch(console.error);
     }
