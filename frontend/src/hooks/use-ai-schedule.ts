@@ -18,6 +18,7 @@ interface AIOperation {
   end?: string;
   color?: string;
   description?: string;
+  rrule?: string;
 }
 
 interface AIScheduleResponse {
@@ -130,6 +131,10 @@ export function useAISchedule({
                   if (operation.description) {
                     newBlock.description = operation.description;
                   }
+                  if (operation.rrule) {
+                    newBlock.rrule = operation.rrule;
+                    newBlock.isRecurring = true;
+                  }
                   callbacks.onCreate(newBlock);
                   createdCount++;
                 }
@@ -147,6 +152,10 @@ export function useAISchedule({
                   if (operation.color) updates.color = operation.color;
                   if (operation.description)
                     updates.description = operation.description;
+                  if (operation.rrule !== undefined) {
+                    updates.rrule = operation.rrule;
+                    updates.isRecurring = !!operation.rrule;
+                  }
 
                   if (Object.keys(updates).length > 0) {
                     callbacks.onUpdate(operation.blockId, updates);

@@ -16,7 +16,8 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-const userTimeBlocksQuery = (
+// Query for non-recurring blocks within a date range
+const nonRecurringBlocksQuery = (
   userId: string,
   filters?: { startDate?: Date; endDate?: Date }
 ) => {
@@ -24,6 +25,7 @@ const userTimeBlocksQuery = (
   let q = query(
     timeBlocksCollection,
     where("userId", "==", userId),
+    where("isRecurring", "==", false),
     orderBy("start", "asc")
   );
 
@@ -38,6 +40,17 @@ const userTimeBlocksQuery = (
   return q;
 };
 
+// Query for all recurring blocks (they can generate instances in any week)
+const recurringBlocksQuery = (userId: string) => {
+  const timeBlocksCollection = collection(db, "timeBlocks");
+  return query(
+    timeBlocksCollection,
+    where("userId", "==", userId),
+    where("isRecurring", "==", true),
+    orderBy("start", "asc")
+  );
+};
+
 const convertDocToTimeBlock = (doc: DocumentData, id: string): TimeBlock => {
   const data = doc;
   return {
@@ -49,6 +62,10 @@ const convertDocToTimeBlock = (doc: DocumentData, id: string): TimeBlock => {
     color: data.color,
     description: data.description,
     taskId: data.taskId,
+    rrule: data.rrule,
+    isRecurring: data.isRecurring,
+    masterBlockId: data.masterBlockId,
+    originalStart: data.originalStart?.toDate(),
     createdAt: data.createdAt?.toDate(),
     updatedAt: data.updatedAt?.toDate(),
   };
@@ -59,13 +76,35 @@ export const fetchUserTimeBlocks = async (
   filters?: { startDate?: Date; endDate?: Date }
 ): Promise<TimeBlock[]> => {
   try {
-    const q = userTimeBlocksQuery(userId, filters);
-    const querySnapshot = await getDocs(q);
-    const timeBlocks: TimeBlock[] = [];
+    // Fetch non-recurring blocks within the date range
+    const nonRecurringQuery = nonRecurringBlocksQuery(userId, filters);
+    const nonRecurringSnapshot = await getDocs(nonRecurringQuery);
 
-    querySnapshot.forEach((doc) => {
-      timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+    // Fetch all recurring blocks (they can generate instances in any week)
+    const recurringQuery = recurringBlocksQuery(userId);
+    const recurringSnapshot = await getDocs(recurringQuery);
+
+    const timeBlocks: TimeBlock[] = [];
+    const seenIds = new Set<string>();
+
+    // Add non-recurring blocks
+    nonRecurringSnapshot.forEach((doc) => {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+      }
     });
+
+    // Add recurring blocks
+    recurringSnapshot.forEach((doc) => {
+      if (!seenIds.has(doc.id)) {
+        seenIds.add(doc.id);
+        timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+      }
+    });
+
+    // Sort by start time
+    timeBlocks.sort((a, b) => a.start.getTime() - b.start.getTime());
 
     return timeBlocks;
   } catch (error) {
@@ -80,22 +119,74 @@ export const subscribeToUserTimeBlocks = (
   callback: (timeBlocks: TimeBlock[]) => void,
   onError?: (error: Error) => void
 ) => {
-  const q = userTimeBlocksQuery(userId, filters);
+  const nonRecurringQuery = nonRecurringBlocksQuery(userId, filters);
+  const recurringQuery = recurringBlocksQuery(userId);
 
-  return onSnapshot(
-    q,
+  let nonRecurringBlocks: TimeBlock[] = [];
+  let recurringBlocks: TimeBlock[] = [];
+
+  const mergeAndCallback = () => {
+    const seenIds = new Set<string>();
+    const merged: TimeBlock[] = [];
+
+    // Add non-recurring blocks
+    for (const block of nonRecurringBlocks) {
+      if (!seenIds.has(block.id)) {
+        seenIds.add(block.id);
+        merged.push(block);
+      }
+    }
+
+    // Add recurring blocks
+    for (const block of recurringBlocks) {
+      if (!seenIds.has(block.id)) {
+        seenIds.add(block.id);
+        merged.push(block);
+      }
+    }
+
+    // Sort by start time
+    merged.sort((a, b) => a.start.getTime() - b.start.getTime());
+    callback(merged);
+  };
+
+  // Subscribe to non-recurring blocks
+  const unsubNonRecurring = onSnapshot(
+    nonRecurringQuery,
     (querySnapshot) => {
-      const timeBlocks: TimeBlock[] = [];
+      nonRecurringBlocks = [];
       querySnapshot.forEach((doc) => {
-        timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+        nonRecurringBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
       });
-      callback(timeBlocks);
+      mergeAndCallback();
     },
     (error) => {
-      console.error("Error in time blocks subscription:", error);
+      console.error("Error in non-recurring blocks subscription:", error);
       onError?.(error);
     }
   );
+
+  // Subscribe to recurring blocks
+  const unsubRecurring = onSnapshot(
+    recurringQuery,
+    (querySnapshot) => {
+      recurringBlocks = [];
+      querySnapshot.forEach((doc) => {
+        recurringBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+      });
+      mergeAndCallback();
+    },
+    (error) => {
+      console.error("Error in recurring blocks subscription:", error);
+      onError?.(error);
+    }
+  );
+
+  // Return a function that unsubscribes from both
+  return () => {
+    unsubNonRecurring();
+    unsubRecurring();
+  };
 };
 
 export const addTimeBlock = async (
@@ -105,13 +196,38 @@ export const addTimeBlock = async (
     const now = Timestamp.now();
     const timeBlockRef = doc(collection(db, "timeBlocks"));
 
-    await setDoc(timeBlockRef, {
-      ...timeBlockData,
+    const blockData: DocumentData = {
+      userId: timeBlockData.userId,
+      title: timeBlockData.title,
       start: Timestamp.fromDate(timeBlockData.start),
       end: Timestamp.fromDate(timeBlockData.end),
+      color: timeBlockData.color,
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    // Add optional fields only if they have values
+    if (timeBlockData.description) {
+      blockData.description = timeBlockData.description;
+    }
+    if (timeBlockData.taskId) {
+      blockData.taskId = timeBlockData.taskId;
+    }
+    // Always set isRecurring, defaulting to false
+    if (timeBlockData.rrule) {
+      blockData.rrule = timeBlockData.rrule;
+      blockData.isRecurring = true;
+    } else {
+      blockData.isRecurring = timeBlockData.isRecurring ?? false;
+    }
+    if (timeBlockData.masterBlockId) {
+      blockData.masterBlockId = timeBlockData.masterBlockId;
+    }
+    if (timeBlockData.originalStart) {
+      blockData.originalStart = Timestamp.fromDate(timeBlockData.originalStart);
+    }
+
+    await setDoc(timeBlockRef, blockData);
 
     return timeBlockRef.id;
   } catch (error) {
@@ -127,9 +243,23 @@ export const updateTimeBlock = async (
   try {
     const docRef = doc(db, "timeBlocks", timeBlockId);
     const updateData: DocumentData = {
-      ...updates,
       updatedAt: Timestamp.now(),
     };
+
+    // Handle each field explicitly to avoid undefined values
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.color !== undefined) updateData.color = updates.color;
+    if (updates.description !== undefined)
+      updateData.description = updates.description;
+    if (updates.taskId !== undefined) updateData.taskId = updates.taskId;
+    if (updates.rrule !== undefined) {
+      updateData.rrule = updates.rrule;
+      updateData.isRecurring = !!updates.rrule;
+    }
+    if (updates.isRecurring !== undefined)
+      updateData.isRecurring = updates.isRecurring;
+    if (updates.masterBlockId !== undefined)
+      updateData.masterBlockId = updates.masterBlockId;
 
     if (updates.start) {
       updateData.start = Timestamp.fromDate(updates.start);
@@ -137,6 +267,10 @@ export const updateTimeBlock = async (
 
     if (updates.end) {
       updateData.end = Timestamp.fromDate(updates.end);
+    }
+
+    if (updates.originalStart) {
+      updateData.originalStart = Timestamp.fromDate(updates.originalStart);
     }
 
     await updateDoc(docRef, updateData);

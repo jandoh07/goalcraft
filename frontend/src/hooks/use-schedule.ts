@@ -7,7 +7,12 @@ import {
   moveTimeBlock,
   batchDeleteTimeBlocks,
 } from "@/lib/firebase/schedule";
-import { TimeBlock } from "@/types/schedule";
+import { TimeBlock, TimeBlockInstance } from "@/types/schedule";
+import {
+  expandTimeBlocks,
+  isInstanceId,
+  getMasterBlockId,
+} from "@/lib/utils/recurrence";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
@@ -45,7 +50,7 @@ export const useGetTimeBlocks = (
     return () => unsubscribe();
   }, [userId, memoizedFilters, queryClient, queryKey]);
 
-  return useQuery({
+  const query = useQuery({
     queryKey,
     queryFn: () => fetchUserTimeBlocks(userId, memoizedFilters),
     enabled: !!userId,
@@ -54,6 +59,23 @@ export const useGetTimeBlocks = (
     refetchOnMount: false,
     refetchOnReconnect: false,
   });
+
+  // Expand recurring blocks into instances
+  const expandedBlocks = useMemo(() => {
+    if (!query.data || !filters?.startDate || !filters?.endDate) {
+      return query.data ?? [];
+    }
+    return expandTimeBlocks(query.data, filters.startDate, filters.endDate) as (
+      | TimeBlock
+      | TimeBlockInstance
+    )[];
+  }, [query.data, filters?.startDate, filters?.endDate]);
+
+  return {
+    ...query,
+    data: expandedBlocks,
+    rawData: query.data, // Original data without expansion (for editing master blocks)
+  };
 };
 
 export const useAddTimeBlock = () => {
@@ -112,9 +134,19 @@ export const useUpdateTimeBlock = () => {
     }: {
       timeBlockId: string;
       updates: Partial<Omit<TimeBlock, "id" | "userId" | "createdAt">>;
-    }) => updateTimeBlock(timeBlockId, updates),
+    }) => {
+      // If this is an instance ID, update the master block
+      const actualId = isInstanceId(timeBlockId)
+        ? getMasterBlockId(timeBlockId)
+        : timeBlockId;
+      return updateTimeBlock(actualId, updates);
+    },
     onMutate: async ({ timeBlockId, updates }) => {
       await queryClient.cancelQueries({ queryKey: ["timeBlocks"] });
+
+      const actualId = isInstanceId(timeBlockId)
+        ? getMasterBlockId(timeBlockId)
+        : timeBlockId;
 
       const previousQueries = new Map();
 
@@ -127,7 +159,7 @@ export const useUpdateTimeBlock = () => {
 
           if (oldData) {
             const updatedData = oldData.map((block) =>
-              block.id === timeBlockId
+              block.id === actualId
                 ? { ...block, ...updates, updatedAt: new Date() }
                 : block
             );
@@ -151,9 +183,19 @@ export const useDeleteTimeBlock = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: removeTimeBlock,
+    mutationFn: (timeBlockId: string) => {
+      // If this is an instance ID, delete the master block
+      const actualId = isInstanceId(timeBlockId)
+        ? getMasterBlockId(timeBlockId)
+        : timeBlockId;
+      return removeTimeBlock(actualId);
+    },
     onMutate: async (timeBlockId: string) => {
       await queryClient.cancelQueries({ queryKey: ["timeBlocks"] });
+
+      const actualId = isInstanceId(timeBlockId)
+        ? getMasterBlockId(timeBlockId)
+        : timeBlockId;
 
       const previousQueries = new Map();
 
@@ -166,7 +208,7 @@ export const useDeleteTimeBlock = () => {
 
           if (oldData) {
             const updatedData = oldData.filter(
-              (block) => block.id !== timeBlockId
+              (block) => block.id !== actualId
             );
             queryClient.setQueryData(query.queryKey, updatedData);
           }

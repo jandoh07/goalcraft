@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TimeBlock, HOUR_HEIGHT } from "../../types/schedule";
 
@@ -11,6 +12,7 @@ export function TimeBlockCard({ block, onEdit }: TimeBlockCardProps) {
   const style = getBlockStyle(block);
   const durationMinutes = (block.end.getTime() - block.start.getTime()) / 60000;
   const isShort = durationMinutes <= 30;
+  const isRecurring = block.isRecurring || block.masterBlockId;
 
   return (
     <div
@@ -23,14 +25,21 @@ export function TimeBlockCard({ block, onEdit }: TimeBlockCardProps) {
       )}
       style={style}
     >
-      <p
-        className={cn(
-          "font-medium truncate",
-          isShort ? "text-[10px]" : "text-xs"
+      <div className="flex items-start gap-1">
+        <p
+          className={cn(
+            "font-medium truncate flex-1",
+            isShort ? "text-[10px]" : "text-xs"
+          )}
+        >
+          {block.title}
+        </p>
+        {isRecurring && (
+          <Repeat
+            className={cn("shrink-0", isShort ? "h-2.5 w-2.5" : "h-3 w-3")}
+          />
         )}
-      >
-        {block.title}
-      </p>
+      </div>
       {!isShort && (
         <p className="text-[10px] opacity-70 truncate">
           {format(block.start, "h:mm a")} - {format(block.end, "h:mm a")}
