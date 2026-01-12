@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import {
   startOfWeek,
   endOfWeek,
@@ -29,12 +29,21 @@ import { Loader2 } from "lucide-react";
 
 export default function SchedulePage() {
   const { user } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Initialize as null to avoid hydration mismatch (new Date() differs between server/client)
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  // Set the date on mount (client-side only)
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
   const { state, openCreateModal, openEditModal, closeModal } =
     useScheduleModal();
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
+  // Use a stable date for SSR, then update to actual date on client
+  const effectiveDate = currentDate ?? new Date(0);
+  const weekStart = startOfWeek(effectiveDate, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(effectiveDate, { weekStartsOn: 0 });
 
   const {
     headerScrollRef,
@@ -96,7 +105,7 @@ export default function SchedulePage() {
 
   const navigateWeek = (direction: "prev" | "next") => {
     setCurrentDate((d) =>
-      direction === "next" ? addWeeks(d, 1) : subWeeks(d, 1)
+      d ? (direction === "next" ? addWeeks(d, 1) : subWeeks(d, 1)) : new Date()
     );
   };
 
@@ -139,7 +148,8 @@ export default function SchedulePage() {
     moveTimeBlock.mutate({ timeBlockId: blockId, newStart, newEnd });
   };
 
-  if (isLoading) {
+  // Show loading while hydrating (currentDate is null) or fetching data
+  if (!currentDate || isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100dvh-4rem)] md:h-[calc(100dvh-56px-48px)]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
