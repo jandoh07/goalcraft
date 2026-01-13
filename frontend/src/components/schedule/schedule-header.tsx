@@ -73,7 +73,7 @@ function NavigationControls({
         className="h-8 px-3 text-sm font-medium"
         onClick={onToday}
       >
-        Today Yet
+        Today
       </Button>
       <Button
         variant="ghost"
