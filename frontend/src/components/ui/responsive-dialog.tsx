@@ -27,6 +27,15 @@ import { DialogTitle } from "@radix-ui/react-dialog";
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
  */
 
+type DialogSize = "default" | "lg" | "xl" | "full";
+
+const sizeClasses: Record<DialogSize, string> = {
+  default: "min-w-150",
+  lg: "min-w-[800px] max-w-[900px]",
+  xl: "min-w-[900px] max-w-[1100px]",
+  full: "min-w-[90vw] max-w-[95vw]",
+};
+
 interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -40,6 +49,7 @@ interface ResponsiveDialogProps {
   confirmDialogPreset?: ConfirmDialogPresetType;
   hideSubmitButton?: boolean;
   backIconAction?: () => void;
+  size?: DialogSize;
 }
 
 const ResponsiveDialog = ({
@@ -55,6 +65,7 @@ const ResponsiveDialog = ({
   confirmDialogPreset,
   hideSubmitButton = false,
   backIconAction,
+  size = "default",
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -64,7 +75,7 @@ const ResponsiveDialog = ({
       <>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
-            className="sm:max-w-[600px] max-h-[90vh] flex flex-col"
+            className={`${sizeClasses[size]} max-h-[90vh] flex flex-col`}
             aria-describedby={description ? undefined : "dialog-content"}
           >
             <DialogHeader>

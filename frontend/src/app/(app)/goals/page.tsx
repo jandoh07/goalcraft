@@ -128,6 +128,7 @@ const GoalsContent = () => {
             onSubmit={goalsForm.handleExternalFormSubmit}
             isSubmitting={goalsForm.mutation.isPending}
             hideSubmitButton={!initialData && dialogMode === "ai"}
+            size={!initialData && dialogMode === "ai" ? "xl" : "default"}
           >
             <GoalDialogContent
               setOpen={setOpen}
