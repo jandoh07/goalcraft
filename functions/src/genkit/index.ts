@@ -1,5 +1,5 @@
 import { defineSecret } from "firebase-functions/params";
-import { phase1Flow, phase2Flow } from "./goals";
+import { phase1Flow, phase2Flow, phase3Flow, phase4Flow } from "./goals";
 import { timeblockingFlow } from "./timeblocking";
 import { onCallGenkit } from "firebase-functions/https";
 import { genkit } from "genkit";
@@ -30,6 +30,22 @@ export const goalPhase2 = onCallGenkit(
     enforceAppCheck: true,
   },
   phase2Flow(ai)
+);
+
+export const goalPhase3 = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    enforceAppCheck: true,
+  },
+  phase3Flow(ai)
+);
+
+export const goalPhase4 = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    enforceAppCheck: true,
+  },
+  phase4Flow(ai)
 );
 
 export const scheduleTimeblocking = onCallGenkit(
