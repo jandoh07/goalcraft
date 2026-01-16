@@ -6,17 +6,18 @@ import { functions } from "@/lib/firebase/firebase";
 import { ChatMessagesList } from "./chat-messages-list";
 import { ChatInput } from "./chat-input";
 import { GoalCreationLayout } from "./goal-creation-layout";
-import { Phase2DataPanel } from "./phase2-data-panel";
+import { Phase4DataPanel } from "./phase4-data-panel";
 import {
   ThinkingLevel,
   ChatDisplayMessage,
   ChatHistoryMessage,
-  Phase2Output,
-  Phase2Response,
+  Phase4Output,
+  Phase4Response,
+  AIMilestone,
 } from "@/types";
 import { useGoalCreationStore } from "@/stores/goal-creation-store";
 import { useAuth } from "@/contexts/auth-context";
-import { Heart, Target } from "lucide-react";
+import { Target, CheckSquare, Repeat } from "lucide-react";
 
 /**
  * Generate a unique message ID
@@ -26,45 +27,56 @@ const generateMessageId = () => {
 };
 
 /**
- * Extract display text from Phase 2 output
+ * Extract display text from Phase 4 output
  */
-const formatPhase2Response = (output: Phase2Output): string => {
+const formatPhase4Response = (output: Phase4Output): string => {
   const parts: string[] = [];
 
   if (output.comments) {
     parts.push(output.comments);
   }
 
-  if (output.why_statement) {
+  if (output.oneTimeTasks && output.oneTimeTasks.length > 0) {
     parts.push("");
-    parts.push(`**Your Why:** ${output.why_statement}`);
+    parts.push("**One-Time Setup Tasks:**");
+    output.oneTimeTasks.forEach((t, i) => {
+      parts.push(`${i + 1}. **${t.title}** - ${t.description}`);
+    });
   }
 
-  if (output.skipped) {
+  if (output.nonNegotiables && output.nonNegotiables.length > 0) {
     parts.push("");
-    parts.push(
-      "No problem! You can always come back and add your motivation later."
-    );
+    parts.push("**Non-Negotiables (Recurring):**");
+    output.nonNegotiables.forEach((t, i) => {
+      parts.push(
+        `${i + 1}. **${t.title}** (${t.frequency}) - ${t.description}`
+      );
+    });
+  }
+
+  if (output.follow_up) {
+    parts.push("");
+    parts.push(output.follow_up);
   }
 
   return parts.join("\n");
 };
 
 /**
- * Welcome message for Phase 2
+ * Welcome message for Phase 4
  */
-function Phase2WelcomeMessage({
+function Phase4WelcomeMessage({
   onQuickStart,
 }: {
   onQuickStart?: (message: string) => void;
 }) {
-  const { phase1Data } = useGoalCreationStore();
+  const { phase1Data, phase3Data } = useGoalCreationStore();
 
   const QUICK_START_EXAMPLES = [
-    "I want to feel proud of myself",
-    "To prove I can do it",
-    "For my family",
-    "Skip - I'll figure it out later",
+    "Suggest tasks for me",
+    "What do I need to set up first?",
+    "Help me create a weekly routine",
+    "What habits should I build?",
   ];
 
   return (
@@ -75,16 +87,52 @@ function Phase2WelcomeMessage({
         <span className="text-sm font-medium">{phase1Data.title}</span>
       </div>
 
+      {/* Milestones summary */}
+      {phase3Data.milestones.length > 0 && (
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            Your Milestones
+          </p>
+          <ul className="text-sm space-y-1">
+            {phase3Data.milestones.slice(0, 3).map((m, i) => (
+              <li key={i} className="text-muted-foreground">
+                • {m.title}
+              </li>
+            ))}
+            {phase3Data.milestones.length > 3 && (
+              <li className="text-muted-foreground text-xs">
+                +{phase3Data.milestones.length - 3} more
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
       <div className="space-y-2 w-full">
         <h3 className="font-semibold text-lg md:text-2xl flex items-center gap-2">
-          <Heart className="size-6 text-red-500" />
-          Why does this goal matter to you?
+          <CheckSquare className="size-6 text-blue-500" />
+          <Repeat className="size-6 text-green-500" />
+          Time to build your action plan
         </h3>
         <p className="text-muted-foreground max-w-sm text-left md:text-lg">
-          Let&apos;s dig a little deeper. A powerful &quot;why&quot; becomes
-          your anchor when motivation fades. What would achieving this goal
-          really mean for you?
+          We&apos;ll identify two types of tasks:
         </p>
+        <ul className="text-muted-foreground max-w-sm text-left space-y-2 text-sm">
+          <li className="flex items-start gap-2">
+            <CheckSquare className="size-4 text-blue-500 mt-0.5 shrink-0" />
+            <span>
+              <strong>One-time tasks</strong> - Setup actions you do once
+              (create accounts, buy equipment, etc.)
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Repeat className="size-4 text-green-500 mt-0.5 shrink-0" />
+            <span>
+              <strong>Non-negotiables</strong> - Recurring habits that drive
+              consistent progress
+            </span>
+          </li>
+        </ul>
       </div>
 
       {onQuickStart && (
@@ -110,37 +158,31 @@ function Phase2WelcomeMessage({
 }
 
 /**
- * Chat panel component for Phase 2 - handles the AI conversation about motivation
+ * Chat panel component for Phase 4 - handles the AI conversation about tasks
  */
-function Phase2ChatPanel() {
+function Phase4ChatPanel() {
   const {
     phase1Data,
-    phase2Messages,
-    phase2ChatHistory,
+    phase2Data,
+    phase3Data,
+    phase4Messages,
+    phase4ChatHistory,
     isLoading,
     error,
-    addPhase2Message,
-    setPhase2ChatHistory,
+    addPhase4Message,
+    setPhase4ChatHistory,
     setIsLoading,
     setError,
-    updatePhase2Data,
-    nextPhase,
+    updatePhase4Data,
   } = useGoalCreationStore();
 
-  const historyRef = useRef<ChatHistoryMessage[]>(phase2ChatHistory);
-  historyRef.current = phase2ChatHistory;
+  const historyRef = useRef<ChatHistoryMessage[]>(phase4ChatHistory);
+  historyRef.current = phase4ChatHistory;
 
   const sendMessage = useCallback(
     async (userMessage: string, thinkingLevel: ThinkingLevel = "LOW") => {
       if (!userMessage.trim()) {
         setError("Please enter a message");
-        return;
-      }
-
-      // Handle skip request
-      if (userMessage.toLowerCase().includes("skip")) {
-        updatePhase2Data({ skipped: true, whyStatement: "" });
-        nextPhase();
         return;
       }
 
@@ -154,25 +196,31 @@ function Phase2ChatPanel() {
         content: userMessage,
         timestamp: new Date(),
       };
-      addPhase2Message(userMsg);
+      addPhase4Message(userMsg);
 
       try {
-        const goalPhase2 = httpsCallable<
+        const goalPhase4 = httpsCallable<
           {
             title: string;
             category: string;
             duration: string;
+            whyStatement?: string;
+            milestones: AIMilestone[];
             userMessage: string;
             thinkingLevel: ThinkingLevel;
             history?: ChatHistoryMessage[];
           },
-          Phase2Response
-        >(functions, "goalPhase2");
+          Phase4Response
+        >(functions, "goalPhase4");
 
-        const result = await goalPhase2({
+        const result = await goalPhase4({
           title: phase1Data.title,
           category: phase1Data.category,
           duration: phase1Data.duration,
+          whyStatement: phase2Data.skipped
+            ? undefined
+            : phase2Data.whyStatement,
+          milestones: phase3Data.milestones,
           userMessage,
           thinkingLevel,
           history: historyRef.current,
@@ -181,40 +229,31 @@ function Phase2ChatPanel() {
         const { output, history } = result.data;
 
         // Update chat history
-        setPhase2ChatHistory(history);
+        setPhase4ChatHistory(history);
         historyRef.current = history;
 
         // Add assistant response
         const assistantMsg: ChatDisplayMessage = {
           id: generateMessageId(),
           role: "assistant",
-          content: formatPhase2Response(output),
+          content: formatPhase4Response(output),
           timestamp: new Date(),
         };
-        addPhase2Message(assistantMsg);
+        addPhase4Message(assistantMsg);
 
-        // Update Phase 2 data if AI provided values
-        if (output.why_statement) {
-          updatePhase2Data({
-            whyStatement: output.why_statement,
-            skipped: false,
+        // Update Phase 4 data if AI provided tasks
+        if (output.oneTimeTasks || output.nonNegotiables) {
+          updatePhase4Data({
+            ...(output.oneTimeTasks && { oneTimeTasks: output.oneTimeTasks }),
+            ...(output.nonNegotiables && {
+              nonNegotiables: output.nonNegotiables,
+            }),
           });
-        } else if (!output.skipped && userMessage.trim()) {
-          // If AI didn't return a why_statement but user provided a good response,
-          // use the user's message as the why statement
-          updatePhase2Data({
-            whyStatement: userMessage.trim(),
-            skipped: false,
-          });
-        }
-
-        if (output.skipped) {
-          updatePhase2Data({ skipped: true });
         }
 
         return output;
       } catch (err) {
-        console.error("Error in Phase 2:", err);
+        console.error("Error in Phase 4:", err);
         const errorMessage =
           err instanceof Error ? err.message : "An error occurred";
         setError(errorMessage);
@@ -225,19 +264,20 @@ function Phase2ChatPanel() {
           content: "Sorry, I encountered an error. Please try again.",
           timestamp: new Date(),
         };
-        addPhase2Message(errorMsg);
+        addPhase4Message(errorMsg);
       } finally {
         setIsLoading(false);
       }
     },
     [
       phase1Data,
-      addPhase2Message,
-      setPhase2ChatHistory,
+      phase2Data,
+      phase3Data,
+      addPhase4Message,
+      setPhase4ChatHistory,
       setError,
       setIsLoading,
-      updatePhase2Data,
-      nextPhase,
+      updatePhase4Data,
     ]
   );
 
@@ -258,16 +298,16 @@ function Phase2ChatPanel() {
   const { user } = useAuth();
   const isPremium = user?.subscription === "premium";
 
-  const hasMessages = phase2Messages.length > 0;
+  const hasMessages = phase4Messages.length > 0;
 
   return (
     <div className="flex flex-col h-full flex-1 relative">
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto pb-40 md:pb-0 custom-scrollbar">
         {!hasMessages ? (
-          <Phase2WelcomeMessage onQuickStart={handleQuickStart} />
+          <Phase4WelcomeMessage onQuickStart={handleQuickStart} />
         ) : (
-          <ChatMessagesList messages={phase2Messages} isLoading={isLoading} />
+          <ChatMessagesList messages={phase4Messages} isLoading={isLoading} />
         )}
       </div>
 
@@ -288,8 +328,8 @@ function Phase2ChatPanel() {
             isPremium={isPremium}
             placeholder={
               hasMessages
-                ? "Tell me more about your motivation..."
-                : "Why does this goal matter to you?"
+                ? "Refine your tasks..."
+                : "What tasks and habits do you need?"
             }
           />
         </div>
@@ -299,16 +339,16 @@ function Phase2ChatPanel() {
 }
 
 /**
- * Main AI Goal Chat component for Phase 2 of goal creation
+ * Main AI Goal Chat component for Phase 4 of goal creation
  * Two-column layout: Chat (70%) + Data Panel (30%)
  */
-const AIGoalPhase2 = () => {
+const AIGoalPhase4 = () => {
   return (
     <GoalCreationLayout
-      chatPanel={<Phase2ChatPanel />}
-      dataPanel={<Phase2DataPanel />}
+      chatPanel={<Phase4ChatPanel />}
+      dataPanel={<Phase4DataPanel />}
     />
   );
 };
 
-export default AIGoalPhase2;
+export default AIGoalPhase4;

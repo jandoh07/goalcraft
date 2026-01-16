@@ -7,6 +7,7 @@ import GoalsHeader from "@/components/goals/goals-header";
 import MobileHeader from "@/components/layout/mobile/header";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 import GoalDialogContent, {
   type DialogMode,
 } from "@/components/goals/goal-dialog-content";
@@ -15,6 +16,11 @@ import { useGoals } from "@/hooks/use-goals";
 import { useAuth } from "@/contexts/auth-context";
 import { Goal } from "@/types";
 import useGoalsForm from "@/hooks/use-goals-form";
+import {
+  useGoalCreationStore,
+  hasUnsavedChanges,
+  GoalCreationState,
+} from "@/stores/goal-creation-store";
 
 const GoalsContent = () => {
   const router = useRouter();
@@ -22,6 +28,11 @@ const GoalsContent = () => {
 
   const modeParam = searchParams.get("mode") as "add" | "edit" | null;
   const open = modeParam === "add" || modeParam === "edit";
+
+  // Goal creation store for checking unsaved changes
+  const goalCreationStore = useGoalCreationStore();
+  const reset = useGoalCreationStore((state) => state.reset);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   const updateURL = useCallback(
     (newMode: string | null) => {
@@ -36,14 +47,36 @@ const GoalsContent = () => {
     [router]
   );
 
+  const handleCloseDialog = useCallback(() => {
+    updateURL(null);
+    reset();
+  }, [updateURL, reset]);
+
   const setOpen = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
-        updateURL(null);
+        // Check for unsaved changes before closing
+        if (hasUnsavedChanges(goalCreationStore as GoalCreationState)) {
+          setShowDiscardDialog(true);
+          return;
+        }
+        handleCloseDialog();
       }
     },
-    [updateURL]
+    [goalCreationStore, handleCloseDialog]
   );
+
+  const handleDiscardConfirm = useCallback(() => {
+    setShowDiscardDialog(false);
+    handleCloseDialog();
+  }, [handleCloseDialog]);
+
+  const handleDiscardCancel = useCallback(() => {
+    // User chose to continue later - just close the confirmation dialog
+    setShowDiscardDialog(false);
+    // Also close the main dialog but keep the data
+    updateURL(null);
+  }, [updateURL]);
 
   const { user, loading: authLoading } = useAuth();
   const [goalFilter, setGoalFilter] = useState<
@@ -128,7 +161,7 @@ const GoalsContent = () => {
             onSubmit={goalsForm.handleExternalFormSubmit}
             isSubmitting={goalsForm.mutation.isPending}
             hideSubmitButton={!initialData && dialogMode === "ai"}
-            size={!initialData && dialogMode === "ai" ? "xl" : "default"}
+            size={!initialData && dialogMode === "ai" ? "2xl" : "default"}
           >
             <GoalDialogContent
               setOpen={setOpen}
@@ -137,6 +170,14 @@ const GoalsContent = () => {
               onModeChange={setDialogMode}
             />
           </ResponsiveDialog>
+
+          <ConfirmationDialog
+            isOpen={showDiscardDialog}
+            onOpenChange={setShowDiscardDialog}
+            onConfirm={handleDiscardConfirm}
+            onCancel={handleDiscardCancel}
+            preset="discardChanges"
+          />
         </>
       )}
     </div>

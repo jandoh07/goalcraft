@@ -2,6 +2,11 @@ import { create } from "zustand";
 import {
   Phase1Data,
   Phase2Data,
+  Phase3Data,
+  Phase4Data,
+  AIMilestone,
+  OneTimeTask,
+  NonNegotiable,
   GoalCreationPhase,
   ChatDisplayMessage,
   ChatHistoryMessage,
@@ -17,17 +22,30 @@ interface GoalCreationState {
   // Phase 2 data (why statement)
   phase2Data: Phase2Data;
 
+  // Phase 3 data (milestones)
+  phase3Data: Phase3Data;
+
+  // Phase 4 data (one-time tasks + non-negotiables)
+  phase4Data: Phase4Data;
+
   // Chat state (separate for each phase)
   messages: ChatDisplayMessage[];
   chatHistory: ChatHistoryMessage[];
   phase2Messages: ChatDisplayMessage[];
   phase2ChatHistory: ChatHistoryMessage[];
+  phase3Messages: ChatDisplayMessage[];
+  phase3ChatHistory: ChatHistoryMessage[];
+  phase4Messages: ChatDisplayMessage[];
+  phase4ChatHistory: ChatHistoryMessage[];
   isLoading: boolean;
   error: string | null;
 
   // UI state
   isDataPanelOpen: boolean;
 }
+
+// Export GoalCreationState type for use in hasUnsavedChanges
+export type { GoalCreationState };
 
 interface GoalCreationActions {
   // Phase navigation
@@ -43,6 +61,23 @@ interface GoalCreationActions {
   updatePhase2Data: (data: Partial<Phase2Data>) => void;
   setPhase2Data: (data: Phase2Data) => void;
 
+  // Phase 3 data updates
+  updatePhase3Data: (data: Partial<Phase3Data>) => void;
+  setPhase3Data: (data: Phase3Data) => void;
+  addMilestone: (milestone: AIMilestone) => void;
+  updateMilestone: (index: number, milestone: AIMilestone) => void;
+  removeMilestone: (index: number) => void;
+
+  // Phase 4 data updates
+  updatePhase4Data: (data: Partial<Phase4Data>) => void;
+  setPhase4Data: (data: Phase4Data) => void;
+  addOneTimeTask: (task: OneTimeTask) => void;
+  updateOneTimeTask: (index: number, task: OneTimeTask) => void;
+  removeOneTimeTask: (index: number) => void;
+  addNonNegotiable: (task: NonNegotiable) => void;
+  updateNonNegotiable: (index: number, task: NonNegotiable) => void;
+  removeNonNegotiable: (index: number) => void;
+
   // Chat actions (Phase 1)
   addMessage: (message: ChatDisplayMessage) => void;
   setChatHistory: (history: ChatHistoryMessage[]) => void;
@@ -50,6 +85,14 @@ interface GoalCreationActions {
   // Chat actions (Phase 2)
   addPhase2Message: (message: ChatDisplayMessage) => void;
   setPhase2ChatHistory: (history: ChatHistoryMessage[]) => void;
+
+  // Chat actions (Phase 3)
+  addPhase3Message: (message: ChatDisplayMessage) => void;
+  setPhase3ChatHistory: (history: ChatHistoryMessage[]) => void;
+
+  // Chat actions (Phase 4)
+  addPhase4Message: (message: ChatDisplayMessage) => void;
+  setPhase4ChatHistory: (history: ChatHistoryMessage[]) => void;
 
   // Shared chat state
   setIsLoading: (loading: boolean) => void;
@@ -74,14 +117,29 @@ const initialPhase2Data: Phase2Data = {
   skipped: false,
 };
 
+const initialPhase3Data: Phase3Data = {
+  milestones: [],
+};
+
+const initialPhase4Data: Phase4Data = {
+  oneTimeTasks: [],
+  nonNegotiables: [],
+};
+
 const initialState: GoalCreationState = {
   phase: "phase1",
   phase1Data: initialPhase1Data,
   phase2Data: initialPhase2Data,
+  phase3Data: initialPhase3Data,
+  phase4Data: initialPhase4Data,
   messages: [],
   chatHistory: [],
   phase2Messages: [],
   phase2ChatHistory: [],
+  phase3Messages: [],
+  phase3ChatHistory: [],
+  phase4Messages: [],
+  phase4ChatHistory: [],
   isLoading: false,
   error: null,
   isDataPanelOpen: false,
@@ -139,6 +197,107 @@ export const useGoalCreationStore = create<
 
   setPhase2Data: (data) => set({ phase2Data: data }),
 
+  // Phase 3 data updates
+  updatePhase3Data: (data) =>
+    set((state) => ({
+      phase3Data: { ...state.phase3Data, ...data },
+    })),
+
+  setPhase3Data: (data) => set({ phase3Data: data }),
+
+  addMilestone: (milestone) =>
+    set((state) => ({
+      phase3Data: {
+        ...state.phase3Data,
+        milestones: [
+          ...state.phase3Data.milestones,
+          { ...milestone, weight: milestone.weight ?? 0 },
+        ],
+      },
+    })),
+
+  updateMilestone: (index, milestone) =>
+    set((state) => ({
+      phase3Data: {
+        ...state.phase3Data,
+        milestones: state.phase3Data.milestones.map((m, i) =>
+          i === index ? milestone : m
+        ),
+      },
+    })),
+
+  removeMilestone: (index) =>
+    set((state) => ({
+      phase3Data: {
+        ...state.phase3Data,
+        milestones: state.phase3Data.milestones.filter((_, i) => i !== index),
+      },
+    })),
+
+  // Phase 4 data updates
+  updatePhase4Data: (data) =>
+    set((state) => ({
+      phase4Data: { ...state.phase4Data, ...data },
+    })),
+
+  setPhase4Data: (data) => set({ phase4Data: data }),
+
+  addOneTimeTask: (task) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        oneTimeTasks: [...state.phase4Data.oneTimeTasks, task],
+      },
+    })),
+
+  updateOneTimeTask: (index, task) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        oneTimeTasks: state.phase4Data.oneTimeTasks.map((t, i) =>
+          i === index ? task : t
+        ),
+      },
+    })),
+
+  removeOneTimeTask: (index) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        oneTimeTasks: state.phase4Data.oneTimeTasks.filter(
+          (_, i) => i !== index
+        ),
+      },
+    })),
+
+  addNonNegotiable: (task) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        nonNegotiables: [...state.phase4Data.nonNegotiables, task],
+      },
+    })),
+
+  updateNonNegotiable: (index, task) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        nonNegotiables: state.phase4Data.nonNegotiables.map((t, i) =>
+          i === index ? task : t
+        ),
+      },
+    })),
+
+  removeNonNegotiable: (index) =>
+    set((state) => ({
+      phase4Data: {
+        ...state.phase4Data,
+        nonNegotiables: state.phase4Data.nonNegotiables.filter(
+          (_, i) => i !== index
+        ),
+      },
+    })),
+
   // Chat actions (Phase 1)
   addMessage: (message) =>
     set((state) => ({
@@ -154,6 +313,22 @@ export const useGoalCreationStore = create<
     })),
 
   setPhase2ChatHistory: (history) => set({ phase2ChatHistory: history }),
+
+  // Chat actions (Phase 3)
+  addPhase3Message: (message) =>
+    set((state) => ({
+      phase3Messages: [...state.phase3Messages, message],
+    })),
+
+  setPhase3ChatHistory: (history) => set({ phase3ChatHistory: history }),
+
+  // Chat actions (Phase 4)
+  addPhase4Message: (message) =>
+    set((state) => ({
+      phase4Messages: [...state.phase4Messages, message],
+    })),
+
+  setPhase4ChatHistory: (history) => set({ phase4ChatHistory: history }),
 
   // Shared chat state
   setIsLoading: (loading) => set({ isLoading: loading }),
@@ -182,4 +357,84 @@ export const isPhase1Valid = (data: Phase1Data): boolean => {
  */
 export const isPhase2Valid = (data: Phase2Data): boolean => {
   return data.skipped || !!data.whyStatement.trim();
+};
+
+/**
+ * Check if Phase 3 is complete (at least one milestone)
+ */
+export const isPhase3Valid = (data: Phase3Data): boolean => {
+  return data.milestones.length > 0;
+};
+
+/**
+ * Check if Phase 4 is complete (at least one task of either type)
+ */
+export const isPhase4Valid = (data: Phase4Data): boolean => {
+  return data.oneTimeTasks.length > 0 || data.nonNegotiables.length > 0;
+};
+
+/**
+ * Check if there are unsaved changes in any phase
+ */
+export const hasUnsavedChanges = (state: GoalCreationState): boolean => {
+  const {
+    phase1Data,
+    phase2Data,
+    phase3Data,
+    phase4Data,
+    messages,
+    phase2Messages,
+    phase3Messages,
+    phase4Messages,
+  } = state;
+
+  // Check Phase 1
+  const hasPhase1Data = !!(
+    phase1Data.title.trim() ||
+    phase1Data.category.trim() ||
+    phase1Data.duration.trim()
+  );
+
+  // Check Phase 2
+  const hasPhase2Data = !!(
+    phase2Data.whyStatement.trim() || phase2Data.skipped
+  );
+
+  // Check Phase 3
+  const hasPhase3Data = phase3Data.milestones.length > 0;
+
+  // Check Phase 4
+  const hasPhase4Data =
+    phase4Data.oneTimeTasks.length > 0 || phase4Data.nonNegotiables.length > 0;
+
+  // Check if any chat messages exist (beyond initial system messages)
+  const hasChatHistory =
+    messages.length > 0 ||
+    phase2Messages.length > 0 ||
+    phase3Messages.length > 0 ||
+    phase4Messages.length > 0;
+
+  return (
+    hasPhase1Data ||
+    hasPhase2Data ||
+    hasPhase3Data ||
+    hasPhase4Data ||
+    hasChatHistory
+  );
+};
+
+/**
+ * Calculate total weight of all milestones
+ */
+export const getTotalMilestoneWeight = (data: Phase3Data): number => {
+  return data.milestones.reduce((sum, m) => sum + (m.weight || 0), 0);
+};
+
+/**
+ * Check if milestone weights are valid (sum to 100)
+ */
+export const areMilestoneWeightsValid = (data: Phase3Data): boolean => {
+  if (data.milestones.length === 0) return true;
+  const total = getTotalMilestoneWeight(data);
+  return total === 100;
 };

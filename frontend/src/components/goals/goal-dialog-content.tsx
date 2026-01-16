@@ -3,6 +3,8 @@
 import GoalForm from "./goal-form/goal-form";
 import AIGoalChat from "./ai-chat/ai-goal-chat";
 import AIGoalPhase2 from "./ai-chat/ai-goal-phase2";
+import AIGoalPhase3 from "./ai-chat/ai-goal-phase3";
+import AIGoalPhase4 from "./ai-chat/ai-goal-phase4";
 import { useGoalCreationStore } from "@/stores/goal-creation-store";
 import type useGoalsForm from "@/hooks/use-goals-form";
 
@@ -35,11 +37,9 @@ const GoalDialogContent = ({
       case "phase2":
         return <AIGoalPhase2 />;
       case "phase3":
-        // TODO: Implement Phase 3 (Milestones)
-        return <AIGoalChat />;
+        return <AIGoalPhase3 />;
       case "phase4":
-        // TODO: Implement Phase 4 (Tasks)
-        return <AIGoalChat />;
+        return <AIGoalPhase4 />;
       default:
         return <AIGoalChat />;
     }

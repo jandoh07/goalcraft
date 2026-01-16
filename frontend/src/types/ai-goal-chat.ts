@@ -68,6 +68,67 @@ export interface Phase2Response {
 }
 
 /**
+ * AI-generated milestone object (for goal creation flow)
+ */
+export interface AIMilestone {
+  title: string;
+  description: string;
+  weight: number; // Percentage contribution to goal (0-100, all milestones should sum to 100)
+}
+
+/**
+ * Phase 3 output schema - matches the prompt output
+ */
+export interface Phase3Output {
+  milestones?: AIMilestone[];
+  comments?: string;
+  follow_up?: string;
+}
+
+/**
+ * Phase 3 API response
+ */
+export interface Phase3Response {
+  output: Phase3Output;
+  history: ChatHistoryMessage[];
+}
+
+/**
+ * One-time task object
+ */
+export interface OneTimeTask {
+  title: string;
+  description: string;
+}
+
+/**
+ * Non-negotiable (recurring task) object
+ */
+export interface NonNegotiable {
+  title: string;
+  description: string;
+  frequency: string;
+}
+
+/**
+ * Phase 4 output schema - matches the prompt output
+ */
+export interface Phase4Output {
+  oneTimeTasks?: OneTimeTask[];
+  nonNegotiables?: NonNegotiable[];
+  comments?: string;
+  follow_up?: string;
+}
+
+/**
+ * Phase 4 API response
+ */
+export interface Phase4Response {
+  output: Phase4Output;
+  history: ChatHistoryMessage[];
+}
+
+/**
  * Goal creation phases
  */
 export type GoalCreationPhase =
@@ -91,6 +152,21 @@ export interface Phase1Data {
 export interface Phase2Data {
   whyStatement: string;
   skipped: boolean;
+}
+
+/**
+ * Phase 3 completed data
+ */
+export interface Phase3Data {
+  milestones: AIMilestone[];
+}
+
+/**
+ * Phase 4 completed data
+ */
+export interface Phase4Data {
+  oneTimeTasks: OneTimeTask[];
+  nonNegotiables: NonNegotiable[];
 }
 
 /**

@@ -10,29 +10,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mic, Send } from "lucide-react";
-import { AIModel } from "@/types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Mic, Send, Lock } from "lucide-react";
+import { ThinkingLevel } from "@/types";
 
 interface ChatInputProps {
-  onSend: (message: string, model: AIModel) => void;
+  onSend: (message: string, thinkingLevel: ThinkingLevel) => void;
   isLoading?: boolean;
   placeholder?: string;
+  isPremium?: boolean;
 }
 
 /**
- * Chat input with model selector and voice input
+ * Chat input with thinking level selector and voice input
  */
 export function ChatInput({
   onSend,
   isLoading,
   placeholder = "What goal would you like to achieve?",
+  isPremium = false,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [model, setModel] = useState<AIModel>("basic");
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>("LOW");
 
   const handleSend = () => {
     if (!message.trim() || isLoading) return;
-    onSend(message.trim(), model);
+    onSend(message.trim(), thinkingLevel);
     setMessage("");
   };
 
@@ -50,6 +58,13 @@ export function ChatInput({
 
   const hasContent = message.trim().length > 0;
 
+  const thinkingLevelLabels: Record<ThinkingLevel, string> = {
+    MINIMAL: "Minimal",
+    LOW: "Low",
+    MEDIUM: "Medium",
+    HIGH: "High",
+  };
+
   return (
     <div className="bg-background space-y-2">
       <div className="relative">
@@ -64,18 +79,35 @@ export function ChatInput({
         />
         {/* Actions inside input */}
         <div className="absolute right-2 bottom-2 flex items-center gap-1">
-          <Select
-            value={model}
-            onValueChange={(value: AIModel) => setModel(value)}
-          >
-            <SelectTrigger className="h-8 w-20 text-xs border-0 bg-muted/50 hover:bg-muted">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="basic">Basic</SelectItem>
-              <SelectItem value="pro">Pro</SelectItem>
-            </SelectContent>
-          </Select>
+          {isPremium ? (
+            <Select
+              value={thinkingLevel}
+              onValueChange={(value: ThinkingLevel) => setThinkingLevel(value)}
+            >
+              <SelectTrigger className="h-8 w-24 text-xs border-0 bg-muted/50 hover:bg-muted">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOW">Low</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="h-8 px-2 flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 rounded-md cursor-not-allowed">
+                    <Lock className="size-3" />
+                    <span>{thinkingLevelLabels[thinkingLevel]}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Upgrade to Pro to unlock higher thinking levels</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {hasContent ? (
             <Button
               onClick={handleSend}

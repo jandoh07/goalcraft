@@ -6,17 +6,17 @@ import { functions } from "@/lib/firebase/firebase";
 import { ChatMessagesList } from "./chat-messages-list";
 import { ChatInput } from "./chat-input";
 import { GoalCreationLayout } from "./goal-creation-layout";
-import { Phase2DataPanel } from "./phase2-data-panel";
+import { Phase3DataPanel } from "./phase3-data-panel";
 import {
   ThinkingLevel,
   ChatDisplayMessage,
   ChatHistoryMessage,
-  Phase2Output,
-  Phase2Response,
+  Phase3Output,
+  Phase3Response,
 } from "@/types";
 import { useGoalCreationStore } from "@/stores/goal-creation-store";
 import { useAuth } from "@/contexts/auth-context";
-import { Heart, Target } from "lucide-react";
+import { Target, Flag } from "lucide-react";
 
 /**
  * Generate a unique message ID
@@ -26,34 +26,35 @@ const generateMessageId = () => {
 };
 
 /**
- * Extract display text from Phase 2 output
+ * Extract display text from Phase 3 output
  */
-const formatPhase2Response = (output: Phase2Output): string => {
+const formatPhase3Response = (output: Phase3Output): string => {
   const parts: string[] = [];
 
   if (output.comments) {
     parts.push(output.comments);
   }
 
-  if (output.why_statement) {
+  if (output.milestones && output.milestones.length > 0) {
     parts.push("");
-    parts.push(`**Your Why:** ${output.why_statement}`);
+    parts.push("**Suggested Milestones:**");
+    output.milestones.forEach((m, i) => {
+      parts.push(`${i + 1}. **${m.title}** - ${m.description}`);
+    });
   }
 
-  if (output.skipped) {
+  if (output.follow_up) {
     parts.push("");
-    parts.push(
-      "No problem! You can always come back and add your motivation later."
-    );
+    parts.push(output.follow_up);
   }
 
   return parts.join("\n");
 };
 
 /**
- * Welcome message for Phase 2
+ * Welcome message for Phase 3
  */
-function Phase2WelcomeMessage({
+function Phase3WelcomeMessage({
   onQuickStart,
 }: {
   onQuickStart?: (message: string) => void;
@@ -61,10 +62,10 @@ function Phase2WelcomeMessage({
   const { phase1Data } = useGoalCreationStore();
 
   const QUICK_START_EXAMPLES = [
-    "I want to feel proud of myself",
-    "To prove I can do it",
-    "For my family",
-    "Skip - I'll figure it out later",
+    "Suggest milestones for me",
+    "I want 4 milestones",
+    "Break it into monthly checkpoints",
+    "Help me think about key achievements",
   ];
 
   return (
@@ -77,13 +78,16 @@ function Phase2WelcomeMessage({
 
       <div className="space-y-2 w-full">
         <h3 className="font-semibold text-lg md:text-2xl flex items-center gap-2">
-          <Heart className="size-6 text-red-500" />
-          Why does this goal matter to you?
+          <Flag className="size-6 text-primary" />
+          Let&apos;s map out your journey
         </h3>
         <p className="text-muted-foreground max-w-sm text-left md:text-lg">
-          Let&apos;s dig a little deeper. A powerful &quot;why&quot; becomes
-          your anchor when motivation fades. What would achieving this goal
-          really mean for you?
+          Milestones are checkpoints that mark significant progress. They help
+          you stay motivated and track your advancement toward the goal.
+        </p>
+        <p className="text-muted-foreground max-w-sm text-left text-sm">
+          I&apos;ll suggest some milestones based on your goal, or you can tell
+          me what achievements matter most to you.
         </p>
       </div>
 
@@ -110,37 +114,30 @@ function Phase2WelcomeMessage({
 }
 
 /**
- * Chat panel component for Phase 2 - handles the AI conversation about motivation
+ * Chat panel component for Phase 3 - handles the AI conversation about milestones
  */
-function Phase2ChatPanel() {
+function Phase3ChatPanel() {
   const {
     phase1Data,
-    phase2Messages,
-    phase2ChatHistory,
+    phase2Data,
+    phase3Messages,
+    phase3ChatHistory,
     isLoading,
     error,
-    addPhase2Message,
-    setPhase2ChatHistory,
+    addPhase3Message,
+    setPhase3ChatHistory,
     setIsLoading,
     setError,
-    updatePhase2Data,
-    nextPhase,
+    updatePhase3Data,
   } = useGoalCreationStore();
 
-  const historyRef = useRef<ChatHistoryMessage[]>(phase2ChatHistory);
-  historyRef.current = phase2ChatHistory;
+  const historyRef = useRef<ChatHistoryMessage[]>(phase3ChatHistory);
+  historyRef.current = phase3ChatHistory;
 
   const sendMessage = useCallback(
     async (userMessage: string, thinkingLevel: ThinkingLevel = "LOW") => {
       if (!userMessage.trim()) {
         setError("Please enter a message");
-        return;
-      }
-
-      // Handle skip request
-      if (userMessage.toLowerCase().includes("skip")) {
-        updatePhase2Data({ skipped: true, whyStatement: "" });
-        nextPhase();
         return;
       }
 
@@ -154,25 +151,29 @@ function Phase2ChatPanel() {
         content: userMessage,
         timestamp: new Date(),
       };
-      addPhase2Message(userMsg);
+      addPhase3Message(userMsg);
 
       try {
-        const goalPhase2 = httpsCallable<
+        const goalPhase3 = httpsCallable<
           {
             title: string;
             category: string;
             duration: string;
+            whyStatement?: string;
             userMessage: string;
             thinkingLevel: ThinkingLevel;
             history?: ChatHistoryMessage[];
           },
-          Phase2Response
-        >(functions, "goalPhase2");
+          Phase3Response
+        >(functions, "goalPhase3");
 
-        const result = await goalPhase2({
+        const result = await goalPhase3({
           title: phase1Data.title,
           category: phase1Data.category,
           duration: phase1Data.duration,
+          whyStatement: phase2Data.skipped
+            ? undefined
+            : phase2Data.whyStatement,
           userMessage,
           thinkingLevel,
           history: historyRef.current,
@@ -181,40 +182,28 @@ function Phase2ChatPanel() {
         const { output, history } = result.data;
 
         // Update chat history
-        setPhase2ChatHistory(history);
+        setPhase3ChatHistory(history);
         historyRef.current = history;
 
         // Add assistant response
         const assistantMsg: ChatDisplayMessage = {
           id: generateMessageId(),
           role: "assistant",
-          content: formatPhase2Response(output),
+          content: formatPhase3Response(output),
           timestamp: new Date(),
         };
-        addPhase2Message(assistantMsg);
+        addPhase3Message(assistantMsg);
 
-        // Update Phase 2 data if AI provided values
-        if (output.why_statement) {
-          updatePhase2Data({
-            whyStatement: output.why_statement,
-            skipped: false,
+        // Update Phase 3 data if AI provided milestones
+        if (output.milestones && output.milestones.length > 0) {
+          updatePhase3Data({
+            milestones: output.milestones,
           });
-        } else if (!output.skipped && userMessage.trim()) {
-          // If AI didn't return a why_statement but user provided a good response,
-          // use the user's message as the why statement
-          updatePhase2Data({
-            whyStatement: userMessage.trim(),
-            skipped: false,
-          });
-        }
-
-        if (output.skipped) {
-          updatePhase2Data({ skipped: true });
         }
 
         return output;
       } catch (err) {
-        console.error("Error in Phase 2:", err);
+        console.error("Error in Phase 3:", err);
         const errorMessage =
           err instanceof Error ? err.message : "An error occurred";
         setError(errorMessage);
@@ -225,19 +214,19 @@ function Phase2ChatPanel() {
           content: "Sorry, I encountered an error. Please try again.",
           timestamp: new Date(),
         };
-        addPhase2Message(errorMsg);
+        addPhase3Message(errorMsg);
       } finally {
         setIsLoading(false);
       }
     },
     [
       phase1Data,
-      addPhase2Message,
-      setPhase2ChatHistory,
+      phase2Data,
+      addPhase3Message,
+      setPhase3ChatHistory,
       setError,
       setIsLoading,
-      updatePhase2Data,
-      nextPhase,
+      updatePhase3Data,
     ]
   );
 
@@ -258,16 +247,16 @@ function Phase2ChatPanel() {
   const { user } = useAuth();
   const isPremium = user?.subscription === "premium";
 
-  const hasMessages = phase2Messages.length > 0;
+  const hasMessages = phase3Messages.length > 0;
 
   return (
     <div className="flex flex-col h-full flex-1 relative">
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto pb-40 md:pb-0 custom-scrollbar">
         {!hasMessages ? (
-          <Phase2WelcomeMessage onQuickStart={handleQuickStart} />
+          <Phase3WelcomeMessage onQuickStart={handleQuickStart} />
         ) : (
-          <ChatMessagesList messages={phase2Messages} isLoading={isLoading} />
+          <ChatMessagesList messages={phase3Messages} isLoading={isLoading} />
         )}
       </div>
 
@@ -288,8 +277,8 @@ function Phase2ChatPanel() {
             isPremium={isPremium}
             placeholder={
               hasMessages
-                ? "Tell me more about your motivation..."
-                : "Why does this goal matter to you?"
+                ? "Refine your milestones..."
+                : "Tell me about key achievements you want to reach"
             }
           />
         </div>
@@ -299,16 +288,16 @@ function Phase2ChatPanel() {
 }
 
 /**
- * Main AI Goal Chat component for Phase 2 of goal creation
+ * Main AI Goal Chat component for Phase 3 of goal creation
  * Two-column layout: Chat (70%) + Data Panel (30%)
  */
-const AIGoalPhase2 = () => {
+const AIGoalPhase3 = () => {
   return (
     <GoalCreationLayout
-      chatPanel={<Phase2ChatPanel />}
-      dataPanel={<Phase2DataPanel />}
+      chatPanel={<Phase3ChatPanel />}
+      dataPanel={<Phase3DataPanel />}
     />
   );
 };
 
-export default AIGoalPhase2;
+export default AIGoalPhase3;

@@ -89,12 +89,12 @@ export function GoalCreationLayout({
   return (
     <div className="grid grid-cols-10 h-[75vh] overflow-hidden">
       {/* Chat panel - 70% */}
-      <div className="col-span-7 flex flex-col border-r overflow-y-auto">
+      <div className="col-span-6 flex flex-col border-r overflow-y-auto">
         {chatPanel}
       </div>
 
       {/* Data panel - 30% - fixed, no scroll */}
-      <div className="col-span-3 bg-muted/30 overflow-hidden">{dataPanel}</div>
+      <div className="col-span-4 bg-muted/30 overflow-hidden">{dataPanel}</div>
     </div>
   );
 }

@@ -57,7 +57,7 @@ export function Phase1DataPanel() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto p-4 w-full space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 w-full space-y-6 custom-scrollbar">
         {/* AI suggestion indicator */}
         {hasAIConversation && phase1Data.title && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">

@@ -46,7 +46,7 @@ export function Phase2DataPanel() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto p-4 w-full space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 w-full space-y-6 custom-scrollbar">
         {/* Goal context */}
         <div className="bg-muted/50 rounded-lg p-3 space-y-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide">

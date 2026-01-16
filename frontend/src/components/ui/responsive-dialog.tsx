@@ -27,12 +27,13 @@ import { DialogTitle } from "@radix-ui/react-dialog";
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
  */
 
-type DialogSize = "default" | "lg" | "xl" | "full";
+type DialogSize = "default" | "lg" | "xl" | "2xl" | "full";
 
 const sizeClasses: Record<DialogSize, string> = {
   default: "min-w-150",
   lg: "min-w-[800px] max-w-[900px]",
   xl: "min-w-[900px] max-w-[1100px]",
+  "2xl": "min-w-[1100px] max-w-[1300px]",
   full: "min-w-[90vw] max-w-[95vw]",
 };
 

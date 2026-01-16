@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/lib/firebase/firebase";
 import {
-  AIModel,
   ThinkingLevel,
   ChatDisplayMessage,
   ChatHistoryMessage,
@@ -40,13 +39,6 @@ export function useGoalAIChat(options: UseGoalAIChatOptions = {}) {
    */
   const generateMessageId = () => {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
-
-  /**
-   * Map AI model selection to thinking level
-   */
-  const getThinkingLevel = (model: AIModel): ThinkingLevel => {
-    return model === "pro" ? "HIGH" : "LOW";
   };
 
   /**
@@ -110,7 +102,7 @@ export function useGoalAIChat(options: UseGoalAIChatOptions = {}) {
    * Send a message in Phase 1 (goal title, category, duration)
    */
   const sendPhase1Message = useCallback(
-    async (userMessage: string, model: AIModel = "basic") => {
+    async (userMessage: string, thinkingLevel: ThinkingLevel = "LOW") => {
       if (!userMessage.trim()) {
         setError("Please enter a message");
         return;
@@ -135,7 +127,7 @@ export function useGoalAIChat(options: UseGoalAIChatOptions = {}) {
 
         const result = await goalPhase1({
           userGist: userMessage,
-          thinkingLevel: getThinkingLevel(model),
+          thinkingLevel,
           history: historyRef.current,
         });
 

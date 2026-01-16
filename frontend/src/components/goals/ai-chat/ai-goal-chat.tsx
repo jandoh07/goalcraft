@@ -9,7 +9,6 @@ import { WelcomeMessage } from "./chat-ui-elements";
 import { GoalCreationLayout } from "./goal-creation-layout";
 import { Phase1DataPanel, mapToAppCategory } from "./phase1-data-panel";
 import {
-  AIModel,
   ThinkingLevel,
   ChatDisplayMessage,
   ChatHistoryMessage,
@@ -17,19 +16,13 @@ import {
   Phase1Response,
 } from "@/types";
 import { useGoalCreationStore } from "@/stores/goal-creation-store";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * Generate a unique message ID
  */
 const generateMessageId = () => {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
- * Map AI model selection to thinking level
- */
-const getThinkingLevel = (model: AIModel): ThinkingLevel => {
-  return model === "pro" ? "HIGH" : "LOW";
 };
 
 /**
@@ -77,7 +70,7 @@ function ChatPanel() {
   historyRef.current = chatHistory;
 
   const sendMessage = useCallback(
-    async (userMessage: string, model: AIModel = "basic") => {
+    async (userMessage: string, thinkingLevel: ThinkingLevel = "LOW") => {
       if (!userMessage.trim()) {
         setError("Please enter a message");
         return;
@@ -107,7 +100,7 @@ function ChatPanel() {
 
         const result = await goalPhase1({
           userGist: userMessage,
-          thinkingLevel: getThinkingLevel(model),
+          thinkingLevel,
           history: historyRef.current,
         });
 
@@ -159,25 +152,28 @@ function ChatPanel() {
   );
 
   const handleSend = useCallback(
-    (message: string, model: AIModel) => {
-      sendMessage(message, model);
+    (message: string, thinkingLevel: ThinkingLevel) => {
+      sendMessage(message, thinkingLevel);
     },
     [sendMessage]
   );
 
   const handleQuickStart = useCallback(
     (message: string) => {
-      sendMessage(message, "basic");
+      sendMessage(message, "LOW");
     },
     [sendMessage]
   );
+
+  const { user } = useAuth();
+  const isPremium = user?.subscription === "premium";
 
   const hasMessages = messages.length > 0;
 
   return (
     <div className="flex flex-col h-full flex-1 relative">
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto pb-40 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto pb-40 md:pb-0 custom-scrollbar">
         {!hasMessages ? (
           <WelcomeMessage onQuickStart={handleQuickStart} />
         ) : (
@@ -199,6 +195,7 @@ function ChatPanel() {
           <ChatInput
             onSend={handleSend}
             isLoading={isLoading}
+            isPremium={isPremium}
             placeholder={
               hasMessages
                 ? "Continue the conversation..."

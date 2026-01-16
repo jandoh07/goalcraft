@@ -57,7 +57,7 @@ export const functions = getFunctions(app);
 // Connect to emulator in development
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
   // Uncomment the line below to use the Functions emulator
-  // connectFunctionsEmulator(functions, "localhost", 5001);
+  connectFunctionsEmulator(functions, "localhost", 5001);
 }
 
 export default app;
