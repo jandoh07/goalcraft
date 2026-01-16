@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
   Phase1Data,
+  Phase2Data,
   GoalCreationPhase,
   ChatDisplayMessage,
   ChatHistoryMessage,
@@ -13,9 +14,14 @@ interface GoalCreationState {
   // Phase 1 data (can be filled by AI or manually)
   phase1Data: Phase1Data;
 
-  // Chat state
+  // Phase 2 data (why statement)
+  phase2Data: Phase2Data;
+
+  // Chat state (separate for each phase)
   messages: ChatDisplayMessage[];
   chatHistory: ChatHistoryMessage[];
+  phase2Messages: ChatDisplayMessage[];
+  phase2ChatHistory: ChatHistoryMessage[];
   isLoading: boolean;
   error: string | null;
 
@@ -33,9 +39,19 @@ interface GoalCreationActions {
   updatePhase1Data: (data: Partial<Phase1Data>) => void;
   setPhase1Data: (data: Phase1Data) => void;
 
-  // Chat actions
+  // Phase 2 data updates
+  updatePhase2Data: (data: Partial<Phase2Data>) => void;
+  setPhase2Data: (data: Phase2Data) => void;
+
+  // Chat actions (Phase 1)
   addMessage: (message: ChatDisplayMessage) => void;
   setChatHistory: (history: ChatHistoryMessage[]) => void;
+
+  // Chat actions (Phase 2)
+  addPhase2Message: (message: ChatDisplayMessage) => void;
+  setPhase2ChatHistory: (history: ChatHistoryMessage[]) => void;
+
+  // Shared chat state
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -53,11 +69,19 @@ const initialPhase1Data: Phase1Data = {
   duration: "",
 };
 
+const initialPhase2Data: Phase2Data = {
+  whyStatement: "",
+  skipped: false,
+};
+
 const initialState: GoalCreationState = {
   phase: "phase1",
   phase1Data: initialPhase1Data,
+  phase2Data: initialPhase2Data,
   messages: [],
   chatHistory: [],
+  phase2Messages: [],
+  phase2ChatHistory: [],
   isLoading: false,
   error: null,
   isDataPanelOpen: false,
@@ -107,7 +131,15 @@ export const useGoalCreationStore = create<
 
   setPhase1Data: (data) => set({ phase1Data: data }),
 
-  // Chat actions
+  // Phase 2 data updates
+  updatePhase2Data: (data) =>
+    set((state) => ({
+      phase2Data: { ...state.phase2Data, ...data },
+    })),
+
+  setPhase2Data: (data) => set({ phase2Data: data }),
+
+  // Chat actions (Phase 1)
   addMessage: (message) =>
     set((state) => ({
       messages: [...state.messages, message],
@@ -115,6 +147,15 @@ export const useGoalCreationStore = create<
 
   setChatHistory: (history) => set({ chatHistory: history }),
 
+  // Chat actions (Phase 2)
+  addPhase2Message: (message) =>
+    set((state) => ({
+      phase2Messages: [...state.phase2Messages, message],
+    })),
+
+  setPhase2ChatHistory: (history) => set({ phase2ChatHistory: history }),
+
+  // Shared chat state
   setIsLoading: (loading) => set({ isLoading: loading }),
 
   setError: (error) => set({ error }),
@@ -134,4 +175,11 @@ export const useGoalCreationStore = create<
  */
 export const isPhase1Valid = (data: Phase1Data): boolean => {
   return !!(data.title.trim() && data.category.trim() && data.duration.trim());
+};
+
+/**
+ * Check if Phase 2 is complete (why statement provided or skipped)
+ */
+export const isPhase2Valid = (data: Phase2Data): boolean => {
+  return data.skipped || !!data.whyStatement.trim();
 };

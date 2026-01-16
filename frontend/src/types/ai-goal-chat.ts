@@ -51,6 +51,23 @@ export interface Phase1Response {
 }
 
 /**
+ * Phase 2 output schema - matches the prompt output
+ */
+export interface Phase2Output {
+  why_statement?: string;
+  comments?: string;
+  skipped: boolean;
+}
+
+/**
+ * Phase 2 API response
+ */
+export interface Phase2Response {
+  output: Phase2Output;
+  history: ChatHistoryMessage[];
+}
+
+/**
  * Goal creation phases
  */
 export type GoalCreationPhase =
@@ -66,6 +83,14 @@ export interface Phase1Data {
   title: string;
   category: string;
   duration: string;
+}
+
+/**
+ * Phase 2 completed data
+ */
+export interface Phase2Data {
+  whyStatement: string;
+  skipped: boolean;
 }
 
 /**

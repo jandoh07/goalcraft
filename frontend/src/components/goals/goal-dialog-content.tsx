@@ -2,6 +2,8 @@
 
 import GoalForm from "./goal-form/goal-form";
 import AIGoalChat from "./ai-chat/ai-goal-chat";
+import AIGoalPhase2 from "./ai-chat/ai-goal-phase2";
+import { useGoalCreationStore } from "@/stores/goal-creation-store";
 import type useGoalsForm from "@/hooks/use-goals-form";
 
 export type DialogMode = "ai" | "form";
@@ -18,15 +20,34 @@ const GoalDialogContent = ({
   goalForm,
   isEditMode,
 }: GoalDialogContentProps) => {
+  const { phase } = useGoalCreationStore();
+
   // In edit mode, show the form
   if (isEditMode) {
     return <GoalForm setOpen={setOpen} goalForm={goalForm} />;
   }
 
-  // Otherwise, show the AI chat
+  // Render the appropriate phase
+  const renderPhase = () => {
+    switch (phase) {
+      case "phase1":
+        return <AIGoalChat />;
+      case "phase2":
+        return <AIGoalPhase2 />;
+      case "phase3":
+        // TODO: Implement Phase 3 (Milestones)
+        return <AIGoalChat />;
+      case "phase4":
+        // TODO: Implement Phase 4 (Tasks)
+        return <AIGoalChat />;
+      default:
+        return <AIGoalChat />;
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-[75vh] md:min-h-full">
-      <AIGoalChat />
+      {renderPhase()}
     </div>
   );
 };
