@@ -25,7 +25,7 @@ const GoalDialogContent = ({
 
   // Otherwise, show the AI chat
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-[75vh] md:min-h-full">
       <AIGoalChat />
     </div>
   );

@@ -175,9 +175,9 @@ function ChatPanel() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="flex flex-col h-full flex-1 relative">
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-40 custom-scrollbar">
         {!hasMessages ? (
           <WelcomeMessage onQuickStart={handleQuickStart} />
         ) : (
@@ -185,24 +185,27 @@ function ChatPanel() {
         )}
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="px-4 pb-2">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
-      )}
+      {/* Input area - fixed to bottom */}
+      <div className="sticky bottom-0 left-0 right-0 border-t bg-background">
+        {/* Error message */}
+        {error && (
+          <div className="px-4 pt-2">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
 
-      {/* Input area */}
-      <div className="px-2">
-        <ChatInput
-          onSend={handleSend}
-          isLoading={isLoading}
-          placeholder={
-            hasMessages
-              ? "Continue the conversation..."
-              : "What goal would you like to achieve?"
-          }
-        />
+        {/* Chat input */}
+        <div className="px-2 py-2 md:pb-0">
+          <ChatInput
+            onSend={handleSend}
+            isLoading={isLoading}
+            placeholder={
+              hasMessages
+                ? "Continue the conversation..."
+                : "What goal would you like to achieve?"
+            }
+          />
+        </div>
       </div>
     </div>
   );

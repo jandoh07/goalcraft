@@ -87,7 +87,13 @@ const ResponsiveDialog = ({
                 <Reply onClick={backIconAction} className="cursor-pointer" />
               )}
             </DialogHeader>
-            <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
+            <div
+              className={`px-1 flex-1 min-h-0 ${
+                size === "xl" || size === "full"
+                  ? "overflow-hidden"
+                  : "overflow-y-auto custom-scrollbar"
+              }`}
+            >
               {children}
             </div>
             <DialogFooter className={onDelete ? "grid grid-cols-4 gap-2" : ""}>

@@ -16,7 +16,7 @@ const QUICK_START_EXAMPLES = [
  */
 export function WelcomeMessage({ onQuickStart }: WelcomeMessageProps) {
   return (
-    <div className="flex-1 flex flex-col py-8 mt-10 md:mt-0 px-2 text-left space-y-6">
+    <div className="flex-1 flex flex-col py-2 md:py-8 px-2 text-left space-y-6">
       <div className="space-y-2 w-full">
         <h3 className="font-semibold text-lg md:text-2xl">
           Ready to build something great?
