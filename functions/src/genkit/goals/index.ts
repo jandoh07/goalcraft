@@ -82,6 +82,10 @@ const Phase2InputSchema = z.object({
     .default("MEDIUM")
     .describe("The desired depth of thinking for the AI"),
   history: z.array(ChatMessageSchema).optional(),
+  previousPhaseHistory: z
+    .array(ChatMessageSchema)
+    .optional()
+    .describe("Chat history from previous phases for context"),
 });
 
 export const phase2Flow = (ai: Genkit) =>
@@ -94,12 +98,21 @@ export const phase2Flow = (ai: Genkit) =>
     async (input, sendChunk) => {
       const phase2Prompt = ai.prompt("goals/phase2");
 
-      // Convert client history format to Genkit message format
-      const messages =
+      // Combine previous phase history with current phase history
+      const previousMessages =
+        input.previousPhaseHistory?.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })) || [];
+
+      const currentMessages =
         input.history?.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })) || [];
+
+      // Prepend previous phase history for context
+      const messages = [...previousMessages, ...currentMessages];
 
       const { response, stream } = phase2Prompt.stream(
         {
@@ -158,6 +171,10 @@ const Phase3InputSchema = z.object({
     .default("MEDIUM")
     .describe("The desired depth of thinking for the AI"),
   history: z.array(ChatMessageSchema).optional(),
+  previousPhaseHistory: z
+    .array(ChatMessageSchema)
+    .optional()
+    .describe("Chat history from previous phases for context"),
 });
 
 export const phase3Flow = (ai: Genkit) =>
@@ -170,12 +187,21 @@ export const phase3Flow = (ai: Genkit) =>
     async (input, sendChunk) => {
       const phase3Prompt = ai.prompt("goals/phase3");
 
-      // Convert client history format to Genkit message format
-      const messages =
+      // Combine previous phase history with current phase history
+      const previousMessages =
+        input.previousPhaseHistory?.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })) || [];
+
+      const currentMessages =
         input.history?.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })) || [];
+
+      // Prepend previous phase history for context
+      const messages = [...previousMessages, ...currentMessages];
 
       const { response, stream } = phase3Prompt.stream(
         {
@@ -242,6 +268,10 @@ const Phase4InputSchema = z.object({
     .default("MEDIUM")
     .describe("The desired depth of thinking for the AI"),
   history: z.array(ChatMessageSchema).optional(),
+  previousPhaseHistory: z
+    .array(ChatMessageSchema)
+    .optional()
+    .describe("Chat history from previous phases for context"),
 });
 
 export const phase4Flow = (ai: Genkit) =>
@@ -254,12 +284,21 @@ export const phase4Flow = (ai: Genkit) =>
     async (input, sendChunk) => {
       const phase4Prompt = ai.prompt("goals/phase4");
 
-      // Convert client history format to Genkit message format
-      const messages =
+      // Combine previous phase history with current phase history
+      const previousMessages =
+        input.previousPhaseHistory?.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })) || [];
+
+      const currentMessages =
         input.history?.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })) || [];
+
+      // Prepend previous phase history for context
+      const messages = [...previousMessages, ...currentMessages];
 
       const { response, stream } = phase4Prompt.stream(
         {
