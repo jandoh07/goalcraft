@@ -123,6 +123,18 @@ export const getGoal = async (goalId: string) => {
   } as Goal;
 };
 
+export interface AddGoalOptions {
+  userId: string;
+  goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">;
+  newCategory?: string;
+  tasks?: (Omit<
+    Task,
+    "id" | "createdAt" | "updatedAt" | "userId" | "goalId"
+  > & {
+    isRecurring?: boolean;
+  })[];
+}
+
 export const addGoal = async (
   userId: string,
   goalData: Omit<Goal, "id" | "createdAt" | "updatedAt" | "userId" | "status">,

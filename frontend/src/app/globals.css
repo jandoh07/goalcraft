@@ -119,6 +119,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @layer utilities {
@@ -133,6 +136,10 @@
   .custom-scrollbar {
     scrollbar-width: thin; /* Firefox */
     scrollbar-color: hsl(var(--muted)) hsl(var(--background)); /* Firefox */
+  }
+
+  .scrollbar-gutter-stable {
+    scrollbar-gutter: stable;
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */

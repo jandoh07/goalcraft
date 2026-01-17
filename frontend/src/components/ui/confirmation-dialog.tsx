@@ -29,6 +29,7 @@ const presets = {
     description:
       "This action cannot be undone. This will permanently delete your goal.",
     confirmText: "Delete",
+    cancelText: "Cancel",
     variant: "destructive" as const,
   },
   deleteTask: {
@@ -36,6 +37,15 @@ const presets = {
     description:
       "This action cannot be undone. This will permanently delete your task.",
     confirmText: "Delete",
+    cancelText: "Cancel",
+    variant: "destructive" as const,
+  },
+  discardChanges: {
+    title: "Discard unsaved changes?",
+    description:
+      "You have unsaved progress in your goal creation. Would you like to continue later or discard your changes?",
+    confirmText: "Discard",
+    cancelText: "Continue Later",
     variant: "destructive" as const,
   },
 };
@@ -48,14 +58,15 @@ const ConfirmationDialog = ({
   title,
   description,
   preset = "deleteTask",
-  confirmText = "Continue",
-  cancelText = "Cancel",
-  variant = "default",
+  confirmText,
+  cancelText,
+  variant,
 }: ConfirmationDialogProps) => {
   const presetConfig = presets[preset];
   const finalTitle = title || presetConfig.title;
   const finalDescription = description || presetConfig.description;
   const finalConfirmText = confirmText || presetConfig.confirmText;
+  const finalCancelText = cancelText || presetConfig.cancelText || "Cancel";
   const finalVariant = variant || presetConfig.variant;
 
   return (
@@ -66,7 +77,9 @@ const ConfirmationDialog = ({
           <AlertDialogDescription>{finalDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {finalCancelText}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={

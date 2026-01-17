@@ -1,1 +1,4 @@
-export type ConfirmDialogPresetType = "deleteGoal" | "deleteTask";
+export type ConfirmDialogPresetType =
+  | "deleteGoal"
+  | "deleteTask"
+  | "discardChanges";

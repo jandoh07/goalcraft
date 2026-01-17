@@ -27,6 +27,16 @@ import { DialogTitle } from "@radix-ui/react-dialog";
  * A responsive dialog that uses a dialog(modal) on desktop and a drawer on mobile.
  */
 
+type DialogSize = "default" | "lg" | "xl" | "2xl" | "full";
+
+const sizeClasses: Record<DialogSize, string> = {
+  default: "min-w-150",
+  lg: "min-w-[800px] max-w-[900px]",
+  xl: "min-w-[900px] max-w-[1100px]",
+  "2xl": "min-w-[1100px] max-w-[1300px]",
+  full: "min-w-[90vw] max-w-[95vw]",
+};
+
 interface ResponsiveDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -40,6 +50,7 @@ interface ResponsiveDialogProps {
   confirmDialogPreset?: ConfirmDialogPresetType;
   hideSubmitButton?: boolean;
   backIconAction?: () => void;
+  size?: DialogSize;
 }
 
 const ResponsiveDialog = ({
@@ -55,6 +66,7 @@ const ResponsiveDialog = ({
   confirmDialogPreset,
   hideSubmitButton = false,
   backIconAction,
+  size = "default",
 }: ResponsiveDialogProps) => {
   const isDesktop = !useIsMobile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -64,7 +76,7 @@ const ResponsiveDialog = ({
       <>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent
-            className="sm:max-w-[600px] max-h-[90vh] flex flex-col"
+            className={`${sizeClasses[size]} max-h-[90vh] flex flex-col`}
             aria-describedby={description ? undefined : "dialog-content"}
           >
             <DialogHeader>
@@ -76,7 +88,13 @@ const ResponsiveDialog = ({
                 <Reply onClick={backIconAction} className="cursor-pointer" />
               )}
             </DialogHeader>
-            <div className="overflow-y-auto px-1 flex-1 min-h-0 custom-scrollbar">
+            <div
+              className={`px-1 flex-1 min-h-0 ${
+                size === "xl" || size === "full"
+                  ? "overflow-hidden"
+                  : "overflow-y-auto custom-scrollbar"
+              }`}
+            >
               {children}
             </div>
             <DialogFooter className={onDelete ? "grid grid-cols-4 gap-2" : ""}>

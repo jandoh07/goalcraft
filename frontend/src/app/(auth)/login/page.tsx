@@ -26,21 +26,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const {
-    signIn,
-    signInWithGoogle,
-    user,
-    loading: authLoading,
-    isAnonymous,
-  } = useAuth();
+  const { signIn, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect if already logged in with a real account (not anonymous)
+  // Redirect if already logged in
   useEffect(() => {
-    if (!authLoading && user && !isAnonymous) {
+    if (!authLoading && user) {
       router.replace("/");
     }
-  }, [user, authLoading, isAnonymous, router]);
+  }, [user, authLoading, router]);
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -51,8 +45,8 @@ const Login = () => {
     );
   }
 
-  // Don't render login form if user is authenticated with real account (will redirect)
-  if (user && !isAnonymous) {
+  // Don't render login form if user is authenticated (will redirect)
+  if (user) {
     return null;
   }
 

@@ -15,6 +15,7 @@ import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
 import TaskGroupHeader from "@/components/tasks/task-group-header";
 import TaskDetails from "@/components/tasks/task-details/task-details";
 import DateStrip from "@/components/tasks/date-strip";
+import QuickAddTask from "@/components/tasks/quick-add-task";
 
 type Groupkey =
   | "overdue"
@@ -91,12 +92,12 @@ const TasksContent = () => {
         </div>
       ) : (
         <>
-          <DateStrip
+          {/* <DateStrip
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
             className="mb-3"
-          />
-          {/* <QuickAddTask /> */}
+          /> */}
+          <QuickAddTask />
           <div className="pb-50 md:pb-5">
             {tasks.isSuccess && filteredTasks?.length === 0 ? (
               <div className="text-center text-muted-foreground mt-10">

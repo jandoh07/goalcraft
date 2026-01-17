@@ -1,6 +1,6 @@
 import { injectManifest } from "workbox-build";
 import { build } from "esbuild";
-import { readdirSync, unlinkSync } from "fs";
+import { readdirSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
 import { execSync } from "child_process";
@@ -14,6 +14,11 @@ try {
 }
 
 const BUILD_HASH = createHash("md5").update(BUILD_ID).digest("hex").slice(0, 8);
+
+writeFileSync(
+  "src/components/providers/sw-version.ts",
+  `export const SW_VERSION = '${BUILD_HASH}';`
+);
 
 function getAppRoutes(dir: string, baseRoute = ""): string[] {
   const routes: string[] = [];
