@@ -32,6 +32,9 @@ const GoalsContent = () => {
   // Goal creation store for checking unsaved changes
   const goalCreationStore = useGoalCreationStore();
   const reset = useGoalCreationStore((state) => state.reset);
+  const initializeFromGoal = useGoalCreationStore(
+    (state) => state.initializeFromGoal
+  );
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   const updateURL = useCallback(
@@ -53,8 +56,13 @@ const GoalsContent = () => {
   }, [updateURL, reset]);
 
   const setOpen = useCallback(
-    (isOpen: boolean) => {
+    (isOpen: boolean, skipUnsavedCheck?: boolean) => {
       if (!isOpen) {
+        // Skip unsaved changes check if explicitly requested (e.g., after successful save)
+        if (skipUnsavedCheck) {
+          handleCloseDialog();
+          return;
+        }
         // Check for unsaved changes before closing
         if (hasUnsavedChanges(goalCreationStore as GoalCreationState)) {
           setShowDiscardDialog(true);
@@ -72,10 +80,13 @@ const GoalsContent = () => {
   }, [handleCloseDialog]);
 
   const handleDiscardCancel = useCallback(() => {
-    // User chose to continue later - just close the confirmation dialog
-    setShowDiscardDialog(false);
-    // Also close the main dialog but keep the data
+    // User chose to continue later - close the main dialog first, then hide confirmation
+    // This order prevents the flash where confirmation hides but dialog is still visible
     updateURL(null);
+    // Use setTimeout to ensure state updates happen in correct order
+    setTimeout(() => {
+      setShowDiscardDialog(false);
+    }, 0);
   }, [updateURL]);
 
   const { user, loading: authLoading } = useAuth();
@@ -93,14 +104,31 @@ const GoalsContent = () => {
   });
 
   const handleAddNew = () => {
+    // If there's an existing draft (not from editing), resume it instead of resetting
+    const hasDraft = hasUnsavedChanges(goalCreationStore as GoalCreationState);
+    const isEditingDraft = goalCreationStore.editingGoalId !== null;
+
+    if (hasDraft && !isEditingDraft) {
+      // Resume the existing draft
+      setInitialData(undefined);
+      setDialogMode("ai");
+      updateURL("add");
+      return;
+    }
+
+    // No draft or it's an edit draft - start fresh
     setInitialData(undefined);
     setDialogMode("ai");
     goalsForm.form.reset();
+    reset(); // Reset the AI creation store
     updateURL("add");
   };
 
   const handleEditGoal = (goal: Goal) => {
+    // Initialize the AI goal creation store with existing goal data
+    initializeFromGoal(goal);
     setInitialData(goal);
+    setDialogMode("ai"); // Use AI mode for editing
     updateURL("edit");
   };
 

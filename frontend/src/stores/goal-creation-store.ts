@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   Phase1Data,
   Phase2Data,
@@ -10,11 +11,18 @@ import {
   GoalCreationPhase,
   ChatDisplayMessage,
   ChatHistoryMessage,
+  Goal,
 } from "@/types";
 
 interface GoalCreationState {
   // Current phase
   phase: GoalCreationPhase;
+
+  // Edit mode - if set, we're editing an existing goal
+  editingGoalId: string | null;
+
+  // Hash of original data when editing (to detect actual changes)
+  editingOriginalHash: string | null;
 
   // Phase 1 data (can be filled by AI or manually)
   phase1Data: Phase1Data;
@@ -102,6 +110,9 @@ interface GoalCreationActions {
   setDataPanelOpen: (open: boolean) => void;
   toggleDataPanel: () => void;
 
+  // Initialize from existing goal (for edit mode)
+  initializeFromGoal: (goal: Goal) => void;
+
   // Reset
   reset: () => void;
 }
@@ -126,8 +137,27 @@ const initialPhase4Data: Phase4Data = {
   nonNegotiables: [],
 };
 
+/**
+ * Compute a simple hash of the relevant state for change detection
+ */
+const computeStateHash = (state: GoalCreationState): string => {
+  const relevantData = {
+    phase1Data: state.phase1Data,
+    phase2Data: state.phase2Data,
+    phase3Data: state.phase3Data,
+    phase4Data: state.phase4Data,
+    messagesCount: state.messages.length,
+    phase2MessagesCount: state.phase2Messages.length,
+    phase3MessagesCount: state.phase3Messages.length,
+    phase4MessagesCount: state.phase4Messages.length,
+  };
+  return JSON.stringify(relevantData);
+};
+
 const initialState: GoalCreationState = {
   phase: "phase1",
+  editingGoalId: null,
+  editingOriginalHash: null,
   phase1Data: initialPhase1Data,
   phase2Data: initialPhase2Data,
   phase3Data: initialPhase3Data,
@@ -147,203 +177,277 @@ const initialState: GoalCreationState = {
 
 export const useGoalCreationStore = create<
   GoalCreationState & GoalCreationActions
->((set, get) => ({
-  ...initialState,
+>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
-  // Phase navigation
-  setPhase: (phase) => set({ phase }),
+      // Phase navigation
+      setPhase: (phase) => set({ phase }),
 
-  nextPhase: () => {
-    const { phase } = get();
-    const phases: GoalCreationPhase[] = [
-      "phase1",
-      "phase2",
-      "phase3",
-      "phase4",
-    ];
-    const currentIndex = phases.indexOf(phase);
-    if (currentIndex < phases.length - 1) {
-      set({ phase: phases[currentIndex + 1] });
+      nextPhase: () => {
+        const { phase } = get();
+        const phases: GoalCreationPhase[] = [
+          "phase1",
+          "phase2",
+          "phase3",
+          "phase4",
+        ];
+        const currentIndex = phases.indexOf(phase);
+        if (currentIndex < phases.length - 1) {
+          set({ phase: phases[currentIndex + 1] });
+        }
+      },
+
+      prevPhase: () => {
+        const { phase } = get();
+        const phases: GoalCreationPhase[] = [
+          "phase1",
+          "phase2",
+          "phase3",
+          "phase4",
+        ];
+        const currentIndex = phases.indexOf(phase);
+        if (currentIndex > 0) {
+          set({ phase: phases[currentIndex - 1] });
+        }
+      },
+
+      // Phase 1 data updates
+      updatePhase1Data: (data) =>
+        set((state) => ({
+          phase1Data: { ...state.phase1Data, ...data },
+        })),
+
+      setPhase1Data: (data) => set({ phase1Data: data }),
+
+      // Phase 2 data updates
+      updatePhase2Data: (data) =>
+        set((state) => ({
+          phase2Data: { ...state.phase2Data, ...data },
+        })),
+
+      setPhase2Data: (data) => set({ phase2Data: data }),
+
+      // Phase 3 data updates
+      updatePhase3Data: (data) =>
+        set((state) => ({
+          phase3Data: { ...state.phase3Data, ...data },
+        })),
+
+      setPhase3Data: (data) => set({ phase3Data: data }),
+
+      addMilestone: (milestone) =>
+        set((state) => ({
+          phase3Data: {
+            ...state.phase3Data,
+            milestones: [
+              ...state.phase3Data.milestones,
+              { ...milestone, weight: milestone.weight ?? 0 },
+            ],
+          },
+        })),
+
+      updateMilestone: (index, milestone) =>
+        set((state) => ({
+          phase3Data: {
+            ...state.phase3Data,
+            milestones: state.phase3Data.milestones.map((m, i) =>
+              i === index ? milestone : m
+            ),
+          },
+        })),
+
+      removeMilestone: (index) =>
+        set((state) => ({
+          phase3Data: {
+            ...state.phase3Data,
+            milestones: state.phase3Data.milestones.filter(
+              (_, i) => i !== index
+            ),
+          },
+        })),
+
+      // Phase 4 data updates
+      updatePhase4Data: (data) =>
+        set((state) => ({
+          phase4Data: { ...state.phase4Data, ...data },
+        })),
+
+      setPhase4Data: (data) => set({ phase4Data: data }),
+
+      addOneTimeTask: (task) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            oneTimeTasks: [...state.phase4Data.oneTimeTasks, task],
+          },
+        })),
+
+      updateOneTimeTask: (index, task) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            oneTimeTasks: state.phase4Data.oneTimeTasks.map((t, i) =>
+              i === index ? task : t
+            ),
+          },
+        })),
+
+      removeOneTimeTask: (index) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            oneTimeTasks: state.phase4Data.oneTimeTasks.filter(
+              (_, i) => i !== index
+            ),
+          },
+        })),
+
+      addNonNegotiable: (task) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            nonNegotiables: [...state.phase4Data.nonNegotiables, task],
+          },
+        })),
+
+      updateNonNegotiable: (index, task) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            nonNegotiables: state.phase4Data.nonNegotiables.map((t, i) =>
+              i === index ? task : t
+            ),
+          },
+        })),
+
+      removeNonNegotiable: (index) =>
+        set((state) => ({
+          phase4Data: {
+            ...state.phase4Data,
+            nonNegotiables: state.phase4Data.nonNegotiables.filter(
+              (_, i) => i !== index
+            ),
+          },
+        })),
+
+      // Chat actions (Phase 1)
+      addMessage: (message) =>
+        set((state) => ({
+          messages: [...state.messages, message],
+        })),
+
+      setChatHistory: (history) => set({ chatHistory: history }),
+
+      // Chat actions (Phase 2)
+      addPhase2Message: (message) =>
+        set((state) => ({
+          phase2Messages: [...state.phase2Messages, message],
+        })),
+
+      setPhase2ChatHistory: (history) => set({ phase2ChatHistory: history }),
+
+      // Chat actions (Phase 3)
+      addPhase3Message: (message) =>
+        set((state) => ({
+          phase3Messages: [...state.phase3Messages, message],
+        })),
+
+      setPhase3ChatHistory: (history) => set({ phase3ChatHistory: history }),
+
+      // Chat actions (Phase 4)
+      addPhase4Message: (message) =>
+        set((state) => ({
+          phase4Messages: [...state.phase4Messages, message],
+        })),
+
+      setPhase4ChatHistory: (history) => set({ phase4ChatHistory: history }),
+
+      // Shared chat state
+      setIsLoading: (loading) => set({ isLoading: loading }),
+
+      setError: (error) => set({ error }),
+
+      // UI actions
+      setDataPanelOpen: (open) => set({ isDataPanelOpen: open }),
+
+      toggleDataPanel: () =>
+        set((state) => ({ isDataPanelOpen: !state.isDataPanelOpen })),
+
+      // Initialize from existing goal (for edit mode)
+      initializeFromGoal: (goal: Goal) => {
+        const newState = {
+          editingGoalId: goal.id || null,
+          phase: "phase1" as GoalCreationPhase,
+          phase1Data: {
+            title: goal.title,
+            category: goal.category,
+            duration: "", // Duration is not stored in Goal, will need to be re-set or derived from dueDate
+          },
+          phase2Data: {
+            whyStatement: goal.relevance || "",
+            skipped: !goal.relevance,
+          },
+          phase3Data: {
+            milestones: (goal.milestones || []).map((m) => ({
+              title: m.title,
+              description: m.description || "",
+              weight: m.weight,
+            })),
+          },
+          phase4Data: {
+            oneTimeTasks: [] as OneTimeTask[],
+            nonNegotiables: [] as NonNegotiable[],
+          },
+          // Restore chat history if available
+          messages: goal.aiDisplayMessages?.phase1 || [],
+          chatHistory: goal.aiChatHistory?.phase1 || [],
+          phase2Messages: goal.aiDisplayMessages?.phase2 || [],
+          phase2ChatHistory: goal.aiChatHistory?.phase2 || [],
+          phase3Messages: goal.aiDisplayMessages?.phase3 || [],
+          phase3ChatHistory: goal.aiChatHistory?.phase3 || [],
+          phase4Messages: goal.aiDisplayMessages?.phase4 || [],
+          phase4ChatHistory: goal.aiChatHistory?.phase4 || [],
+          isLoading: false,
+          error: null,
+          isDataPanelOpen: false,
+        };
+
+        // Compute hash of the initial state to detect actual changes later
+        const editingOriginalHash = computeStateHash(
+          newState as GoalCreationState
+        );
+
+        set({ ...newState, editingOriginalHash });
+      },
+
+      // Reset
+      reset: () => set(initialState),
+    }),
+    {
+      name: "goal-creation-draft",
+      // Only persist data fields, not transient UI state
+      partialize: (state) => ({
+        phase: state.phase,
+        editingGoalId: state.editingGoalId,
+        editingOriginalHash: state.editingOriginalHash,
+        phase1Data: state.phase1Data,
+        phase2Data: state.phase2Data,
+        phase3Data: state.phase3Data,
+        phase4Data: state.phase4Data,
+        messages: state.messages,
+        chatHistory: state.chatHistory,
+        phase2Messages: state.phase2Messages,
+        phase2ChatHistory: state.phase2ChatHistory,
+        phase3Messages: state.phase3Messages,
+        phase3ChatHistory: state.phase3ChatHistory,
+        phase4Messages: state.phase4Messages,
+        phase4ChatHistory: state.phase4ChatHistory,
+      }),
     }
-  },
-
-  prevPhase: () => {
-    const { phase } = get();
-    const phases: GoalCreationPhase[] = [
-      "phase1",
-      "phase2",
-      "phase3",
-      "phase4",
-    ];
-    const currentIndex = phases.indexOf(phase);
-    if (currentIndex > 0) {
-      set({ phase: phases[currentIndex - 1] });
-    }
-  },
-
-  // Phase 1 data updates
-  updatePhase1Data: (data) =>
-    set((state) => ({
-      phase1Data: { ...state.phase1Data, ...data },
-    })),
-
-  setPhase1Data: (data) => set({ phase1Data: data }),
-
-  // Phase 2 data updates
-  updatePhase2Data: (data) =>
-    set((state) => ({
-      phase2Data: { ...state.phase2Data, ...data },
-    })),
-
-  setPhase2Data: (data) => set({ phase2Data: data }),
-
-  // Phase 3 data updates
-  updatePhase3Data: (data) =>
-    set((state) => ({
-      phase3Data: { ...state.phase3Data, ...data },
-    })),
-
-  setPhase3Data: (data) => set({ phase3Data: data }),
-
-  addMilestone: (milestone) =>
-    set((state) => ({
-      phase3Data: {
-        ...state.phase3Data,
-        milestones: [
-          ...state.phase3Data.milestones,
-          { ...milestone, weight: milestone.weight ?? 0 },
-        ],
-      },
-    })),
-
-  updateMilestone: (index, milestone) =>
-    set((state) => ({
-      phase3Data: {
-        ...state.phase3Data,
-        milestones: state.phase3Data.milestones.map((m, i) =>
-          i === index ? milestone : m
-        ),
-      },
-    })),
-
-  removeMilestone: (index) =>
-    set((state) => ({
-      phase3Data: {
-        ...state.phase3Data,
-        milestones: state.phase3Data.milestones.filter((_, i) => i !== index),
-      },
-    })),
-
-  // Phase 4 data updates
-  updatePhase4Data: (data) =>
-    set((state) => ({
-      phase4Data: { ...state.phase4Data, ...data },
-    })),
-
-  setPhase4Data: (data) => set({ phase4Data: data }),
-
-  addOneTimeTask: (task) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        oneTimeTasks: [...state.phase4Data.oneTimeTasks, task],
-      },
-    })),
-
-  updateOneTimeTask: (index, task) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        oneTimeTasks: state.phase4Data.oneTimeTasks.map((t, i) =>
-          i === index ? task : t
-        ),
-      },
-    })),
-
-  removeOneTimeTask: (index) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        oneTimeTasks: state.phase4Data.oneTimeTasks.filter(
-          (_, i) => i !== index
-        ),
-      },
-    })),
-
-  addNonNegotiable: (task) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        nonNegotiables: [...state.phase4Data.nonNegotiables, task],
-      },
-    })),
-
-  updateNonNegotiable: (index, task) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        nonNegotiables: state.phase4Data.nonNegotiables.map((t, i) =>
-          i === index ? task : t
-        ),
-      },
-    })),
-
-  removeNonNegotiable: (index) =>
-    set((state) => ({
-      phase4Data: {
-        ...state.phase4Data,
-        nonNegotiables: state.phase4Data.nonNegotiables.filter(
-          (_, i) => i !== index
-        ),
-      },
-    })),
-
-  // Chat actions (Phase 1)
-  addMessage: (message) =>
-    set((state) => ({
-      messages: [...state.messages, message],
-    })),
-
-  setChatHistory: (history) => set({ chatHistory: history }),
-
-  // Chat actions (Phase 2)
-  addPhase2Message: (message) =>
-    set((state) => ({
-      phase2Messages: [...state.phase2Messages, message],
-    })),
-
-  setPhase2ChatHistory: (history) => set({ phase2ChatHistory: history }),
-
-  // Chat actions (Phase 3)
-  addPhase3Message: (message) =>
-    set((state) => ({
-      phase3Messages: [...state.phase3Messages, message],
-    })),
-
-  setPhase3ChatHistory: (history) => set({ phase3ChatHistory: history }),
-
-  // Chat actions (Phase 4)
-  addPhase4Message: (message) =>
-    set((state) => ({
-      phase4Messages: [...state.phase4Messages, message],
-    })),
-
-  setPhase4ChatHistory: (history) => set({ phase4ChatHistory: history }),
-
-  // Shared chat state
-  setIsLoading: (loading) => set({ isLoading: loading }),
-
-  setError: (error) => set({ error }),
-
-  // UI actions
-  setDataPanelOpen: (open) => set({ isDataPanelOpen: open }),
-
-  toggleDataPanel: () =>
-    set((state) => ({ isDataPanelOpen: !state.isDataPanelOpen })),
-
-  // Reset
-  reset: () => set(initialState),
-}));
+  )
+);
 
 /**
  * Check if Phase 1 is complete (all required fields filled)
@@ -377,6 +481,13 @@ export const isPhase4Valid = (data: Phase4Data): boolean => {
  * Check if there are unsaved changes in any phase
  */
 export const hasUnsavedChanges = (state: GoalCreationState): boolean => {
+  // If we're in edit mode and have an original hash, compare against it
+  if (state.editingGoalId && state.editingOriginalHash) {
+    const currentHash = computeStateHash(state);
+    return currentHash !== state.editingOriginalHash;
+  }
+
+  // For new goals, check if any data exists
   const {
     phase1Data,
     phase2Data,

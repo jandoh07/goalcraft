@@ -122,6 +122,8 @@ function Phase3ChatPanel() {
     phase2Data,
     phase3Messages,
     phase3ChatHistory,
+    chatHistory: phase1ChatHistory, // Get Phase 1 history for context
+    phase2ChatHistory, // Get Phase 2 history for context
     isLoading,
     error,
     addPhase3Message,
@@ -163,9 +165,16 @@ function Phase3ChatPanel() {
             userMessage: string;
             thinkingLevel: ThinkingLevel;
             history?: ChatHistoryMessage[];
+            previousPhaseHistory?: ChatHistoryMessage[];
           },
           Phase3Response
         >(functions, "goalPhase3");
+
+        // Combine previous phase histories for context
+        const previousPhaseHistory = [
+          ...phase1ChatHistory,
+          ...phase2ChatHistory,
+        ];
 
         const result = await goalPhase3({
           title: phase1Data.title,
@@ -177,6 +186,8 @@ function Phase3ChatPanel() {
           userMessage,
           thinkingLevel,
           history: historyRef.current,
+          previousPhaseHistory:
+            previousPhaseHistory.length > 0 ? previousPhaseHistory : undefined,
         });
 
         const { output, history } = result.data;
@@ -222,6 +233,8 @@ function Phase3ChatPanel() {
     [
       phase1Data,
       phase2Data,
+      phase1ChatHistory,
+      phase2ChatHistory,
       addPhase3Message,
       setPhase3ChatHistory,
       setError,

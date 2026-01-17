@@ -167,6 +167,9 @@ function Phase4ChatPanel() {
     phase3Data,
     phase4Messages,
     phase4ChatHistory,
+    chatHistory: phase1ChatHistory, // Get Phase 1 history for context
+    phase2ChatHistory, // Get Phase 2 history for context
+    phase3ChatHistory, // Get Phase 3 history for context
     isLoading,
     error,
     addPhase4Message,
@@ -209,9 +212,17 @@ function Phase4ChatPanel() {
             userMessage: string;
             thinkingLevel: ThinkingLevel;
             history?: ChatHistoryMessage[];
+            previousPhaseHistory?: ChatHistoryMessage[];
           },
           Phase4Response
         >(functions, "goalPhase4");
+
+        // Combine all previous phase histories for context
+        const previousPhaseHistory = [
+          ...phase1ChatHistory,
+          ...phase2ChatHistory,
+          ...phase3ChatHistory,
+        ];
 
         const result = await goalPhase4({
           title: phase1Data.title,
@@ -224,6 +235,8 @@ function Phase4ChatPanel() {
           userMessage,
           thinkingLevel,
           history: historyRef.current,
+          previousPhaseHistory:
+            previousPhaseHistory.length > 0 ? previousPhaseHistory : undefined,
         });
 
         const { output, history } = result.data;
@@ -273,6 +286,9 @@ function Phase4ChatPanel() {
       phase1Data,
       phase2Data,
       phase3Data,
+      phase1ChatHistory,
+      phase2ChatHistory,
+      phase3ChatHistory,
       addPhase4Message,
       setPhase4ChatHistory,
       setError,
@@ -338,15 +354,19 @@ function Phase4ChatPanel() {
   );
 }
 
+interface AIGoalPhase4Props {
+  setOpen?: (open: boolean, skipUnsavedCheck?: boolean) => void;
+}
+
 /**
  * Main AI Goal Chat component for Phase 4 of goal creation
  * Two-column layout: Chat (70%) + Data Panel (30%)
  */
-const AIGoalPhase4 = () => {
+const AIGoalPhase4 = ({ setOpen }: AIGoalPhase4Props) => {
   return (
     <GoalCreationLayout
       chatPanel={<Phase4ChatPanel />}
-      dataPanel={<Phase4DataPanel />}
+      dataPanel={<Phase4DataPanel setOpen={setOpen} />}
     />
   );
 };

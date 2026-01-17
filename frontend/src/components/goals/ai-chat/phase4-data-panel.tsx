@@ -8,6 +8,7 @@ import {
   useGoalCreationStore,
   isPhase4Valid,
 } from "@/stores/goal-creation-store";
+import { useAIGoalCreation } from "@/hooks/use-ai-goal-creation";
 import {
   ChevronLeft,
   Sparkles,
@@ -16,13 +17,20 @@ import {
   Plus,
   Trash2,
   Check,
+  Loader2,
+  Edit,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+
+interface Phase4DataPanelProps {
+  setOpen?: (open: boolean, skipUnsavedCheck?: boolean) => void;
+}
 
 /**
  * Phase 4 Data Panel - Displays and allows editing of one-time tasks and non-negotiables
  */
-export function Phase4DataPanel() {
+export function Phase4DataPanel({ setOpen }: Phase4DataPanelProps) {
   const {
     phase1Data,
     phase4Data,
@@ -34,7 +42,10 @@ export function Phase4DataPanel() {
     removeNonNegotiable,
     prevPhase,
     phase4Messages,
+    reset,
   } = useGoalCreationStore();
+
+  const { createGoal, isLoading: isCreating, isEditing } = useAIGoalCreation();
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
@@ -69,13 +80,23 @@ export function Phase4DataPanel() {
     }
   };
 
-  const handleCreateGoal = () => {
-    // TODO: Implement goal creation with all collected data
-    console.log("Creating goal with:", {
-      phase1Data,
-      phase4Data,
-    });
-    alert("Goal creation will be implemented - check console for data");
+  const handleCreateGoal = async () => {
+    try {
+      await createGoal();
+      toast.success(
+        isEditing ? "Goal updated successfully!" : "Goal created successfully!"
+      );
+      reset();
+      // Pass true to skip unsaved changes check since we just saved
+      setOpen?.(false, true);
+    } catch (error) {
+      console.error("Failed to create goal:", error);
+      toast.error(
+        isEditing
+          ? "Failed to update goal. Please try again."
+          : "Failed to create goal. Please try again."
+      );
+    }
   };
 
   return (
@@ -306,13 +327,32 @@ export function Phase4DataPanel() {
         <Button
           className="w-full"
           onClick={handleCreateGoal}
-          disabled={!isValid}
+          disabled={!isValid || isCreating}
         >
-          <Check className="size-4 mr-1" />
-          Create Goal
+          {isCreating ? (
+            <>
+              <Loader2 className="size-4 mr-1 animate-spin" />
+              {isEditing ? "Updating..." : "Creating..."}
+            </>
+          ) : isEditing ? (
+            <>
+              <Edit className="size-4 mr-1" />
+              Update Goal
+            </>
+          ) : (
+            <>
+              <Check className="size-4 mr-1" />
+              Create Goal
+            </>
+          )}
         </Button>
 
-        <Button variant="ghost" className="w-full" onClick={prevPhase}>
+        <Button
+          variant="ghost"
+          className="w-full"
+          onClick={prevPhase}
+          disabled={isCreating}
+        >
           <ChevronLeft className="size-4 mr-1" />
           Back to Milestones
         </Button>

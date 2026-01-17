@@ -117,6 +117,7 @@ function Phase2ChatPanel() {
     phase1Data,
     phase2Messages,
     phase2ChatHistory,
+    chatHistory: phase1ChatHistory, // Get Phase 1 history for context
     isLoading,
     error,
     addPhase2Message,
@@ -165,6 +166,7 @@ function Phase2ChatPanel() {
             userMessage: string;
             thinkingLevel: ThinkingLevel;
             history?: ChatHistoryMessage[];
+            previousPhaseHistory?: ChatHistoryMessage[];
           },
           Phase2Response
         >(functions, "goalPhase2");
@@ -175,7 +177,9 @@ function Phase2ChatPanel() {
           duration: phase1Data.duration,
           userMessage,
           thinkingLevel,
+          // Include current phase history + previous phase history for context
           history: historyRef.current,
+          previousPhaseHistory: phase1ChatHistory,
         });
 
         const { output, history } = result.data;
@@ -232,6 +236,7 @@ function Phase2ChatPanel() {
     },
     [
       phase1Data,
+      phase1ChatHistory,
       addPhase2Message,
       setPhase2ChatHistory,
       setError,

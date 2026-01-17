@@ -11,7 +11,7 @@ import type useGoalsForm from "@/hooks/use-goals-form";
 export type DialogMode = "ai" | "form";
 
 interface GoalDialogContentProps {
-  setOpen: (open: boolean) => void;
+  setOpen: (open: boolean, skipUnsavedCheck?: boolean) => void;
   goalForm: ReturnType<typeof useGoalsForm>;
   isEditMode: boolean;
   onModeChange?: (mode: DialogMode) => void;
@@ -22,10 +22,11 @@ const GoalDialogContent = ({
   goalForm,
   isEditMode,
 }: GoalDialogContentProps) => {
-  const { phase } = useGoalCreationStore();
+  const { phase, editingGoalId } = useGoalCreationStore();
 
-  // In edit mode, show the form
-  if (isEditMode) {
+  // In edit mode (from old form flow), show the form
+  // But if we have an editingGoalId in the store, use AI flow
+  if (isEditMode && !editingGoalId) {
     return <GoalForm setOpen={setOpen} goalForm={goalForm} />;
   }
 
@@ -39,7 +40,7 @@ const GoalDialogContent = ({
       case "phase3":
         return <AIGoalPhase3 />;
       case "phase4":
-        return <AIGoalPhase4 />;
+        return <AIGoalPhase4 setOpen={setOpen} />;
       default:
         return <AIGoalChat />;
     }
