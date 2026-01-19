@@ -53,6 +53,15 @@ importScripts(
   "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"
 );
 
+// Activate immediately without waiting
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 firebase.initializeApp(${JSON.stringify(firebaseConfig, null, 2)});
 
 const messaging = firebase.messaging();
