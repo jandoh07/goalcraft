@@ -28,7 +28,7 @@ registerRoute(
       }),
     ],
     networkTimeoutSeconds: 3,
-  })
+  }),
 );
 
 registerRoute(
@@ -41,7 +41,7 @@ registerRoute(
         maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
-  })
+  }),
 );
 
 registerRoute(
@@ -57,7 +57,7 @@ registerRoute(
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
-  })
+  }),
 );
 
 registerRoute(
@@ -70,7 +70,7 @@ registerRoute(
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
-  })
+  }),
 );
 
 registerRoute(
@@ -83,43 +83,8 @@ registerRoute(
         maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
       }),
     ],
-  })
+  }),
 );
 
-self.addEventListener("push", (event) => {
-  if (!event.data) return;
-
-  const data = event.data.json();
-  const title = data.title || "GoalCraft";
-  const options = {
-    body: data.body,
-    icon: "/web-app-manifest-192x192.png",
-    badge: "/web-app-manifest-192x192.png",
-    data: {
-      url: data.url || "/",
-    },
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const urlToOpen = event.notification.data.url;
-
-  event.waitUntil(
-    self.clients
-      .matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      })
-      .then((clientsArr) => {
-        if (clientsArr.length > 0) {
-          clientsArr[0].navigate(urlToOpen);
-          clientsArr[0].focus();
-        } else {
-          self.clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
+// Note: Push notifications are handled by firebase-messaging-sw.js
+// This service worker only handles PWA caching strategies

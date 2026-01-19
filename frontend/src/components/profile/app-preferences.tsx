@@ -66,7 +66,7 @@ const AppPreferences = () => {
   const { setTheme, theme } = useTheme();
   const updateUserPreferences = useUpdateUserPreferences();
   const { data: fcmTokens, isLoading: isLoadingTokens } = useGetFcmTokens(
-    user?.uid || ""
+    user?.uid || "",
   );
   const saveFcmToken = useSaveFcmToken();
   const deleteFcmToken = useDeleteFcmToken();
@@ -94,15 +94,23 @@ const AppPreferences = () => {
         return null;
       }
 
+      // Register the Firebase messaging service worker
+      const registration = await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js",
+      );
+
       const messaging = getMessaging(app);
       const token = await getToken(messaging, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration,
       });
 
       return token;
     } catch (error) {
       console.error("Error requesting notification permission:", error);
-      toast.error("Failed to enable notifications");
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to enable notifications: ${errorMessage}`);
       return null;
     }
   };
