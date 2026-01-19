@@ -241,9 +241,37 @@ const AppPreferences = () => {
           {/* Show registered devices when notifications are enabled */}
           {pushNotifications && (
             <div className="ml-13 space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">
-                Registered Devices
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Registered Devices
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!user?.uid) return;
+                    setIsRequestingPermission(true);
+                    try {
+                      const token = await requestNotificationPermission();
+                      if (token) {
+                        await saveFcmToken.mutateAsync({
+                          userId: user.uid,
+                          token,
+                        });
+                        toast.success("Device added successfully");
+                      }
+                    } finally {
+                      setIsRequestingPermission(false);
+                    }
+                  }}
+                  disabled={isRequestingPermission || saveFcmToken.isPending}
+                >
+                  {isRequestingPermission ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Add Device
+                </Button>
+              </div>
               {isLoadingTokens ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
