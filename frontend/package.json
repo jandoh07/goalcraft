@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "tsx workbox/generate-fcm-sw.ts",
     "dev": "next dev",
     "build": "next build",
     "postbuild": "tsx workbox/generate-sw.ts",

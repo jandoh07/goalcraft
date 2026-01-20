@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   },
   robots: isStaging ? "noindex, nofollow" : "index, follow",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
   ),
   alternates: {
     canonical: "./",
@@ -91,7 +91,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

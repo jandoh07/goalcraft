@@ -1,1 +1,1 @@
-export const SW_VERSION = "initial";
+export const SW_VERSION = 'ab702903';
