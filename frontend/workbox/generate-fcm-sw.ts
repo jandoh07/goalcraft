@@ -83,6 +83,36 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// Handle raw push events (for testing via Chrome DevTools)
+self.addEventListener("push", (event) => {
+  console.log("[firebase-messaging-sw.js] Push event received", event);
+  
+  // Only handle if not already handled by FCM
+  if (event.data) {
+    let data;
+    try {
+      data = event.data.json();
+    } catch {
+      data = { title: "GoalCraft", body: event.data.text() };
+    }
+    
+    // Skip if this is an FCM message (has FCM-specific structure)
+    if (data.notification || data.data || data.fcmMessageId) {
+      return; // Let FCM handler deal with it
+    }
+    
+    const title = data.title || "GoalCraft";
+    const options = {
+      body: data.body || "",
+      icon: "/web-app-manifest-192x192.png",
+      badge: "/web-app-manifest-192x192.png",
+      data: { url: data.url || "/" },
+    };
+    
+    event.waitUntil(self.registration.showNotification(title, options));
+  }
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 

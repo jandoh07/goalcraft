@@ -94,10 +94,15 @@ const AppPreferences = () => {
         return null;
       }
 
-      // Register the Firebase messaging service worker
+      // Register the Firebase messaging service worker with a specific scope
+      // to avoid conflicts with the main PWA service worker
       const registration = await navigator.serviceWorker.register(
         "/firebase-messaging-sw.js",
+        { scope: "/firebase-cloud-messaging-push-scope" },
       );
+
+      // Wait for the service worker to be ready
+      await navigator.serviceWorker.ready;
 
       const messaging = getMessaging(app);
       const token = await getToken(messaging, {
