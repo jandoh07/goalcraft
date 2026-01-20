@@ -22,7 +22,7 @@ const sendPushNotification = async (
   userId: string,
   title: string,
   body: string,
-  url: string
+  url: string,
 ): Promise<void> => {
   const tokensSnapshot = await db
     .collection("users")
@@ -33,7 +33,7 @@ const sendPushNotification = async (
   if (tokensSnapshot.empty) return;
 
   const tokens = tokensSnapshot.docs.map(
-    (doc) => (doc.data() as FcmTokenDoc).token
+    (doc) => (doc.data() as FcmTokenDoc).token,
   );
 
   const message: admin.messaging.MulticastMessage = {
@@ -43,6 +43,7 @@ const sendPushNotification = async (
       body,
       url,
       type: url.includes("weekly") ? "weekly_review" : "daily_review",
+      id: Date.now().toString(),
     },
   };
 
@@ -71,7 +72,7 @@ const sendPushNotification = async (
               .collection("users")
               .doc(userId)
               .collection("fcmTokens")
-              .doc(tokenId)
+              .doc(tokenId),
           );
         });
         await batch.commit();
@@ -211,7 +212,7 @@ export const sendReviewNotifications = onSchedule(
     }
 
     logger.info(
-      `Review notifications complete. Processed ~${totalNotificationsSent} users.`
+      `Review notifications complete. Processed ~${totalNotificationsSent} users.`,
     );
-  }
+  },
 );

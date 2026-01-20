@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
+import { NotificationHandler } from "@/components/notifications/notification-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +106,7 @@ export default function RootLayout({
           >
             <AuthProvider>
               <ServiceWorkerProvider />
+              <NotificationHandler />
               {children}
               <Toaster position="top-right" />
             </AuthProvider>

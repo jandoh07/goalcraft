@@ -113,17 +113,40 @@ messaging.onBackgroundMessage((payload) => {
     payload,
   );
 
-  const notificationTitle = payload.notification?.title || "GoalCraft";
-  const notificationOptions = {
-    body: payload.notification?.body || "",
-    icon: "/web-app-manifest-192x192.png",
-    badge: "/web-app-manifest-192x192.png",
-    data: {
-      url: payload.data?.url || "/",
-    },
-  };
+  // Check if there are any visible clients (app is open)
+  // Only show notification if app is not in focus
+  self.clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((clientList) => {
+      // If any client is focused, don't show notification (app will handle it)
+      const hasFocusedClient = clientList.some(
+        (client) => client.visibilityState === "visible",
+      );
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+      if (hasFocusedClient) {
+        console.log(
+          "[firebase-messaging-sw.js] App is visible, skipping notification",
+        );
+        return;
+      }
+
+      // Show notification only if app is not visible
+      const notificationTitle = payload.notification?.title || "GoalCraft";
+      const notificationOptions = {
+        body: payload.notification?.body || "",
+        icon: "/web-app-manifest-192x192.png",
+        tag: payload.data?.notificationId || "goalcraft-notification",
+        renotify: false,
+        data: {
+          url: payload.data?.url || "/",
+        },
+      };
+
+      self.registration.showNotification(
+        notificationTitle,
+        notificationOptions,
+      );
+    });
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -135,13 +158,32 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        for (const client of clientList) {
-          if ("focus" in client) {
-            client.focus();
-            client.navigate(url);
-            return;
-          }
+        // First, try to find an existing PWA client (standalone mode)
+        const standaloneClient = clientList.find(
+          (client) =>
+            client.url.includes(self.location.origin) &&
+            matchMedia("(display-mode: standalone)").matches,
+        );
+
+        if (standaloneClient) {
+          // Focus existing PWA and navigate to URL
+          standaloneClient.focus();
+          return standaloneClient.navigate(url);
         }
+
+        // Second, try to find any existing client with the same origin
+        const existingClient = clientList.find((client) =>
+          client.url.includes(self.location.origin),
+        );
+
+        if (existingClient) {
+          // Focus existing client and navigate
+          existingClient.focus();
+          return existingClient.navigate(url);
+        }
+
+        // If no existing client, open new window
+        // If PWA is installed, this will open in standalone mode
         if (self.clients.openWindow) {
           return self.clients.openWindow(url);
         }
