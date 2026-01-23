@@ -131,11 +131,11 @@ messaging.onBackgroundMessage((payload) => {
       }
 
       // Show notification only if app is not visible
-      const notificationTitle = payload.notification?.title || "GoalCraft";
+      const notificationTitle = payload.data?.title || "GoalCraft";
       const notificationOptions = {
-        body: payload.notification?.body || "",
+        body: payload.data?.body || "",
         icon: "/web-app-manifest-192x192.png",
-        tag: payload.data?.notificationId || "goalcraft-notification",
+        tag: payload.data?.id || "goalcraft-notification",
         renotify: false,
         data: {
           url: payload.data?.url || "/",
