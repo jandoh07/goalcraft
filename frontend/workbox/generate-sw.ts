@@ -1,9 +1,25 @@
 import { injectManifest } from "workbox-build";
 import { build } from "esbuild";
-import { readdirSync, unlinkSync, writeFileSync } from "fs";
+import { readdirSync, unlinkSync, writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
 import { execSync } from "child_process";
+
+// Load environment variables from .env.local
+try {
+  const envFile = readFileSync(".env.local", "utf-8");
+  envFile.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split("=");
+    if (key && valueParts.length) {
+      const value = valueParts.join("=").trim();
+      process.env[key.trim()] = value;
+    }
+  });
+} catch (e) {
+  console.warn(
+    "No .env.local file found, using existing environment variables",
+  );
+}
 
 let BUILD_ID: string;
 try {
@@ -17,7 +33,7 @@ const BUILD_HASH = createHash("md5").update(BUILD_ID).digest("hex").slice(0, 8);
 
 writeFileSync(
   "src/components/providers/sw-version.ts",
-  `export const SW_VERSION = '${BUILD_HASH}';`
+  `export const SW_VERSION = '${BUILD_HASH}';`,
 );
 
 function getAppRoutes(dir: string, baseRoute = ""): string[] {
@@ -61,6 +77,23 @@ function getAppRoutes(dir: string, baseRoute = ""): string[] {
 async function buildSW() {
   const tempSwPath = "public/sw-temp.js";
 
+  // Validate required environment variables
+  const requiredEnvVars = [
+    "NEXT_PUBLIC_FIREBASE_API_KEY",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+    "NEXT_PUBLIC_FIREBASE_APP_ID",
+  ];
+
+  const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingVars.join(", ")}`,
+    );
+  }
+
   await build({
     entryPoints: ["src/app/sw.ts"],
     bundle: true,
@@ -69,6 +102,26 @@ async function buildSW() {
     target: "es2020",
     platform: "browser",
     minify: true,
+    define: {
+      "process.env.NEXT_PUBLIC_FIREBASE_API_KEY": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      ),
+      "process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      ),
+      "process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      ),
+      "process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      ),
+      "process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      ),
+      "process.env.NEXT_PUBLIC_FIREBASE_APP_ID": JSON.stringify(
+        process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      ),
+    },
   });
 
   const appDir = "src/app";
@@ -93,7 +146,7 @@ async function buildSW() {
 
   unlinkSync(tempSwPath);
   console.log(
-    `✅ Service worker generated with ${routeEntries.length} static routes.`
+    `✅ Service worker generated with ${routeEntries.length} static routes.`,
   );
 }
 

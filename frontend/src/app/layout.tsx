@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
+import { NotificationHandler } from "@/components/notifications/notification-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
   },
   robots: isStaging ? "noindex, nofollow" : "index, follow",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
   ),
   alternates: {
     canonical: "./",
@@ -91,7 +92,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
@@ -105,6 +106,7 @@ export default function RootLayout({
           >
             <AuthProvider>
               <ServiceWorkerProvider />
+              <NotificationHandler />
               {children}
               <Toaster position="top-right" />
             </AuthProvider>

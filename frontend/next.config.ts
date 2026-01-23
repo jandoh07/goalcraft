@@ -34,6 +34,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "@tabler/icons-react"],
+  },
 };
 
 export default nextConfig;

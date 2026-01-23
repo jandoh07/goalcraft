@@ -11,8 +11,8 @@ const MobileHeader = ({ title }: MobileHeaderProps) => {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div>
-      <div className="md:hidden flex items-center justify-between py-3 px-3 border-b border-b-border fixed top-0 left-0 w-full bg-background shadow-sm z-10">
+    <div className="md:hidden">
+      <div className="flex items-center justify-between py-3 px-3 border-b border-b-border fixed top-0 left-0 w-full bg-background shadow-sm z-10">
         <p className="text-lg font-semibold">{title}</p>
         <button
           onClick={openNotifications}
@@ -27,7 +27,7 @@ const MobileHeader = ({ title }: MobileHeaderProps) => {
           )}
         </button>
       </div>
-      <div className="w-full h-10 md:hidden"></div>
+      <div className="w-full h-10"></div>
     </div>
   );
 };

@@ -17,7 +17,9 @@ export const updateUserPreferences = async (
   preferences: {
     theme?: "light" | "dark" | "system";
     pushNotifications?: boolean;
-  }
+    notificationTime?: number;
+    timezone?: string;
+  },
 ) => {
   const docRef = doc(db, "users", userId);
   const updateData: DocumentData = {};
@@ -28,13 +30,19 @@ export const updateUserPreferences = async (
   if (preferences.pushNotifications !== undefined) {
     updateData.pushNotifications = preferences.pushNotifications;
   }
+  if (preferences.notificationTime !== undefined) {
+    updateData.notificationTime = preferences.notificationTime;
+  }
+  if (preferences.timezone !== undefined) {
+    updateData.timezone = preferences.timezone;
+  }
 
   await updateDoc(docRef, updateData);
 };
 
 export const updateUserCustomCategories = async (
   userId: string,
-  customCategories: string[]
+  customCategories: string[],
 ) => {
   const docRef = doc(db, "users", userId);
   await updateDoc(docRef, { customCategories });
@@ -60,7 +68,7 @@ const getDeviceType = (): "desktop" | "mobile" | "tablet" => {
 
 export const saveFcmToken = async (
   userId: string,
-  token: string
+  token: string,
 ): Promise<void> => {
   const fcmTokensRef = collection(db, "users", userId, "fcmTokens");
 
@@ -106,7 +114,7 @@ export const getFcmTokens = async (userId: string): Promise<FcmToken[]> => {
 
 export const deleteFcmToken = async (
   userId: string,
-  tokenId: string
+  tokenId: string,
 ): Promise<void> => {
   const tokenDocRef = doc(db, "users", userId, "fcmTokens", tokenId);
   await deleteDoc(tokenDocRef);
