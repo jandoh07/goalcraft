@@ -31,6 +31,10 @@ export const fetchUserData = async (
         theme: firestoreData.theme || "system",
         pushNotifications: firestoreData.pushNotifications ?? false,
         customCategories: firestoreData.customCategories || [],
+        timezone:
+          firestoreData.timezone ||
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
+        notificationTime: firestoreData.notificationTime,
       } as AppUser;
     } else {
       // If no Firestore doc exists, return auth user with defaults
@@ -39,6 +43,7 @@ export const fetchUserData = async (
         subscription: "free",
         theme: fallbackTheme,
         pushNotifications: false,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       } as AppUser;
     }
   } catch (error) {
@@ -49,6 +54,7 @@ export const fetchUserData = async (
       subscription: "free",
       theme: fallbackTheme,
       pushNotifications: false,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     } as AppUser;
   }
 };
@@ -154,6 +160,7 @@ export const setupAuthListener = (
             timezone:
               firestoreData.timezone ||
               Intl.DateTimeFormat().resolvedOptions().timeZone,
+            notificationTime: firestoreData.notificationTime,
           } as AppUser;
 
           setUser(updatedUser);

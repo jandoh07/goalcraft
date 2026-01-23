@@ -8,6 +8,13 @@ export function NotificationHandler() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    console.log({
+      ianaName: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      offsetMinutes: new Date().getTimezoneOffset(),
+      localTime: new Date().toString(),
+      isoTime: new Date().toISOString(),
+    });
+
     const messaging = getMessaging();
 
     const unsubscribe = onMessage(messaging, (payload) => {

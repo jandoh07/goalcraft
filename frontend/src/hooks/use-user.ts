@@ -21,6 +21,8 @@ export const useUpdateUserPreferences = () => {
       preferences: {
         theme?: "light" | "dark" | "system";
         pushNotifications?: boolean;
+        notificationTime?: number;
+        timezone?: string;
       };
     }) => updateUserPreferences(userId, preferences),
     onSuccess: () => {
