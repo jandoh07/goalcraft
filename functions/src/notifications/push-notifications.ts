@@ -238,8 +238,20 @@ export const sendReviewNotifications = onSchedule(
     const nonIanaTimezones = getNonIanaTimezones();
     for (const nonIanaTz of nonIanaTimezones) {
       const ianaEquivalent = NON_IANA_TIMEZONE_MAP[nonIanaTz];
-      const hour = timezoneHours.get(ianaEquivalent);
-      if (hour !== undefined) {
+      
+      // Check if IANA equivalent is already in our map
+      let hour = timezoneHours.get(ianaEquivalent);
+      
+      // If not (e.g., Etc/UTC isn't in supportedValuesOf), calculate it directly
+      if (hour === undefined) {
+        hour = getCurrentHourInTimezone(ianaEquivalent);
+        if (hour >= 0) {
+          // Also add the IANA equivalent to the map for future reference
+          timezoneHours.set(ianaEquivalent, hour);
+        }
+      }
+      
+      if (hour !== undefined && hour >= 0) {
         // Add non-IANA timezone to the same hour group
         if (!hourToTimezones.has(hour)) {
           hourToTimezones.set(hour, []);
@@ -296,8 +308,8 @@ export const sendReviewNotifications = onSchedule(
             : "Review your day and celebrate your progress!";
 
           const url = isSunday
-            ? `${APP_URL}?review=weekly`
-            : `${APP_URL}?review=daily`;
+            ? `${APP_URL}/goals?review=weekly`
+            : `${APP_URL}/goals?review=daily`;
 
           await sendPushNotification(userId, title, body, url);
         });
