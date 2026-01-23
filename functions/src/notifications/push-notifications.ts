@@ -238,10 +238,10 @@ export const sendReviewNotifications = onSchedule(
     const nonIanaTimezones = getNonIanaTimezones();
     for (const nonIanaTz of nonIanaTimezones) {
       const ianaEquivalent = NON_IANA_TIMEZONE_MAP[nonIanaTz];
-      
+
       // Check if IANA equivalent is already in our map
       let hour = timezoneHours.get(ianaEquivalent);
-      
+
       // If not (e.g., Etc/UTC isn't in supportedValuesOf), calculate it directly
       if (hour === undefined) {
         hour = getCurrentHourInTimezone(ianaEquivalent);
@@ -250,7 +250,7 @@ export const sendReviewNotifications = onSchedule(
           timezoneHours.set(ianaEquivalent, hour);
         }
       }
-      
+
       if (hour !== undefined && hour >= 0) {
         // Add non-IANA timezone to the same hour group
         if (!hourToTimezones.has(hour)) {
