@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Set the session cookie
     // httpOnly: prevents JavaScript access (XSS protection)
     // secure: only sent over HTTPS in production
-    // sameSite: strict prevents CSRF attacks
+    // sameSite: lax allows cookie to be sent on navigation
     response.cookies.set(SESSION_COOKIE_NAME, sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
       path: "/",
     });
 
+    console.log("Session cookie created successfully");
     return response;
   } catch (error) {
     console.error("Error creating session:", error);
+    // Return more detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create session" },
+      { error: "Failed to create session", details: errorMessage },
       { status: 401 }
     );
   }

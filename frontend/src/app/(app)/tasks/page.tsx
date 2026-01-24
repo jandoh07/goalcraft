@@ -27,7 +27,7 @@ type Groupkey =
 
 const TasksContent = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const tasks = useGetTasks(user?.uid || "");
   const taskDialog = useTaskDialog();
   const taskForm = useTasksForm({
@@ -36,7 +36,9 @@ const TasksContent = () => {
     openDialog: (open) => taskDialog.handleClose(open),
   });
 
-  const isFullyLoaded = !authLoading && !tasks.isLoading;
+  // With edge auth, if user reaches this page they are authenticated
+  // Only wait for data loading, not auth loading
+  const isFullyLoaded = !tasks.isLoading;
 
   // Filter tasks by selected date
   const filteredTasks = useMemo(() => {

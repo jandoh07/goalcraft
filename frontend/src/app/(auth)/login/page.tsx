@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,36 +19,21 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { handleEmailLogin, handleGoogleLogin } from "@/hooks/use-login";
 
-const Login = () => {
+const LoginContent = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { signIn, signInWithGoogle, user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { signIn, signInWithGoogle } = useAuth();
+  const searchParams = useSearchParams();
+  
+  // Get redirect URL from query params (set by middleware when redirecting from protected routes)
+  const redirectTo = searchParams.get("redirect") || "/goals";
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/goals");
-    }
-  }, [user, authLoading, router]);
-
-  // Show loading while checking auth state
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Don't render login form if user is authenticated (will redirect)
-  if (user) {
-    return null;
-  }
+  // Note: Auth state checking is handled by edge middleware in proxy.ts
+  // If user reaches this page, they are definitely not authenticated
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15 p-4">
@@ -69,7 +54,7 @@ const Login = () => {
 
           <form
             onSubmit={(e) =>
-              handleEmailLogin(e, email, password, setError, setLoading, signIn)
+              handleEmailLogin(e, email, password, setError, setLoading, signIn, redirectTo)
             }
             className="space-y-4"
           >
@@ -147,7 +132,7 @@ const Login = () => {
             variant="outline"
             className="w-full"
             onClick={() =>
-              handleGoogleLogin(setError, setGoogleLoading, signInWithGoogle)
+              handleGoogleLogin(setError, setGoogleLoading, signInWithGoogle, redirectTo)
             }
             disabled={loading || googleLoading}
           >
@@ -195,6 +180,20 @@ const Login = () => {
         </CardFooter>
       </Card>
     </div>
+  );
+};
+
+const Login = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 };
 

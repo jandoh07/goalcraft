@@ -69,7 +69,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const credential = await firebaseSignIn(email, password);
     // Sync session cookie after successful sign in
     const idToken = await credential.user.getIdToken();
-    await createSession(idToken);
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
     return credential;
   };
 
@@ -77,7 +80,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const credential = await firebaseSignUp(email, password, theme || "system");
     // Sync session cookie after successful sign up
     const idToken = await credential.user.getIdToken();
-    await createSession(idToken);
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
     return credential;
   };
 
@@ -85,7 +91,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const credential = await firebaseSignInWithGoogle(theme || "system");
     // Sync session cookie after successful Google sign in
     const idToken = await credential.user.getIdToken();
-    await createSession(idToken);
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
     return credential;
   };
 

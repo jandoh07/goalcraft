@@ -34,7 +34,7 @@ const Analytics: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { data: tasks = [], isLoading: tasksLoading } = useGetTasks(
     user?.uid || "",
   );
@@ -42,7 +42,9 @@ const Analytics: React.FC = () => {
     user?.uid || "",
   );
 
-  const isLoading = authLoading || tasksLoading || goalsLoading;
+  // With edge auth, if user reaches this page they are authenticated
+  // Only wait for data loading, not auth loading
+  const isLoading = tasksLoading || goalsLoading;
   const stats = useAnalyticsStats(tasks, goals);
 
   const activeGoals = useMemo(

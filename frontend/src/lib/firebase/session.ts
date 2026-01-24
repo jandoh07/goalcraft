@@ -16,9 +16,16 @@ export async function createSession(idToken: string): Promise<boolean> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ idToken }),
+      credentials: "same-origin", // Ensure cookies are included
     });
 
-    return response.ok;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Session creation failed:", response.status, errorData);
+      return false;
+    }
+
+    return true;
   } catch (error) {
     console.error("Failed to create session:", error);
     return false;

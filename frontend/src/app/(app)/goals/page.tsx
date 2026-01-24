@@ -89,7 +89,7 @@ const GoalsContent = () => {
     }, 0);
   }, [updateURL]);
 
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [goalFilter, setGoalFilter] = useState<
     "all" | "in-progress" | "completed" | "overdue"
   >("in-progress");
@@ -132,7 +132,9 @@ const GoalsContent = () => {
     updateURL("edit");
   };
 
-  const isFullyLoaded = !authLoading && !isLoading;
+  // With edge auth, if user reaches this page they are authenticated
+  // Only wait for data loading, not auth loading
+  const isFullyLoaded = !isLoading;
 
   const getEmptyStateMessage = () => {
     switch (goalFilter) {
