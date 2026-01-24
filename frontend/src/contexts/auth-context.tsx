@@ -13,6 +13,7 @@ import {
   fetchUserData,
 } from "@/lib/firebase/auth";
 import { auth } from "@/lib/firebase/firebase";
+import { createSession, clearSession } from "@/lib/firebase/session";
 
 interface AuthContextType {
   user: AppUser | null;
@@ -63,20 +64,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return cleanup;
   }, [theme, setTheme]);
 
-  // Wrapper functions that use the current theme
+  // Wrapper functions that use the current theme and sync sessions
   const signIn = async (email: string, password: string) => {
-    return firebaseSignIn(email, password);
+    const credential = await firebaseSignIn(email, password);
+    // Sync session cookie after successful sign in
+    const idToken = await credential.user.getIdToken();
+    await createSession(idToken);
+    return credential;
   };
 
   const signUp = async (email: string, password: string) => {
-    return firebaseSignUp(email, password, theme || "system");
+    const credential = await firebaseSignUp(email, password, theme || "system");
+    // Sync session cookie after successful sign up
+    const idToken = await credential.user.getIdToken();
+    await createSession(idToken);
+    return credential;
   };
 
   const signInWithGoogle = async () => {
-    return firebaseSignInWithGoogle(theme || "system");
+    const credential = await firebaseSignInWithGoogle(theme || "system");
+    // Sync session cookie after successful Google sign in
+    const idToken = await credential.user.getIdToken();
+    await createSession(idToken);
+    return credential;
   };
 
   const logout = async () => {
+    // Clear server session first, then sign out from Firebase
+    await clearSession();
     return firebaseLogout();
   };
 

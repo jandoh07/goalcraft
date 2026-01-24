@@ -17,6 +17,30 @@ GoalCraft is an AI-powered PWA for goal setting, task management, and productivi
 3. Real-time updates use Firestore `onSnapshot` subscriptions initialized in hooks (see [use-tasks.ts](frontend/src/hooks/use-tasks.ts))
 4. Optimistic updates are implemented via `onMutate` with rollback on error
 
+### Authentication (Edge Auth)
+
+Authentication uses a dual-layer approach with server-side verification at the edge:
+
+1. **Edge Middleware** ([middleware.ts](frontend/src/middleware.ts)) - Runs before every request to verify session cookies
+   - Protected routes: `/goals`, `/tasks`, `/schedule`, `/analytics`, `/settings`
+   - Auth routes (`/login`, `/signup`) redirect to `/goals` if already authenticated
+   - Session verification via `/api/auth/verify` endpoint
+
+2. **Session Management** - Firebase Admin SDK manages server-side sessions:
+   - [admin.ts](frontend/src/lib/firebase/admin.ts) - Firebase Admin configuration for session cookies
+   - [session.ts](frontend/src/lib/firebase/session.ts) - Client-side session utilities (`createSession`, `clearSession`)
+   - API routes: `POST/DELETE /api/auth/session` for cookie management
+
+3. **Client-Side Auth** - [auth-context.tsx](frontend/src/contexts/auth-context.tsx) syncs Firebase Auth with session cookies:
+   - On login/signup: Gets ID token, creates server session cookie
+   - On logout: Clears server session, then signs out from Firebase
+   - Real-time Firestore listener for user profile updates
+
+4. **Fallback Protection** - [protected-route.tsx](frontend/src/components/auth/protected-route.tsx) provides client-side fallback for:
+   - Offline scenarios where middleware might not run
+   - Session expiry during active use
+   - PWA cached page access
+
 ### Hook Pattern (Critical)
 
 All data operations follow this pattern in `frontend/src/hooks/`:
@@ -31,6 +55,8 @@ Firebase operations are in `frontend/src/lib/firebase/`:
 
 - Each domain has its own file: `tasks.ts`, `goals.ts`, `auth.ts`, `user.ts`
 - Export both one-time fetch functions and `subscribeTo*` functions for real-time
+- `admin.ts` - Server-side Firebase Admin SDK (session cookies, token verification)
+- `session.ts` - Client utilities for session sync
 
 ### Form Handling
 
@@ -95,9 +121,15 @@ firebase emulators:start  # Firestore on 8080, Functions on 5001
 
 Frontend requires `NEXT_PUBLIC_FIREBASE_*` variables for Firebase config. App Check uses `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and debug token for local dev.
 
+For edge auth session management:
+
+- `FIREBASE_SERVICE_ACCOUNT_KEY` - JSON string of Firebase service account credentials (required for production)
+- In development, Firebase Admin uses default credentials if running with `firebase emulators`
+
 ## Important Gotchas
 
-1. **Anonymous auth by default**: App auto-signs in anonymously if no user (see [auth-context.tsx](frontend/src/contexts/auth-context.tsx))
+1. **Edge Auth with Session Cookies**: Auth is verified at the edge via middleware before pages load. Session cookies are synced on login/logout via API routes.
 2. **Firestore timestamps**: Always convert `.toDate()` when reading, use `Timestamp.now()` when writing
 3. **Query invalidation**: Real-time subscriptions update cache directly; avoid manual invalidation
 4. **PWA**: Service worker generated via `postbuild` script using Workbox
+5. **Session Cookie Name**: The session cookie is named `__session` (required by Firebase Hosting)
