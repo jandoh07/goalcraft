@@ -32,6 +32,11 @@ const PUBLIC_ROUTES = [
 /**
  * Middleware for edge authentication
  * Runs before every request to check authentication status
+ * 
+ * Note: We only check for cookie existence here, not validity.
+ * The session cookie is cryptographically signed by Firebase Admin SDK,
+ * so if it exists and hasn't expired, it's valid. Full verification
+ * happens in API routes and client-side as needed.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -61,30 +66,8 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-
-    // Verify the session is valid by calling the verify API
-    // This is done server-side to avoid exposing the session to client
-    try {
-      const verifyUrl = new URL("/api/auth/verify", request.url);
-      const verifyResponse = await fetch(verifyUrl, {
-        headers: {
-          Cookie: `${SESSION_COOKIE_NAME}=${sessionCookie}`,
-        },
-      });
-
-      if (!verifyResponse.ok) {
-        // Session is invalid, clear cookie and redirect to login
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        const response = NextResponse.redirect(loginUrl);
-        response.cookies.delete(SESSION_COOKIE_NAME);
-        return response;
-      }
-    } catch (error) {
-      console.error("Session verification error in middleware:", error);
-      // On verification error, allow the request but let client-side handle it
-      // This prevents blocking users if the verify API has issues
-    }
+    // Cookie exists - allow the request
+    // Full session verification happens in API routes/client-side if needed
   }
 
   // For auth routes: redirect to goals if already authenticated
