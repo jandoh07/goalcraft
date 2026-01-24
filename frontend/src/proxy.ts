@@ -38,7 +38,7 @@ const PUBLIC_ROUTES = [
  * so if it exists and hasn't expired, it's valid. Full verification
  * happens in API routes and client-side as needed.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for public routes and static assets
