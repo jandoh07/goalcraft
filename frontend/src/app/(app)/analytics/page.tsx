@@ -25,8 +25,6 @@ const Analytics: React.FC = () => {
     user?.uid || "",
   );
 
-  // With edge auth, if user reaches this page they are authenticated
-  // Only wait for data loading, not auth loading
   const isLoading = tasksLoading;
 
   return (
@@ -79,7 +77,7 @@ const Analytics: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="flex justify-between items-center">
                     Your task completion history - days are colored based on
                     completed tasks
                   </CardDescription>
