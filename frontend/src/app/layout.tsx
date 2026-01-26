@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
-import { AuthProvider } from "@/contexts/auth-context";
+import { AuthProviderWithServerUser } from "@/components/providers/auth-provider-server";
 import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
@@ -86,7 +86,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -104,12 +104,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AuthProvider>
+            <AuthProviderWithServerUser>
               <ServiceWorkerProvider />
               <NotificationHandler />
               {children}
               <Toaster position="top-right" />
-            </AuthProvider>
+            </AuthProviderWithServerUser>
           </ThemeProvider>
         </QueryProvider>
       </body>

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Session cookie name - must match the one used in API routes
 const SESSION_COOKIE_NAME = "__session";
-
-// Routes that require authentication
+const AUTH_ROUTES = ["/login", "/signup"];
 const PROTECTED_ROUTES = [
   "/goals",
   "/tasks",
@@ -11,11 +9,6 @@ const PROTECTED_ROUTES = [
   "/analytics",
   "/settings",
 ];
-
-// Routes that should redirect to app if user is authenticated
-const AUTH_ROUTES = ["/login", "/signup"];
-
-// Public routes that don't require any auth checks
 const PUBLIC_ROUTES = [
   "/",
   "/about",
@@ -29,55 +22,42 @@ const PUBLIC_ROUTES = [
   "/sitemap.xml",
 ];
 
-/**
- * Middleware for edge authentication
- * Runs before every request to check authentication status
- * 
- * Note: We only check for cookie existence here, not validity.
- * The session cookie is cryptographically signed by Firebase Admin SDK,
- * so if it exists and hasn't expired, it's valid. Full verification
- * happens in API routes and client-side as needed.
- */
+function matchesRoutes(pathname: string, routes: string[]): boolean {
+  return routes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for public routes and static assets
-  if (
-    PUBLIC_ROUTES.some(
-      (route) => pathname === route || pathname.startsWith(route + "/")
-    )
-  ) {
+  if (matchesRoutes(pathname, PUBLIC_ROUTES)) {
     return NextResponse.next();
   }
 
-  // Get session cookie
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const isAuthenticated = !!sessionCookie;
+  const isProtectedRoute = matchesRoutes(pathname, PROTECTED_ROUTES);
+  const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
-  // For protected routes: redirect to login if not authenticated
-  if (
-    PROTECTED_ROUTES.some(
-      (route) => pathname === route || pathname.startsWith(route + "/")
-    )
-  ) {
-    if (!isAuthenticated) {
+  if (!isProtectedRoute && !isAuthRoute) {
+    return NextResponse.next();
+  }
+
+  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const hasSession = !!sessionCookie;
+
+  if (isProtectedRoute) {
+    if (!hasSession) {
       const loginUrl = new URL("/login", request.url);
-      // Preserve the original URL to redirect back after login
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-    // Cookie exists - allow the request
-    // Full session verification happens in API routes/client-side if needed
+    return NextResponse.next();
   }
 
-  // For auth routes: redirect to goals if already authenticated
-  if (AUTH_ROUTES.some((route) => pathname === route)) {
-    if (isAuthenticated) {
-      // Check if there's a redirect URL in the query params
-      const redirectUrl = request.nextUrl.searchParams.get("redirect");
-      const destination = redirectUrl || "/goals";
-      return NextResponse.redirect(new URL(destination, request.url));
-    }
+  if (isAuthRoute && hasSession) {
+    const redirectUrl = request.nextUrl.searchParams.get("redirect");
+    const destination = redirectUrl || "/goals";
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return NextResponse.next();
