@@ -73,7 +73,7 @@ export function UserNav() {
             <span className="truncate font-medium">
               {user?.name || user?.email}
             </span>
-            <span className="text-muted-foreground truncate text-xs">
+            <span className="opacity-50 truncate text-xs">
               {user?.subscription === "premium" ? "Premium Plan" : "Free Plan"}
             </span>
           </div>
@@ -130,7 +130,7 @@ export function UserNav() {
                 {theme === "dark" && <span className="text-primary">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setTheme("system")}
+                onClick={() => handleThemeChange("system")}
                 className="flex justify-between items-center cursor-pointer"
               >
                 <span className="flex items-center gap-2">
