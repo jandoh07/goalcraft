@@ -16,7 +16,7 @@ export async function createSession(idToken: string): Promise<boolean> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ idToken }),
-      credentials: "same-origin", // Ensure cookies are included
+      credentials: "same-origin",
     });
 
     if (!response.ok) {
@@ -50,9 +50,32 @@ export async function clearSession(): Promise<boolean> {
 }
 
 /**
- * Verify the current session is valid
- * Useful for checking if the session is still active
+ * Update the user data cookie with new values
+ * Call this when user preferences change (e.g., theme)
+ * @param updates - Partial user data to update
  */
+export async function updateUserDataCookie(updates: {
+  theme?: string;
+  name?: string;
+  subscription?: string;
+}): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/user-data", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
+      credentials: "same-origin",
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error("Failed to update user data cookie:", error);
+    return false;
+  }
+}
+
 export async function verifySession(): Promise<{
   authenticated: boolean;
   uid?: string;

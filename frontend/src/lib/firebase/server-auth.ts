@@ -1,5 +1,9 @@
 import { cookies } from "next/headers";
-import { verifySessionCookie, SESSION_COOKIE_NAME, getAdminDb } from "./admin";
+import {
+  verifySessionCookie,
+  SESSION_COOKIE_NAME,
+  USER_DATA_COOKIE_NAME,
+} from "./admin";
 
 export interface ServerUser {
   uid: string;
@@ -19,27 +23,21 @@ export async function getServerUser(): Promise<ServerUser | null> {
     }
 
     const decodedClaims = await verifySessionCookie(sessionCookie);
-
     if (!decodedClaims) {
       return null;
     }
 
-    try {
-      const db = getAdminDb();
-      const userDoc = await db.collection("users").doc(decodedClaims.uid).get();
+    const userDataCookie = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
+    if (userDataCookie) {
+      try {
+        const userData = JSON.parse(userDataCookie) as ServerUser;
 
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        return {
-          uid: decodedClaims.uid,
-          email: decodedClaims.email,
-          name: userData?.name,
-          theme: userData?.theme,
-          subscription: userData?.subscription,
-        };
+        if (userData.uid === decodedClaims.uid) {
+          return userData;
+        }
+      } catch {
+        // Silently fail and return minimal data below
       }
-    } catch (firestoreError) {
-      console.error("Error fetching user data from Firestore:", firestoreError);
     }
 
     return {
