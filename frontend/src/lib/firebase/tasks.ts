@@ -2,6 +2,7 @@ import { SubTask, Task } from "@/types";
 import {
   collection,
   getDocs,
+  getDocsFromCache,
   doc,
   updateDoc,
   deleteDoc,
@@ -23,7 +24,7 @@ import { calculateNextRun } from "../utils/calculate-next-run-date";
 
 const userTasksQuery = (
   userId: string,
-  filters?: { status?: string; goalId?: string }
+  filters?: { status?: string; goalId?: string },
 ) => {
   let q;
   const tasksCollection = collection(db, "tasks");
@@ -33,13 +34,13 @@ const userTasksQuery = (
     q = query(
       baseQuery,
       where("status", "==", filters.status),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
   } else if (filters?.goalId) {
     q = query(
       baseQuery,
       where("goalId", "==", filters.goalId),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
   } else {
     q = query(baseQuery, orderBy("createdAt", "desc"));
@@ -49,28 +50,33 @@ const userTasksQuery = (
 
 export const fetchUserTasks = async (
   userId: string,
-  filters?: { status?: string; goalId?: string }
+  filters?: { status?: string; goalId?: string },
 ) => {
   try {
     const q = userTasksQuery(userId, filters);
-    const querySnapshot = await getDocs(q);
-    const tasks: Task[] = [];
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      tasks.push({
-        id: doc.id,
-        ...data,
-        dueDate: data.dueDate?.toDate(),
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as Task);
-    });
+    try {
+      const querySnapshot = await getDocsFromCache(q);
+      const tasks: Task[] = [];
 
-    return tasks;
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        tasks.push({
+          id: doc.id,
+          ...data,
+          dueDate: data.dueDate?.toDate(),
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        } as Task);
+      });
+
+      return tasks;
+    } catch {
+      return [];
+    }
   } catch (error) {
-    console.error("Error getting tasks:", error);
-    throw error;
+    console.error("Error fetching tasks from cache:", error);
+    return [];
   }
 };
 
@@ -78,11 +84,10 @@ export const subscribeToUserTasks = (
   userId: string,
   filters: { status?: string; goalId?: string } | undefined,
   callback: (tasks: Task[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   const q = userTasksQuery(userId, filters);
 
-  // onSnapshot returns an unsubscribe function
   return onSnapshot(
     q,
     (querySnapshot) => {
@@ -102,21 +107,21 @@ export const subscribeToUserTasks = (
     (error) => {
       console.error("Error in tasks subscription:", error);
       onError?.(error);
-    }
+    },
   );
 };
 
 export const addTask = async (
   taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> & {
     isRecurring?: boolean;
-  }
+  },
 ) => {
   const now = Timestamp.now();
 
   if (taskData.isRecurring) {
     if (!taskData.dueDate || !taskData.frequency) {
       throw new Error(
-        "Recurring tasks must have an initial dueDate and a frequency."
+        "Recurring tasks must have an initial dueDate and a frequency.",
       );
     }
 
@@ -124,7 +129,7 @@ export const addTask = async (
     const nextRunDate = calculateNextRun(
       taskData.frequency,
       taskData.dueDate,
-      timeZone
+      timeZone,
     );
 
     const batch = writeBatch(db);
@@ -196,7 +201,7 @@ export const addTask = async (
 
 export const updateTask = async (
   taskId: string,
-  updates: Partial<Task> & { stopRecurring?: boolean }
+  updates: Partial<Task> & { stopRecurring?: boolean },
 ) => {
   const docRef = doc(db, "tasks", taskId);
   const updateData: DocumentData = {
@@ -264,7 +269,7 @@ export const removeTask = async (taskId: string) => {
 export const toggleTaskStatus = async (
   taskId: string,
   currentStatus: string,
-  goalId?: string
+  goalId?: string,
 ) => {
   const newStatus = currentStatus === "completed" ? "in-progress" : "completed";
   const taskRef = doc(db, "tasks", taskId);
@@ -340,7 +345,7 @@ export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
   for (const chunk of chunks) {
     const q = query(
       collection(db, "masterTasks"),
-      where("__name__", "in", chunk)
+      where("__name__", "in", chunk),
     );
     const querySnapshot = await getDocs(q);
 
@@ -361,7 +366,7 @@ export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
 
 export const updateTaskRecurrence = async (
   masterTaskId: string,
-  recurringStatus: string
+  recurringStatus: string,
 ) => {
   const masterTaskRef = doc(db, "masterTasks", masterTaskId);
   await updateDoc(masterTaskRef, {
@@ -373,7 +378,7 @@ export const updateTaskRecurrence = async (
 
 export const getNonNegotiablesByGoalId = async (
   goalId: string,
-  userId: string
+  userId: string,
 ) => {
   if (!goalId || !userId) return [];
 
@@ -381,7 +386,7 @@ export const getNonNegotiablesByGoalId = async (
     const q = query(
       collection(db, "masterTasks"),
       where("userId", "==", userId),
-      where("goalId", "==", goalId)
+      where("goalId", "==", goalId),
     );
 
     const querySnapshot = await getDocs(q);

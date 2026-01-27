@@ -3,7 +3,7 @@ import {
   query,
   where,
   orderBy,
-  getDocs,
+  getDocsFromCache,
   getDoc,
   doc,
   updateDoc,
@@ -27,20 +27,20 @@ const userGoalsQuery = (userId: string, status?: string) => {
       where("userId", "==", userId),
       where("status", "==", "in-progress"),
       where("dueDate", "<", Timestamp.now()),
-      orderBy("dueDate", "asc")
+      orderBy("dueDate", "asc"),
     );
   } else if (status === "in-progress" || status === "completed") {
     q = query(
       collection(db, "goals"),
       where("userId", "==", userId),
       where("status", "==", status),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
   } else {
     q = query(
       collection(db, "goals"),
       where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
     );
   }
 
@@ -51,38 +51,38 @@ export const getUserGoals = async (userId: string, status?: string) => {
   try {
     const q = userGoalsQuery(userId, status);
 
-    const querySnapshot = await getDocs(q);
-    const goals: Goal[] = [];
+    // Only read from cache - the onSnapshot subscription handles server fetching
+    // This prevents double fetching (once from queryFn, once from subscription)
+    try {
+      const querySnapshot = await getDocsFromCache(q);
+      const goals: Goal[] = [];
 
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      goals.push({
-        id: docSnap.id,
-        ...data,
-        dueDate: data.dueDate?.toDate(),
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as Goal);
-    });
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        goals.push({
+          id: docSnap.id,
+          ...data,
+          dueDate: data.dueDate?.toDate(),
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        } as Goal);
+      });
 
-    return goals;
-  } catch (error) {
-    console.error("Error fetching goals:", error);
-    // Check if it's an index error
-    if (error instanceof Error && error.message.includes("index")) {
-      console.error("You need to create a composite index in Firestore.");
-      console.error(
-        "The error message should contain a link to create the index."
-      );
+      return goals;
+    } catch {
+      // Cache miss - return empty array, subscription will populate data
+      return [];
     }
-    throw error;
+  } catch (error) {
+    console.error("Error fetching goals from cache:", error);
+    return [];
   }
 };
 
 export const subscribeToUserGoals = (
   userId: string,
   status: string | undefined,
-  callback: (goals: Goal[]) => void
+  callback: (goals: Goal[]) => void,
 ) => {
   const q = userGoalsQuery(userId, status);
 
@@ -104,7 +104,7 @@ export const subscribeToUserGoals = (
     },
     (error) => {
       console.error("Error subscribing to goals:", error);
-    }
+    },
   );
 };
 
@@ -144,7 +144,7 @@ export const addGoal = async (
     "id" | "createdAt" | "updatedAt" | "userId" | "goalId"
   > & {
     isRecurring?: boolean;
-  })[]
+  })[],
 ) => {
   const batch = writeBatch(db);
   const now = Timestamp.now();
@@ -174,7 +174,7 @@ export const addGoal = async (
         const nextRunDate = calculateNextRun(
           task.frequency!,
           task.dueDate!,
-          timeZone
+          timeZone,
         );
 
         // Master task (template for recurring instances)
