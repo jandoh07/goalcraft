@@ -21,7 +21,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@genkit-ai/firebase": "^1.28.0",
-    "@genkit-ai/google-genai": "^1.27.0",
+    "@genkit-ai/google-genai": "^1.28.0",
     "@google/genai": "^1.35.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
