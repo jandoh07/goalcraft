@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { UserCredential } from "firebase/auth";
+import { IdTokenResult, UserCredential } from "firebase/auth";
 import { useTheme } from "next-themes";
 import { AppUser } from "@/types";
 import {
@@ -13,6 +13,15 @@ import {
   fetchUserData,
 } from "@/lib/firebase/auth";
 import { auth } from "@/lib/firebase/firebase";
+import { createSession, clearSession } from "@/lib/firebase/session";
+
+export interface InitialUser {
+  uid: string;
+  email: string | undefined;
+  name?: string;
+  theme?: string;
+  subscription?: string;
+}
 
 interface AuthContextType {
   user: AppUser | null;
@@ -34,9 +43,41 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+  children: React.ReactNode;
+  initialUser?: InitialUser | null;
+}
+
+export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
+  const [user, setUser] = useState<AppUser | null>(() => {
+    if (initialUser) {
+      return {
+        uid: initialUser.uid,
+        email: initialUser.email ?? null,
+        displayName: initialUser.name ?? null,
+        name: initialUser.name,
+        subscription: initialUser.subscription ?? "free",
+        theme: initialUser.theme ?? "system",
+        emailVerified: false,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        refreshToken: "",
+        tenantId: null,
+        delete: async () => {},
+        getIdToken: async () => "",
+        getIdTokenResult: async () => ({}) as IdTokenResult,
+        reload: async () => {},
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null,
+        providerId: "",
+      } as AppUser;
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState(!initialUser);
   const { theme, setTheme } = useTheme();
 
   const refreshUser = async () => {
@@ -58,25 +99,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       },
       setTheme,
       setLoading,
-      theme
+      theme,
     );
     return cleanup;
   }, [theme, setTheme]);
 
-  // Wrapper functions that use the current theme
   const signIn = async (email: string, password: string) => {
-    return firebaseSignIn(email, password);
+    const credential = await firebaseSignIn(email, password);
+    const idToken = await credential.user.getIdToken();
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
+    return credential;
   };
 
   const signUp = async (email: string, password: string) => {
-    return firebaseSignUp(email, password, theme || "system");
+    const credential = await firebaseSignUp(email, password, theme || "system");
+    const idToken = await credential.user.getIdToken();
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
+    return credential;
   };
 
   const signInWithGoogle = async () => {
-    return firebaseSignInWithGoogle(theme || "system");
+    const credential = await firebaseSignInWithGoogle(theme || "system");
+    const idToken = await credential.user.getIdToken();
+    const sessionCreated = await createSession(idToken);
+    if (!sessionCreated) {
+      console.error("Failed to create session cookie");
+    }
+    return credential;
   };
 
   const logout = async () => {
+    await clearSession();
     return firebaseLogout();
   };
 

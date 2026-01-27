@@ -26,16 +26,19 @@ export const handleEmailLogin = async (
   password: string,
   setError: React.Dispatch<React.SetStateAction<string>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  signIn: (email: string, password: string) => Promise<UserCredential>
+  signIn: (email: string, password: string) => Promise<UserCredential>,
+  redirectTo: string = "/goals"
 ) => {
   e.preventDefault();
   setError("");
   setLoading(true);
 
   try {
+    // signIn now includes session cookie creation (awaited inside auth context)
     await signIn(email, password);
-    // Don't navigate immediately - let the auth state change handle it
-    // The useEffect above will redirect when user is authenticated
+    // Use full page redirect to ensure proxy processes the new session
+    // The signIn function awaits createSession, so cookie should be set by now
+    window.location.replace(redirectTo);
   } catch (err) {
     if (err instanceof FirebaseError) {
       setError(getErrorMessage(err));
@@ -49,15 +52,18 @@ export const handleEmailLogin = async (
 export const handleGoogleLogin = async (
   setError: React.Dispatch<React.SetStateAction<string>>,
   setGoogleLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  signInWithGoogle: () => Promise<UserCredential>
+  signInWithGoogle: () => Promise<UserCredential>,
+  redirectTo: string = "/goals"
 ) => {
   setError("");
   setGoogleLoading(true);
 
   try {
+    // signInWithGoogle now includes session cookie creation (awaited inside auth context)
     await signInWithGoogle();
-    // Don't navigate immediately - let the auth state change handle it
-    // The useEffect above will redirect when user is authenticated
+    // Use full page redirect to ensure proxy processes the new session
+    // The signInWithGoogle function awaits createSession, so cookie should be set by now
+    window.location.replace(redirectTo);
   } catch (err) {
     if (err instanceof FirebaseError) {
       if (err.code === "auth/popup-closed-by-user") {

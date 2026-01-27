@@ -1,7 +1,7 @@
 import { TimeBlock } from "@/types/schedule";
 import {
   collection,
-  getDocs,
+  getDocsFromCache,
   doc,
   updateDoc,
   deleteDoc,
@@ -19,14 +19,14 @@ import { db } from "./firebase";
 // Query for non-recurring blocks within a date range
 const nonRecurringBlocksQuery = (
   userId: string,
-  filters?: { startDate?: Date; endDate?: Date }
+  filters?: { startDate?: Date; endDate?: Date },
 ) => {
   const timeBlocksCollection = collection(db, "timeBlocks");
   let q = query(
     timeBlocksCollection,
     where("userId", "==", userId),
     where("isRecurring", "==", false),
-    orderBy("start", "asc")
+    orderBy("start", "asc"),
   );
 
   if (filters?.startDate) {
@@ -47,7 +47,7 @@ const recurringBlocksQuery = (userId: string) => {
     timeBlocksCollection,
     where("userId", "==", userId),
     where("isRecurring", "==", true),
-    orderBy("start", "asc")
+    orderBy("start", "asc"),
   );
 };
 
@@ -71,35 +71,57 @@ const convertDocToTimeBlock = (doc: DocumentData, id: string): TimeBlock => {
   };
 };
 
+/**
+ * Helper to get docs from cache only
+ * The onSnapshot subscription handles server fetching to avoid double fetching
+ */
+const getDocsFromCacheOnly = async (q: ReturnType<typeof query>) => {
+  try {
+    return await getDocsFromCache(q);
+  } catch {
+    // Return null on cache miss - caller will return empty array
+    return null;
+  }
+};
+
 export const fetchUserTimeBlocks = async (
   userId: string,
-  filters?: { startDate?: Date; endDate?: Date }
+  filters?: { startDate?: Date; endDate?: Date },
 ): Promise<TimeBlock[]> => {
   try {
-    // Fetch non-recurring blocks within the date range
+    // Only read from cache - the onSnapshot subscription handles server fetching
+    // This prevents double fetching (once from queryFn, once from subscription)
     const nonRecurringQuery = nonRecurringBlocksQuery(userId, filters);
-    const nonRecurringSnapshot = await getDocs(nonRecurringQuery);
+    const nonRecurringSnapshot = await getDocsFromCacheOnly(nonRecurringQuery);
 
-    // Fetch all recurring blocks (they can generate instances in any week)
     const recurringQuery = recurringBlocksQuery(userId);
-    const recurringSnapshot = await getDocs(recurringQuery);
+    const recurringSnapshot = await getDocsFromCacheOnly(recurringQuery);
+
+    // If cache is empty, return empty array - subscription will populate
+    if (!nonRecurringSnapshot && !recurringSnapshot) {
+      return [];
+    }
 
     const timeBlocks: TimeBlock[] = [];
     const seenIds = new Set<string>();
 
     // Add non-recurring blocks
-    nonRecurringSnapshot.forEach((doc) => {
+    nonRecurringSnapshot?.forEach((doc) => {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
-        timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+        timeBlocks.push(
+          convertDocToTimeBlock(doc.data() as DocumentData, doc.id),
+        );
       }
     });
 
     // Add recurring blocks
-    recurringSnapshot.forEach((doc) => {
+    recurringSnapshot?.forEach((doc) => {
       if (!seenIds.has(doc.id)) {
         seenIds.add(doc.id);
-        timeBlocks.push(convertDocToTimeBlock(doc.data(), doc.id));
+        timeBlocks.push(
+          convertDocToTimeBlock(doc.data() as DocumentData, doc.id),
+        );
       }
     });
 
@@ -117,7 +139,7 @@ export const subscribeToUserTimeBlocks = (
   userId: string,
   filters: { startDate?: Date; endDate?: Date } | undefined,
   callback: (timeBlocks: TimeBlock[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ) => {
   const nonRecurringQuery = nonRecurringBlocksQuery(userId, filters);
   const recurringQuery = recurringBlocksQuery(userId);
@@ -163,7 +185,7 @@ export const subscribeToUserTimeBlocks = (
     (error) => {
       console.error("Error in non-recurring blocks subscription:", error);
       onError?.(error);
-    }
+    },
   );
 
   // Subscribe to recurring blocks
@@ -179,7 +201,7 @@ export const subscribeToUserTimeBlocks = (
     (error) => {
       console.error("Error in recurring blocks subscription:", error);
       onError?.(error);
-    }
+    },
   );
 
   // Return a function that unsubscribes from both
@@ -190,7 +212,7 @@ export const subscribeToUserTimeBlocks = (
 };
 
 export const addTimeBlock = async (
-  timeBlockData: Omit<TimeBlock, "id" | "createdAt" | "updatedAt">
+  timeBlockData: Omit<TimeBlock, "id" | "createdAt" | "updatedAt">,
 ): Promise<string> => {
   try {
     const now = Timestamp.now();
@@ -238,7 +260,7 @@ export const addTimeBlock = async (
 
 export const updateTimeBlock = async (
   timeBlockId: string,
-  updates: Partial<Omit<TimeBlock, "id" | "userId" | "createdAt">>
+  updates: Partial<Omit<TimeBlock, "id" | "userId" | "createdAt">>,
 ): Promise<void> => {
   try {
     const docRef = doc(db, "timeBlocks", timeBlockId);
@@ -293,7 +315,7 @@ export const removeTimeBlock = async (timeBlockId: string): Promise<void> => {
 export const moveTimeBlock = async (
   timeBlockId: string,
   newStart: Date,
-  newEnd: Date
+  newEnd: Date,
 ): Promise<void> => {
   try {
     const docRef = doc(db, "timeBlocks", timeBlockId);
@@ -309,7 +331,7 @@ export const moveTimeBlock = async (
 };
 
 export const batchAddTimeBlocks = async (
-  timeBlocks: Omit<TimeBlock, "id" | "createdAt" | "updatedAt">[]
+  timeBlocks: Omit<TimeBlock, "id" | "createdAt" | "updatedAt">[],
 ): Promise<string[]> => {
   try {
     const batch = writeBatch(db);
@@ -338,7 +360,7 @@ export const batchAddTimeBlocks = async (
 };
 
 export const batchDeleteTimeBlocks = async (
-  timeBlockIds: string[]
+  timeBlockIds: string[],
 ): Promise<void> => {
   try {
     const batch = writeBatch(db);

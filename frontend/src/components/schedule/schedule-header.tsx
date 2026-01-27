@@ -1,4 +1,4 @@
-import { format, addDays, isToday } from "date-fns";
+import { format, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -6,21 +6,27 @@ import MobileHeader from "@/components/layout/mobile/header";
 import { RefObject, ReactNode } from "react";
 
 interface ScheduleHeaderProps {
-  weekStart: Date;
+  days: Date[];
+  dateLabel: string;
   onNavigate: (direction: "prev" | "next") => void;
   onToday: () => void;
+  isTodayInView: boolean;
   scrollRef?: RefObject<HTMLDivElement | null>;
   onScroll?: () => void;
   aiButton?: ReactNode;
+  filterButton?: ReactNode;
 }
 
 export function ScheduleHeader({
-  weekStart,
+  days,
+  dateLabel,
   onNavigate,
   onToday,
+  isTodayInView,
   scrollRef,
   onScroll,
   aiButton,
+  filterButton,
 }: ScheduleHeaderProps) {
   return (
     <header className="shrink-0 border-b">
@@ -31,21 +37,24 @@ export function ScheduleHeader({
             Schedule
           </h1>
 
-          <NavigationControls onNavigate={onNavigate} onToday={onToday} />
+          <NavigationControls
+            onNavigate={onNavigate}
+            onToday={onToday}
+            isTodayInView={isTodayInView}
+          />
 
           <span className="text-sm md:text-base font-medium text-muted-foreground hidden sm:block">
-            {format(weekStart, "MMMM yyyy")}
+            {dateLabel}
           </span>
         </div>
 
-        {aiButton}
+        <div className="flex items-center gap-2">
+          {filterButton}
+          {aiButton}
+        </div>
       </div>
 
-      <DaysHeader
-        weekStart={weekStart}
-        scrollRef={scrollRef}
-        onScroll={onScroll}
-      />
+      <DaysHeader days={days} scrollRef={scrollRef} onScroll={onScroll} />
     </header>
   );
 }
@@ -53,9 +62,11 @@ export function ScheduleHeader({
 function NavigationControls({
   onNavigate,
   onToday,
+  isTodayInView,
 }: {
   onNavigate: (direction: "prev" | "next") => void;
   onToday: () => void;
+  isTodayInView: boolean;
 }) {
   return (
     <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
@@ -68,7 +79,7 @@ function NavigationControls({
         <ChevronLeft className="h-4 w-4" />
       </Button>
       <Button
-        variant="ghost"
+        variant={isTodayInView ? "ghost" : "secondary"}
         size="sm"
         className="h-8 px-3 text-sm font-medium"
         onClick={onToday}
@@ -88,11 +99,11 @@ function NavigationControls({
 }
 
 function DaysHeader({
-  weekStart,
+  days,
   scrollRef,
   onScroll,
 }: {
-  weekStart: Date;
+  days: Date[];
   scrollRef?: RefObject<HTMLDivElement | null>;
   onScroll?: () => void;
 }) {
@@ -105,22 +116,21 @@ function DaysHeader({
         onScroll={onScroll}
         className="flex flex-1 overflow-x-auto no-scrollbar"
       >
-        {Array.from({ length: 7 }).map((_, i) => {
-          const date = addDays(weekStart, i);
+        {days.map((date, i) => {
           const isCurrentDay = isToday(date);
 
           return (
             <div
-              key={i}
+              key={date.toISOString()}
               className={cn(
                 "flex-1 min-w-50 md:min-w-25 py-2 px-1 text-center border-r last:border-r-0 transition-colors",
-                isCurrentDay && "bg-primary/5"
+                isCurrentDay && "bg-primary/5",
               )}
             >
               <p
                 className={cn(
                   "text-[10px] md:text-xs font-medium uppercase tracking-wide",
-                  isCurrentDay ? "text-primary" : "text-muted-foreground"
+                  isCurrentDay ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 {format(date, "EEE")}
@@ -130,7 +140,7 @@ function DaysHeader({
                   "mx-auto mt-1 h-7 w-7 md:h-8 md:w-8 flex items-center justify-center rounded-full text-sm font-medium transition-colors",
                   isCurrentDay
                     ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
+                    : "text-foreground hover:bg-muted",
                 )}
               >
                 {format(date, "d")}

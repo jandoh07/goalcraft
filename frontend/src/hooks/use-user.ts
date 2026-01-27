@@ -6,6 +6,7 @@ import {
   deleteFcmToken,
   deleteAllFcmTokens,
 } from "@/lib/firebase/user";
+import { updateUserDataCookie } from "@/lib/firebase/session";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -25,7 +26,10 @@ export const useUpdateUserPreferences = () => {
         timezone?: string;
       };
     }) => updateUserPreferences(userId, preferences),
-    onSuccess: () => {
+    onSuccess: async (_, { preferences }) => {
+      if (preferences.theme) {
+        await updateUserDataCookie({ theme: preferences.theme });
+      }
       refreshUser();
     },
   });
@@ -47,8 +51,6 @@ export const useUpdateUserCustomCategories = () => {
     },
   });
 };
-
-// FCM Token Hooks
 
 export const useGetFcmTokens = (userId: string) => {
   return useQuery({

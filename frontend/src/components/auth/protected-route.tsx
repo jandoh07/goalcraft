@@ -13,7 +13,6 @@ export default function ProtectedRoute({
   const router = useRouter();
   const [offline, setOffline] = useState(false);
 
-  // Track online/offline state after hydration to avoid mismatch
   useEffect(() => {
     setOffline(!navigator.onLine);
 
@@ -35,7 +34,5 @@ export default function ProtectedRoute({
     }
   }, [user, loading, router, offline]);
 
-  // Always render children to avoid hydration mismatch
-  // The redirect will happen via useEffect if needed
   return <>{children}</>;
 }

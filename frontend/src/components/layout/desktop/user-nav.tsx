@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/auth-context";
+import { useUpdateUserPreferences } from "@/hooks/use-user";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function UserNav() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { mutate: updatePreferences } = useUpdateUserPreferences();
 
   const handleLogOut = async () => {
     try {
@@ -40,6 +42,16 @@ export function UserNav() {
       router.push("/login");
     } catch (error) {
       console.error("Sign out error:", error);
+    }
+  };
+
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme);
+    if (user?.uid && newTheme !== theme) {
+      updatePreferences({
+        userId: user.uid,
+        preferences: { theme: newTheme },
+      });
     }
   };
 
@@ -61,7 +73,7 @@ export function UserNav() {
             <span className="truncate font-medium">
               {user?.name || user?.email}
             </span>
-            <span className="text-muted-foreground truncate text-xs">
+            <span className="opacity-50 truncate text-xs">
               {user?.subscription === "premium" ? "Premium Plan" : "Free Plan"}
             </span>
           </div>
@@ -98,7 +110,7 @@ export function UserNav() {
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuItem
-                onClick={() => setTheme("light")}
+                onClick={() => handleThemeChange("light")}
                 className="flex justify-between items-center cursor-pointer"
               >
                 <span className="flex items-center gap-2">
@@ -108,7 +120,7 @@ export function UserNav() {
                 {theme === "light" && <span className="text-primary">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setTheme("dark")}
+                onClick={() => handleThemeChange("dark")}
                 className="flex justify-between items-center cursor-pointer"
               >
                 <span className="flex items-center gap-2">
@@ -118,7 +130,7 @@ export function UserNav() {
                 {theme === "dark" && <span className="text-primary">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setTheme("system")}
+                onClick={() => handleThemeChange("system")}
                 className="flex justify-between items-center cursor-pointer"
               >
                 <span className="flex items-center gap-2">

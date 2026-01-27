@@ -1,21 +1,16 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from "react";
-import {
-  startOfWeek,
-  endOfWeek,
-  addWeeks,
-  subWeeks,
-  setHours,
-  setMinutes,
-} from "date-fns";
+import { useMemo, useCallback } from "react";
+import { format, setHours, setMinutes } from "date-fns";
 import { ScheduleHeader } from "../../../components/schedule/schedule-header";
 import { TimeGrid } from "../../../components/schedule/time-grid";
 import { ScheduleModal } from "../../../components/schedule/schedule-modal";
 import { AIScheduleSheet } from "../../../components/schedule/ai-schedule-sheet";
+import { ViewRangeFilter } from "../../../components/schedule/view-range-filter";
 import { useScheduleModal } from "../../../hooks/use-schedule-modal";
 import { useSyncedScroll } from "../../../hooks/use-synced-scroll";
 import { useAISchedule } from "../../../hooks/use-ai-schedule";
+import { useViewRange } from "../../../hooks/use-view-range";
 import {
   useGetTimeBlocks,
   useAddTimeBlock,
@@ -29,43 +24,41 @@ import { Loader2 } from "lucide-react";
 
 export default function SchedulePage() {
   const { user } = useAuth();
-  // Initialize as null to avoid hydration mismatch (new Date() differs between server/client)
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
-  // Set the date on mount (client-side only)
-  useEffect(() => {
-    setCurrentDate(new Date());
-  }, []);
+  const {
+    viewRangeType,
+    setViewRangeType,
+    viewRangeDates,
+    navigate,
+    goToToday,
+    isTodayInView,
+    isHydrated,
+  } = useViewRange();
 
   const { state, openCreateModal, openEditModal, closeModal } =
     useScheduleModal();
-
-  // Use a stable date for SSR, then update to actual date on client
-  const effectiveDate = currentDate ?? new Date(0);
-  const weekStart = startOfWeek(effectiveDate, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(effectiveDate, { weekStartsOn: 0 });
 
   const {
     headerScrollRef,
     gridScrollRef,
     handleHeaderScroll,
     handleGridScroll,
-  } = useSyncedScroll(weekStart);
-
-  const weekStartTime = weekStart.getTime();
-  const weekEndTime = weekEnd.getTime();
+  } = useSyncedScroll(viewRangeDates?.days);
 
   const filters = useMemo(
-    () => ({
-      startDate: new Date(weekStartTime),
-      endDate: new Date(weekEndTime),
-    }),
-    [weekStartTime, weekEndTime]
+    () =>
+      viewRangeDates
+        ? {
+            startDate: viewRangeDates.startDate,
+            endDate: viewRangeDates.endDate,
+          }
+        : null,
+    [viewRangeDates],
   );
 
   const { data: blocks = [], isLoading } = useGetTimeBlocks(
     user?.uid ?? "",
-    filters
+    filters ?? { startDate: new Date(), endDate: new Date() },
   );
   const addTimeBlock = useAddTimeBlock();
   const updateTimeBlock = useUpdateTimeBlock();
@@ -100,19 +93,11 @@ export default function SchedulePage() {
       }
       return null;
     },
-    [generateSchedule]
+    [generateSchedule],
   );
 
-  const navigateWeek = (direction: "prev" | "next") => {
-    setCurrentDate((d) =>
-      d ? (direction === "next" ? addWeeks(d, 1) : subWeeks(d, 1)) : new Date()
-    );
-  };
-
-  const goToToday = () => setCurrentDate(new Date());
-
   const handleSaveBlock = (
-    data: TimeBlock | Omit<TimeBlock, "id" | "createdAt" | "updatedAt">
+    data: TimeBlock | Omit<TimeBlock, "id" | "createdAt" | "updatedAt">,
   ) => {
     if (!user) return;
 
@@ -148,8 +133,29 @@ export default function SchedulePage() {
     moveTimeBlock.mutate({ timeBlockId: blockId, newStart, newEnd });
   };
 
-  // Show loading while hydrating (currentDate is null) or fetching data
-  if (!currentDate || isLoading) {
+  // Generate date label for the header
+  const dateLabel = useMemo(() => {
+    if (!viewRangeDates) return "";
+    const { startDate, endDate } = viewRangeDates;
+
+    // If same month, show "Month Year"
+    // If different months, show "Month - Month Year" or "Month Year - Month Year"
+    const startMonth = format(startDate, "MMMM");
+    const endMonth = format(endDate, "MMMM");
+    const startYear = format(startDate, "yyyy");
+    const endYear = format(endDate, "yyyy");
+
+    if (startYear !== endYear) {
+      return `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
+    } else if (startMonth !== endMonth) {
+      return `${startMonth} - ${endMonth} ${startYear}`;
+    } else {
+      return `${startMonth} ${startYear}`;
+    }
+  }, [viewRangeDates]);
+
+  // Show loading while hydrating or fetching data
+  if (!isHydrated || !viewRangeDates || isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100dvh-4rem)] md:h-[calc(100dvh-56px-48px)]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -160,11 +166,19 @@ export default function SchedulePage() {
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-[calc(100dvh-56px-48px)] md:-m-6 overflow-hidden">
       <ScheduleHeader
-        weekStart={weekStart}
-        onNavigate={navigateWeek}
+        days={viewRangeDates.days}
+        dateLabel={dateLabel}
+        onNavigate={navigate}
         onToday={goToToday}
+        isTodayInView={isTodayInView}
         scrollRef={headerScrollRef}
         onScroll={handleHeaderScroll}
+        filterButton={
+          <ViewRangeFilter
+            currentType={viewRangeType}
+            onTypeChange={setViewRangeType}
+          />
+        }
         aiButton={
           <AIScheduleSheet
             isLoading={isAILoading}
@@ -175,7 +189,7 @@ export default function SchedulePage() {
         }
       />
       <TimeGrid
-        weekStart={weekStart}
+        days={viewRangeDates.days}
         blocks={blocks}
         onCreateClick={openCreateModal}
         onEditClick={openEditModal}

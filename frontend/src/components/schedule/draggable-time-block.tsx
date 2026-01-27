@@ -37,14 +37,14 @@ export function DraggableTimeBlock({ block, onEdit }: DraggableTimeBlockProps) {
         "hover:shadow-md hover:z-10",
         "overflow-hidden touch-none",
         isDragging && "cursor-grabbing shadow-lg z-50 opacity-90",
-        block.color
+        block.color,
       )}
       style={style}
     >
       <p
         className={cn(
           "font-medium truncate",
-          isShort ? "text-[10px]" : "text-xs"
+          isShort ? "text-[10px]" : "text-xs",
         )}
       >
         {block.title}
@@ -61,11 +61,20 @@ export function DraggableTimeBlock({ block, onEdit }: DraggableTimeBlockProps) {
 function getBlockStyle(
   block: TimeBlock,
   transform: { x: number; y: number } | null,
-  isDragging: boolean
+  isDragging: boolean,
 ) {
   const startHour = block.start.getHours() + block.start.getMinutes() / 60;
-  const endHour = block.end.getHours() + block.end.getMinutes() / 60;
-  const duration = endHour - startHour;
+  let endHour = block.end.getHours() + block.end.getMinutes() / 60;
+
+  // Handle midnight case: if end is at 00:00, treat it as 24:00 for display
+  // This happens when a block ends at midnight (12 AM)
+  if (endHour === 0 && block.end.getTime() > block.start.getTime()) {
+    endHour = 24;
+  }
+
+  // Handle blocks that cross midnight (end time appears before start time)
+  // For same-day display, cap at midnight (24)
+  const duration = endHour > startHour ? endHour - startHour : 24 - startHour;
 
   return {
     top: `${startHour * HOUR_HEIGHT}px`,

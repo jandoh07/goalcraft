@@ -39,7 +39,8 @@ export const handleEmailSignUp = async (
   confirmPassword: string,
   setError: React.Dispatch<React.SetStateAction<string>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  signUp: (email: string, password: string) => Promise<UserCredential>
+  signUp: (email: string, password: string) => Promise<UserCredential>,
+  redirectTo: string = "/goals"
 ) => {
   e.preventDefault();
   setError("");
@@ -51,9 +52,11 @@ export const handleEmailSignUp = async (
   setLoading(true);
 
   try {
+    // signUp now includes session cookie creation (awaited inside auth context)
     await signUp(email, password);
-    // Don't navigate immediately - let the auth state change handle it
-    // The useEffect above will redirect when user is authenticated
+    // Use full page redirect to ensure proxy processes the new session
+    // The signUp function awaits createSession, so cookie should be set by now
+    window.location.replace(redirectTo);
   } catch (err) {
     if (err instanceof FirebaseError) {
       setError(getErrorMessage(err));
@@ -67,15 +70,18 @@ export const handleEmailSignUp = async (
 export const handleGoogleSignUp = async (
   setError: React.Dispatch<React.SetStateAction<string>>,
   setGoogleLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  signInWithGoogle: () => Promise<UserCredential>
+  signInWithGoogle: () => Promise<UserCredential>,
+  redirectTo: string = "/goals"
 ) => {
   setError("");
   setGoogleLoading(true);
 
   try {
+    // signInWithGoogle now includes session cookie creation (awaited inside auth context)
     await signInWithGoogle();
-    // Don't navigate immediately - let the auth state change handle it
-    // The useEffect above will redirect when user is authenticated
+    // Use full page redirect to ensure proxy processes the new session
+    // The signInWithGoogle function awaits createSession, so cookie should be set by now
+    window.location.replace(redirectTo);
   } catch (err) {
     if (err instanceof FirebaseError) {
       if (err.code === "auth/popup-closed-by-user") {

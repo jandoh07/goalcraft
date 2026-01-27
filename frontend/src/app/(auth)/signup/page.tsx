@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { handleEmailSignUp, handleGoogleSignUp } from "@/hooks/use-sign-up";
 
-const SignUp = () => {
+const SignUpContent = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,29 +28,14 @@ const SignUp = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { signUp, signInWithGoogle } = useAuth();
+  const searchParams = useSearchParams();
+  
+  // Get redirect URL from query params (set by middleware when redirecting from protected routes)
+  const redirectTo = searchParams.get("redirect") || "/goals";
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/");
-    }
-  }, [user, authLoading, router]);
-
-  // Show loading while checking auth state
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Don't render signup form if user is authenticated (will redirect)
-  if (user) {
-    return null;
-  }
+  // Note: Auth state checking is handled by edge middleware in proxy.ts
+  // If user reaches this page, they are definitely not authenticated
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15 p-4">
@@ -78,7 +63,8 @@ const SignUp = () => {
                 confirmPassword,
                 setError,
                 setLoading,
-                signUp
+                signUp,
+                redirectTo
               )
             }
             className="space-y-4"
@@ -190,7 +176,7 @@ const SignUp = () => {
             variant="outline"
             className="w-full"
             onClick={() =>
-              handleGoogleSignUp(setError, setGoogleLoading, signInWithGoogle)
+              handleGoogleSignUp(setError, setGoogleLoading, signInWithGoogle, redirectTo)
             }
             disabled={loading || googleLoading}
           >
@@ -249,6 +235,20 @@ const SignUp = () => {
         </CardFooter>
       </Card>
     </div>
+  );
+};
+
+const SignUp = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/15">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <SignUpContent />
+    </Suspense>
   );
 };
 

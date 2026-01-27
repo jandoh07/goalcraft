@@ -1,4 +1,3 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
@@ -23,7 +22,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase (check if already initialized to avoid errors)
 const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
@@ -33,7 +31,7 @@ if (typeof window !== "undefined") {
 
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(
-      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
     ),
     isTokenAutoRefreshEnabled: true,
   });
@@ -54,9 +52,7 @@ export const db = initializeFirestore(app, {
 
 export const functions = getFunctions(app);
 
-// Connect to emulator in development
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
-  // Uncomment the line below to use the Functions emulator
   connectFunctionsEmulator(functions, "localhost", 5001);
 }
 

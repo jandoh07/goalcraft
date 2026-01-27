@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { addDays, isSameDay, isToday } from "date-fns";
+import { isSameDay, isToday } from "date-fns";
 import {
   DndContext,
   DragEndEvent,
@@ -18,7 +18,7 @@ import { DroppableDayColumn } from "./droppable-day-column";
 import { TimeBlockOverlay } from "@/components/schedule/time-block-overlay";
 
 interface TimeGridProps {
-  weekStart: Date;
+  days: Date[];
   blocks: TimeBlock[];
   onCreateClick: (date: Date, hour: number) => void;
   onEditClick: (block: TimeBlock) => void;
@@ -28,7 +28,7 @@ interface TimeGridProps {
 }
 
 export function TimeGrid({
-  weekStart,
+  days,
   blocks,
   onCreateClick,
   onEditClick,
@@ -46,7 +46,7 @@ export function TimeGrid({
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export function TimeGrid({
     (date: Date) => {
       return blocks.filter((block) => isSameDay(block.start, date));
     },
-    [blocks]
+    [blocks],
   );
 
   const currentTimePosition =
@@ -122,14 +122,13 @@ export function TimeGrid({
             onScroll={onHorizontalScroll}
             className="flex flex-1 min-w-0 overflow-x-auto no-scrollbar"
           >
-            {Array.from({ length: 7 }).map((_, dayIndex) => {
-              const date = addDays(weekStart, dayIndex);
+            {days.map((date, dayIndex) => {
               const isCurrentDay = isToday(date);
               const dayBlocks = getBlocksForDay(date);
 
               return (
                 <DroppableDayColumn
-                  key={dayIndex}
+                  key={date.toISOString()}
                   dayIndex={dayIndex}
                   isCurrentDay={isCurrentDay}
                   blocks={dayBlocks}

@@ -1,8 +1,9 @@
 import { useRef, useCallback, useEffect } from "react";
+import { isSameDay, startOfDay } from "date-fns";
 
 const DAY_COLUMN_WIDTH_MOBILE = 200; // min-w-50 = 200px
 
-export function useSyncedScroll(weekStart?: Date) {
+export function useSyncedScroll(days?: Date[]) {
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const isSyncing = useRef(false);
@@ -32,28 +33,26 @@ export function useSyncedScroll(weekStart?: Date) {
 
   // Scroll to today's column on mobile
   useEffect(() => {
-    if (hasScrolledToToday.current || !weekStart) return;
+    if (hasScrolledToToday.current || !days || days.length === 0) return;
     if (!headerScrollRef.current || !gridScrollRef.current) return;
 
     // Check if on mobile (container is scrollable)
     const container = gridScrollRef.current;
     if (container.scrollWidth <= container.clientWidth) return;
 
-    const today = new Date();
-    const weekStartDate = new Date(weekStart);
+    const today = startOfDay(new Date());
 
-    // Calculate days difference
-    const diffTime = today.getTime() - weekStartDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // Find index of today in the days array
+    const todayIndex = days.findIndex((day) => isSameDay(day, today));
 
-    // Only scroll if today is within this week (0-6)
-    if (diffDays >= 0 && diffDays <= 6) {
+    // Only scroll if today is within the visible days
+    if (todayIndex >= 0) {
       // Calculate scroll position to center today's column
       const containerWidth = container.clientWidth;
       const scrollPosition = Math.max(
         0,
-        diffDays * DAY_COLUMN_WIDTH_MOBILE -
-          (containerWidth - DAY_COLUMN_WIDTH_MOBILE) / 2
+        todayIndex * DAY_COLUMN_WIDTH_MOBILE -
+          (containerWidth - DAY_COLUMN_WIDTH_MOBILE) / 2,
       );
 
       // Scroll both containers
@@ -66,12 +65,12 @@ export function useSyncedScroll(weekStart?: Date) {
 
       hasScrolledToToday.current = true;
     }
-  }, [weekStart]);
+  }, [days]);
 
-  // Reset scroll flag when week changes
+  // Reset scroll flag when days change
   useEffect(() => {
     hasScrolledToToday.current = false;
-  }, [weekStart]);
+  }, [days]);
 
   return {
     headerScrollRef,

@@ -19,8 +19,8 @@ export const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
 
   // Calculate start and end dates for the year inside useMemo to avoid dependency issues
   const weeks = useMemo(() => {
-    const yearStart = new Date(year, 0, 1); // January 1st of the year
-    const yearEnd = new Date(year, 11, 31); // December 31st - always show full year
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year, 11, 31);
     return generateHeatmapWeeks(yearStart, yearEnd, today);
   }, [year, today]);
 
@@ -42,6 +42,22 @@ export const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   const maxCount = useMemo(() => {
     return Math.max(...Object.values(contributionData), 1);
   }, [contributionData]);
+
+  const daysLeftInYear = useMemo(() => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+
+    // Only calculate for current year
+    if (year !== currentYear) {
+      return null;
+    }
+
+    const endOfYear = new Date(year, 11, 31); // December 31st
+    const diffTime = endOfYear.getTime() - currentDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  }, [year]);
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -101,17 +117,28 @@ export const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-2 mt-4 justify-end">
-        <span className="text-xs text-muted-foreground">Less</span>
-        <div className="flex gap-1">
-          <div className="w-3 h-3 rounded-sm bg-muted/50" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-900/70" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-300 dark:bg-emerald-800" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-600" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-500" />
+      <div className="flex justify-between items-center mt-3">
+        <div>
+          {daysLeftInYear !== null && (
+            <div className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                {daysLeftInYear}
+              </span>{" "}
+              days left in {year}
+            </div>
+          )}
         </div>
-        <span className="text-xs text-muted-foreground">More</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Less</span>
+          <div className="flex gap-1">
+            <div className="w-3 h-3 rounded-sm bg-muted/50" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-900/70" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-300 dark:bg-emerald-800" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-600" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-500" />
+          </div>
+          <span className="text-xs text-muted-foreground">More</span>
+        </div>
       </div>
     </div>
   );
