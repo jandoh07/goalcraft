@@ -5,7 +5,6 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
-import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -36,12 +35,6 @@ if (typeof window !== "undefined") {
     isTokenAutoRefreshEnabled: true,
   });
 }
-
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-export const flashModel = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
-export const flashLiteModel = getGenerativeModel(ai, {
-  model: "gemini-2.5-flash-lite",
-});
 
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {

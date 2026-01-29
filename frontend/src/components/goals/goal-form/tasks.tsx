@@ -1,7 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { flashLiteModel } from "@/lib/firebase/firebase";
 import { aiPrompts } from "@/constants/ai";
 import { Milestone } from "@/types";
 import TaskForm from "./task-form";
@@ -63,11 +62,11 @@ const Tasks = ({
       const prompt = aiPrompts.taskSuggestionBasic(
         goalTitle,
         relevance,
-        milestoneTitles as [string] | undefined
+        milestoneTitles as [string] | undefined,
       );
 
-      const result = await flashLiteModel.generateContent(prompt);
-      const responseText = result.response.text();
+      // const result = await flashLiteModel.generateContent(prompt);
+      const responseText = "Ai disabled";
 
       // Parse the JSON response
       const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
@@ -92,7 +91,7 @@ const Tasks = ({
             frequency: task.frequency || "",
             reason: task.reason,
             isAIGenerated: true,
-          })
+          }),
         );
         setTasks(newTasks);
       }

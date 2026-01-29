@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GoalCard from "@/components/goals/goal-card";
 import GoalsHeader from "@/components/goals/goals-header";
@@ -33,7 +33,7 @@ const GoalsContent = () => {
   const goalCreationStore = useGoalCreationStore();
   const reset = useGoalCreationStore((state) => state.reset);
   const initializeFromGoal = useGoalCreationStore(
-    (state) => state.initializeFromGoal
+    (state) => state.initializeFromGoal,
   );
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
@@ -47,7 +47,7 @@ const GoalsContent = () => {
       newParams.set("mode", newMode);
       router.push(`?${newParams.toString()}`, { scroll: false });
     },
-    [router]
+    [router],
   );
 
   const handleCloseDialog = useCallback(() => {
@@ -71,7 +71,7 @@ const GoalsContent = () => {
         handleCloseDialog();
       }
     },
-    [goalCreationStore, handleCloseDialog]
+    [goalCreationStore, handleCloseDialog],
   );
 
   const handleDiscardConfirm = useCallback(() => {
@@ -132,10 +132,6 @@ const GoalsContent = () => {
     updateURL("edit");
   };
 
-  // With edge auth, if user reaches this page they are authenticated
-  // Only wait for data loading, not auth loading
-  const isFullyLoaded = !isLoading;
-
   const getEmptyStateMessage = () => {
     switch (goalFilter) {
       case "all":
@@ -151,11 +147,15 @@ const GoalsContent = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("isLoading:", isLoading, "goals:", goals);
+  }, [isLoading, goals]);
+
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
       <MobileHeader title="Your Goals" />
 
-      {!isFullyLoaded ? (
+      {!isLoading && !goals ? (
         <div className="flex-1 flex justify-center items-center">
           <Spinner className="size-8 text-primary" />
         </div>

@@ -1,5 +1,4 @@
 import { aiPrompts } from "@/constants";
-import { flashLiteModel } from "@/lib/firebase/firebase";
 import { useEffect, useState, useCallback } from "react";
 
 // Prompt types that should auto-trigger after user stops typing
@@ -60,10 +59,11 @@ const useAISuggestion = ({
           return;
       }
 
-      const suggestionResult = await flashLiteModel.generateContent(
-        suggestionPrompt
-      );
-      const suggestionText = suggestionResult.response.text().trim();
+      // const suggestionResult = await flashLiteModel.generateContent(
+      //   suggestionPrompt
+      // );
+      // const suggestionText = suggestionResult.response.text().trim();
+      const suggestionText = "AI disabled";
 
       setSuggestion(suggestionText);
     } catch (error) {
