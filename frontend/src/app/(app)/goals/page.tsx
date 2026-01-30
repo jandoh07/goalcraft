@@ -93,7 +93,7 @@ const GoalsContent = () => {
   const [goalFilter, setGoalFilter] = useState<
     "all" | "in-progress" | "completed" | "overdue"
   >("in-progress");
-  const { data: goals, isLoading } = useGoals(user?.uid || "", goalFilter);
+  const { data: goals, isFetching } = useGoals(user?.uid || "", goalFilter);
   const [initialData, setInitialData] = useState<Goal | undefined>(undefined);
   const [dialogMode, setDialogMode] = useState<DialogMode>("ai");
   const goalsForm = useGoalsForm({
@@ -147,27 +147,23 @@ const GoalsContent = () => {
     }
   };
 
-  useEffect(() => {
-    console.log("isLoading:", isLoading, "goals:", goals);
-  }, [isLoading, goals]);
-
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
       <MobileHeader title="Your Goals" />
 
-      {!isLoading && !goals ? (
+      {!isFetching && !goals ? (
         <div className="flex-1 flex justify-center items-center">
           <Spinner className="size-8 text-primary" />
         </div>
       ) : (
         <>
-          <GoalsHeader setGoalFilter={setGoalFilter} goalFilter={goalFilter} />
+          <GoalsHeader
+            setGoalFilter={setGoalFilter}
+            goalFilter={goalFilter}
+            isFetching={isFetching}
+          />
           <div className={`pb-50 md:pb-5`}>
-            {isLoading ? (
-              <div className="flex justify-center items-center w-full h-32">
-                <Spinner />
-              </div>
-            ) : goals && goals.length > 0 ? (
+            {goals && goals.length > 0 ? (
               goals.map((goal) => (
                 <GoalCard key={goal.id} goal={goal} onEdit={handleEditGoal} />
               ))

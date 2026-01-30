@@ -63,13 +63,18 @@ const TasksContent = () => {
 
   const renderTaskGroup = (
     groupKey: Groupkey,
-    groupTasks: typeof tasks.data
+    groupTasks: typeof tasks.data,
+    showLoading?: boolean,
   ) => {
     if (!groupTasks || groupTasks.length === 0) return null;
 
     return (
       <div key={groupKey}>
-        <TaskGroupHeader group={groupKey} count={groupTasks.length} />
+        <TaskGroupHeader
+          group={groupKey}
+          count={groupTasks.length}
+          showLoading={showLoading}
+        />
         {groupTasks.map((task) => (
           <TaskCard
             key={task.id}
@@ -110,12 +115,30 @@ const TasksContent = () => {
             ) : (
               groupedTasks && (
                 <div className="">
-                  {renderTaskGroup("overdue", groupedTasks.overdue)}
-                  {renderTaskGroup("today", groupedTasks.today)}
-                  {renderTaskGroup("tomorrow", groupedTasks.tomorrow)}
-                  {renderTaskGroup("this-week", groupedTasks["this-week"])}
-                  {renderTaskGroup("later", groupedTasks.later)}
-                  {renderTaskGroup("no-date", groupedTasks["no-date"])}
+                  {(() => {
+                    const isFetching = tasks.isFetching;
+                    const groups: {
+                      key: Groupkey;
+                      tasks: typeof tasks.data;
+                    }[] = [
+                      { key: "overdue", tasks: groupedTasks.overdue },
+                      { key: "today", tasks: groupedTasks.today },
+                      { key: "tomorrow", tasks: groupedTasks.tomorrow },
+                      { key: "this-week", tasks: groupedTasks["this-week"] },
+                      { key: "later", tasks: groupedTasks.later },
+                      { key: "no-date", tasks: groupedTasks["no-date"] },
+                    ];
+                    let hasShownLoading = false;
+                    return groups.map(({ key, tasks: groupTasks }) => {
+                      const showLoading =
+                        isFetching &&
+                        !hasShownLoading &&
+                        groupTasks &&
+                        groupTasks.length > 0;
+                      if (showLoading) hasShownLoading = true;
+                      return renderTaskGroup(key, groupTasks, showLoading);
+                    });
+                  })()}
                 </div>
               )
             )}

@@ -56,7 +56,11 @@ export default function SchedulePage() {
     [viewRangeDates],
   );
 
-  const { data: blocks = [], isLoading } = useGetTimeBlocks(
+  const {
+    data: blocks = [],
+    isLoading,
+    isFetching,
+  } = useGetTimeBlocks(
     user?.uid ?? "",
     filters ?? { startDate: new Date(), endDate: new Date() },
   );
@@ -173,6 +177,7 @@ export default function SchedulePage() {
         isTodayInView={isTodayInView}
         scrollRef={headerScrollRef}
         onScroll={handleHeaderScroll}
+        isFetching={isFetching}
         filterButton={
           <ViewRangeFilter
             currentType={viewRangeType}
