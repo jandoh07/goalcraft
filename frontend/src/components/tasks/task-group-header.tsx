@@ -4,15 +4,21 @@ import {
   CalendarDays,
   Clock,
   CalendarX2,
+  Loader2,
 } from "lucide-react";
 import { TaskGroup } from "@/lib/utils/task-grouping";
 
 interface TaskGroupHeaderProps {
   group: TaskGroup;
   count: number;
+  showLoading?: boolean;
 }
 
-const TaskGroupHeader = ({ group, count }: TaskGroupHeaderProps) => {
+const TaskGroupHeader = ({
+  group,
+  count,
+  showLoading,
+}: TaskGroupHeaderProps) => {
   const getIcon = () => {
     switch (group) {
       case "overdue":
@@ -68,11 +74,16 @@ const TaskGroupHeader = ({ group, count }: TaskGroupHeaderProps) => {
   if (count === 0) return null;
 
   return (
-    <div className={`flex items-center gap-2 mb-3 mt-5 ${getTextColor()}`}>
-      {getIcon()}
-      <p className="font-semibold">
-        {getLabel()} ({count})
-      </p>
+    <div className={`flex items-center justify-between mb-3 mt-5`}>
+      <div className={`flex items-center gap-2 ${getTextColor()}`}>
+        {getIcon()}
+        <p className="font-semibold">
+          {getLabel()} ({count})
+        </p>
+      </div>
+      {showLoading && (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      )}
     </div>
   );
 };

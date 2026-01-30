@@ -58,7 +58,7 @@ export const groupTasksByDate = (tasks: Task[]): GroupedTasks => {
     const dueDateOnly = new Date(
       dueDate.getFullYear(),
       dueDate.getMonth(),
-      dueDate.getDate()
+      dueDate.getDate(),
     );
 
     if (dueDateOnly < today) {
@@ -100,8 +100,14 @@ export const getGroupLabel = (group: TaskGroup, count: number): string => {
  * @param dueDate - The task's due date
  * @returns The task group type
  */
-export const getTaskType = (dueDate?: Date | null): TaskGroup => {
+export const getTaskType = (dueDate?: Date | string | null): TaskGroup => {
   if (!dueDate) return "no-date";
+
+  // Handle dates that may come as strings from localStorage persistence
+  const parsedDate = typeof dueDate === "string" ? new Date(dueDate) : dueDate;
+
+  // Validate the parsed date
+  if (isNaN(parsedDate.getTime())) return "no-date";
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -113,9 +119,9 @@ export const getTaskType = (dueDate?: Date | null): TaskGroup => {
   endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
 
   const dueDateOnly = new Date(
-    dueDate.getFullYear(),
-    dueDate.getMonth(),
-    dueDate.getDate()
+    parsedDate.getFullYear(),
+    parsedDate.getMonth(),
+    parsedDate.getDate(),
   );
 
   if (dueDateOnly < today) {

@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { aiPrompts } from "@/constants";
-import { flashLiteModel } from "@/lib/firebase/firebase";
 import { cn } from "@/lib/utils";
 import { Milestone } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
@@ -36,12 +35,12 @@ const Milestones = ({
   const updateMilestone = (
     id: string,
     field: keyof Milestone,
-    value: string | number
+    value: string | number,
   ) => {
     setMilestones(
       milestones.map((milestone) =>
-        milestone.id === id ? { ...milestone, [field]: value } : milestone
-      )
+        milestone.id === id ? { ...milestone, [field]: value } : milestone,
+      ),
     );
   };
 
@@ -52,7 +51,7 @@ const Milestones = ({
   const getTotalWeight = () => {
     return milestones.reduce(
       (sum, milestone) => sum + (Number(milestone.weight) || 0),
-      0
+      0,
     );
   };
 
@@ -61,8 +60,9 @@ const Milestones = ({
       if (!goalTitle) return;
       setLoading(true);
       const prompt = aiPrompts.goalMilestoneGeneration(goalTitle);
-      const result = await flashLiteModel.generateContent(prompt);
-      const responseText = result.response.text().trim();
+      // const result = await flashLiteModel.generateContent(prompt);
+      // const responseText = result.response.text().trim();
+      const responseText = "Ai disabled";
 
       // Remove markdown code block markers if present
       const jsonText = responseText
@@ -80,7 +80,7 @@ const Milestones = ({
           title: m.title,
           weight: m.weight,
           completed: false,
-        })
+        }),
       );
 
       setMilestones(generatedMilestones);
@@ -142,7 +142,7 @@ const Milestones = ({
                       updateMilestone(
                         milestone.id!,
                         "weight",
-                        Number(e.target.value)
+                        Number(e.target.value),
                       )
                     }
                     className="h-9 w-16"
@@ -166,7 +166,7 @@ const Milestones = ({
               "text-sm font-medium",
               getTotalWeight() === 100
                 ? "text-green-600"
-                : "text-muted-foreground"
+                : "text-muted-foreground",
             )}
           >
             Total Weight: {getTotalWeight()}%

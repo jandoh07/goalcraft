@@ -1,5 +1,5 @@
 import { format, isToday } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MobileHeader from "@/components/layout/mobile/header";
@@ -15,6 +15,7 @@ interface ScheduleHeaderProps {
   onScroll?: () => void;
   aiButton?: ReactNode;
   filterButton?: ReactNode;
+  isFetching?: boolean;
 }
 
 export function ScheduleHeader({
@@ -27,6 +28,7 @@ export function ScheduleHeader({
   onScroll,
   aiButton,
   filterButton,
+  isFetching,
 }: ScheduleHeaderProps) {
   return (
     <header className="shrink-0 border-b">
@@ -49,6 +51,9 @@ export function ScheduleHeader({
         </div>
 
         <div className="flex items-center gap-2">
+          {isFetching && (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          )}
           {filterButton}
           {aiButton}
         </div>

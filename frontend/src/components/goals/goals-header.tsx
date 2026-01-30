@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import React from "react";
 
 const filterItems = [
@@ -14,18 +15,25 @@ const GoalsHeader = ({
   className,
   goalFilter,
   setGoalFilter,
+  isFetching,
 }: {
   className?: string;
   goalFilter: "all" | "in-progress" | "completed" | "overdue";
   setGoalFilter: React.Dispatch<
     React.SetStateAction<"all" | "in-progress" | "completed" | "overdue">
   >;
+  isFetching?: boolean;
 }) => {
+  const LoadingIndicator = () =>
+    isFetching ? (
+      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
+    ) : null;
+
   return (
     <div
       className={cn(
         "mb-4 mt-4 md:mt-0 flex items-center justify-between overflow-x-hidden",
-        className
+        className,
       )}
     >
       <div className="hidden md:flex justify-between items-center">
@@ -34,6 +42,10 @@ const GoalsHeader = ({
       </div>
       <div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {/* Mobile: Loading indicator at the beginning */}
+          <div className="md:hidden">
+            <LoadingIndicator />
+          </div>
           {filterItems.map((item) => (
             <div
               key={item.value}
@@ -47,6 +59,10 @@ const GoalsHeader = ({
               {item.label}
             </div>
           ))}
+          {/* Desktop: Loading indicator at the end */}
+          <div className="hidden md:block">
+            <LoadingIndicator />
+          </div>
         </div>
       </div>
     </div>
