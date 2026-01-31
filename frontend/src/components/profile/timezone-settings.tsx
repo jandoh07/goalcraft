@@ -90,7 +90,7 @@ const formatTimezoneDisplay = (timezone: string): string => {
  * Groups timezones by region
  */
 const groupTimezonesByRegion = (
-  timezones: string[]
+  timezones: string[],
 ): Record<string, string[]> => {
   const groups: Record<string, string[]> = {};
 
@@ -124,7 +124,7 @@ const TimezoneSettings = () => {
   const allTimezones = useMemo(() => getAllTimezones(), []);
   const groupedTimezones = useMemo(
     () => groupTimezonesByRegion(allTimezones),
-    [allTimezones]
+    [allTimezones],
   );
 
   const handleTimezoneChange = async (timezone: string) => {
@@ -156,7 +156,7 @@ const TimezoneSettings = () => {
           preferences: { timezone: detectedTimezone },
         });
         toast.success(
-          `Timezone set to ${formatTimezoneDisplay(detectedTimezone)}`
+          `Timezone set to ${formatTimezoneDisplay(detectedTimezone)}`,
         );
       } catch {
         toast.error("Failed to update timezone");
@@ -167,12 +167,12 @@ const TimezoneSettings = () => {
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+    <div className="md:flex items-center justify-between">
+      <div className="flex items-center gap-3 pb-3 md:pb-0">
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
           <Globe className="h-5 w-5 text-primary" />
         </div>
-        <div>
+        <div className="min-w-0">
           <Label htmlFor="timezone" className="text-base font-medium">
             Timezone
           </Label>
@@ -181,13 +181,13 @@ const TimezoneSettings = () => {
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 sm:shrink-0">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleDetectTimezone}
           disabled={updateUserPreferences.isPending}
-          className="text-xs"
+          className="text-xs shrink-0"
         >
           Detect
         </Button>
@@ -197,7 +197,7 @@ const TimezoneSettings = () => {
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-50 justify-between text-sm"
+              className="grow sm:min-w-50 justify-between text-sm"
               disabled={updateUserPreferences.isPending}
             >
               <span className="truncate">
@@ -206,7 +206,10 @@ const TimezoneSettings = () => {
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-75 p-0" align="end">
+          <PopoverContent
+            className="w-[calc(100vw-2rem)] sm:w-75 p-0"
+            align="end"
+          >
             <Command>
               <CommandInput placeholder="Search timezone..." />
               <CommandList>
@@ -221,10 +224,10 @@ const TimezoneSettings = () => {
                       >
                         <Check
                           className={cn(
-                            "mr-2 h-4 w-4",
+                            "mr-2 h-4 w-4 shrink-0",
                             currentTimezone === tz
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         <span className="truncate">

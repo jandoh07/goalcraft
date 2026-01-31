@@ -8,7 +8,6 @@ import {
 import { Separator } from "../ui/separator";
 import ThemeSettings from "./theme-settings";
 import TimezoneSettings from "./timezone-settings";
-import NotificationSettings from "./notification-settings";
 
 const AppPreferences = () => {
   return (
@@ -21,8 +20,6 @@ const AppPreferences = () => {
         <ThemeSettings />
         <Separator />
         <TimezoneSettings />
-        <Separator />
-        <NotificationSettings />
       </CardContent>
     </Card>
   );

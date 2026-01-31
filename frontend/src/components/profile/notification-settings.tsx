@@ -6,6 +6,7 @@ import {
   Tablet,
   Trash2,
   Loader2,
+  MonitorSmartphone,
 } from "lucide-react";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
@@ -29,6 +30,7 @@ import { getMessaging, getToken } from "firebase/messaging";
 import app from "@/lib/firebase/firebase";
 import { toast } from "sonner";
 import { FcmToken } from "@/types";
+import { Separator } from "../ui/separator";
 
 const DeviceIcon = ({ deviceType }: { deviceType: FcmToken["deviceType"] }) => {
   switch (deviceType) {
@@ -183,7 +185,7 @@ const NotificationSettings = () => {
       {/* Push Notifications Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <Bell className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -210,9 +212,10 @@ const NotificationSettings = () => {
       {/* Notification Time Picker - Only show when notifications are enabled */}
       {pushNotifications && (
         <>
-          <div className="flex items-center justify-between ml-13">
+          <Separator />
+          <div className="md:flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Clock className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -232,7 +235,7 @@ const NotificationSettings = () => {
               onValueChange={handleNotificationTimeChange}
               disabled={updateUserPreferences.isPending}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-full md:w-32 mt-3 md:mt-0">
                 <SelectValue placeholder="Select time" />
               </SelectTrigger>
               <SelectContent>
@@ -246,16 +249,26 @@ const NotificationSettings = () => {
           </div>
 
           {/* Registered Devices */}
-          <div className="ml-13 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">
-                Registered Devices
-              </p>
+          <Separator />
+          <div className="space-y-3">
+            <div className="md:flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <MonitorSmartphone className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-base font-medium">Registered Devices</p>
+                  <p className="text-sm text-muted-foreground">
+                    Manage your devices for push notifications
+                  </p>
+                </div>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleAddDevice}
                 disabled={isRequestingPermission || saveFcmToken.isPending}
+                className="mt-3 md:mt-0 w-full md:w-32"
               >
                 {isRequestingPermission ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
