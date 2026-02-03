@@ -131,7 +131,7 @@ function MatrixQuadrantSection({
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-lg border-2 p-3 flex flex-col min-h-50 transition-colors",
+        "rounded-lg border-2 p-3 flex flex-col min-h-60 max-h-100 transition-colors",
         colorClass,
         isOver && "ring-2 ring-primary ring-offset-2",
       )}

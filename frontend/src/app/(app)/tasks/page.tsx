@@ -171,7 +171,9 @@ const TasksContent = () => {
             <p className="hidden md:block text-lg font-semibold">My Tasks</p>
             <MobileHeader title="My Tasks" />
           </div>
-          <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
+          <div className="hidden md:block">
+            <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
+          </div>
         </div>
 
         {/* Loading state */}
@@ -181,9 +183,12 @@ const TasksContent = () => {
           </div>
         ) : (
           <>
-            {viewMode === "list" && <QuickAddTask />}
+            <div className="md:hidden">
+              <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
+            </div>
+            {/* {viewMode === "list" && <QuickAddTask />} */}
 
-            <div className="flex-1 pb-20 md:pb-5 overflow-auto">
+            <div className="flex-1 mb-13 md:mb-5 overflow-auto">
               {activeTasks.length === 0 ? (
                 <div className="text-center text-muted-foreground mt-10">
                   <p className="mb-2">No tasks found.</p>

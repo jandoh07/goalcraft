@@ -21,13 +21,13 @@ const QuickAddTask = () => {
     toast.success(
       isOnline
         ? "Task added successfully"
-        : "Task added! Will sync when online."
+        : "Task added! Will sync when online.",
     );
     setTaskTitle("");
   };
 
   return (
-    <div className="my-5 border border-border rounded-xl flex justify-between items-center gap-3 px-2 shadow-sm bg-secondary overflow-hidden min-h-12">
+    <div className="mt-5 mb-2 border border-border rounded-xl flex justify-between items-center gap-3 px-2 shadow-sm bg-secondary overflow-hidden min-h-12">
       <input
         type="text"
         placeholder="Quick add task.."
