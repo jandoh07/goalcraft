@@ -9,6 +9,8 @@ export type SubTask = {
   completed: boolean;
 };
 
+export type TaskStatus = "in-progress" | "completed" | "archived";
+
 export interface Task {
   id?: string;
   userId: string;
@@ -20,7 +22,7 @@ export interface Task {
   dueDate?: Date | null;
   time?: string;
   priority?: "high" | "medium" | "low" | "" | null;
-  status: "in-progress" | "completed";
+  status: TaskStatus;
   subtasks?: SubTask[];
   frequency?: string;
   nextRun?: Date;

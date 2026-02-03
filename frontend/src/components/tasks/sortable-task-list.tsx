@@ -32,12 +32,16 @@ interface SortableTaskListProps {
   groupedTasks: GroupedTasks;
   onTaskClick: (task: Task) => void;
   isFetching?: boolean;
+  onArchiveOverdue?: () => void;
+  isArchivingOverdue?: boolean;
 }
 
 export function SortableTaskList({
   groupedTasks,
   onTaskClick,
   isFetching,
+  onArchiveOverdue,
+  isArchivingOverdue,
 }: SortableTaskListProps) {
   const groups: { key: GroupKey; tasks: Task[] }[] = [
     { key: "overdue", tasks: groupedTasks.overdue },
@@ -65,6 +69,8 @@ export function SortableTaskList({
             tasks={tasks}
             onTaskClick={onTaskClick}
             showLoading={showLoading}
+            onArchiveAll={key === "overdue" ? onArchiveOverdue : undefined}
+            isArchiving={key === "overdue" ? isArchivingOverdue : undefined}
           />
         );
       })}
@@ -77,6 +83,8 @@ interface SortableTaskGroupProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   showLoading?: boolean;
+  onArchiveAll?: () => void;
+  isArchiving?: boolean;
 }
 
 function SortableTaskGroup({
@@ -84,6 +92,8 @@ function SortableTaskGroup({
   tasks,
   onTaskClick,
   showLoading,
+  onArchiveAll,
+  isArchiving,
 }: SortableTaskGroupProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `group-${groupKey}`,
@@ -109,6 +119,8 @@ function SortableTaskGroup({
         group={groupKey}
         count={tasks.length}
         showLoading={showLoading}
+        onArchiveAll={onArchiveAll}
+        isArchiving={isArchiving}
       />
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 pb-2">

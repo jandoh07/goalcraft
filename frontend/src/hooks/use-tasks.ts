@@ -9,15 +9,22 @@ import {
   getMasterTasksByIds,
   updateTaskRecurrence,
   getNonNegotiablesByGoalId,
+  batchArchiveTasks,
+  fetchTasksByStatus,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
 export const useGetTasks = (
   userId: string,
-  filters?: { status?: string; goalId?: string }
+  filters?: { status?: string; goalId?: string },
 ) => {
   const queryClient = useQueryClient();
   // const queryKey = ["tasks", userId, filters];
@@ -25,7 +32,7 @@ export const useGetTasks = (
     () => ["tasks", userId, filters] as const,
     // We only care about the actual filter values, not the object reference
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userId, filters?.status, filters?.goalId]
+    [userId, filters?.status, filters?.goalId],
   );
 
   useEffect(() => {
@@ -56,7 +63,7 @@ export const useAddTask = () => {
   return useMutation({
     mutationFn: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) =>
       addTask(
-        removeEmptyFields(task) as Omit<Task, "id" | "createdAt" | "updatedAt">
+        removeEmptyFields(task) as Omit<Task, "id" | "createdAt" | "updatedAt">,
       ),
     onMutate: async (newTask) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
@@ -121,7 +128,7 @@ export const useUpdateTask = () => {
             const updatedData = oldData.map((task) =>
               task.id === taskId
                 ? { ...task, ...updates, updatedAt: new Date() }
-                : task
+                : task,
             );
             queryClient.setQueryData(query.queryKey, updatedData);
           }
@@ -209,7 +216,7 @@ export const useToggleTaskStatus = () => {
                     status: newStatus as "in-progress" | "completed",
                     updatedAt: new Date(),
                   }
-                : task
+                : task,
             );
             queryClient.setQueryData(query.queryKey, updatedData);
           }
@@ -248,7 +255,7 @@ export const useGetNonNegotiables = (masterTaskIds: string[]) => {
 
 export const useGetNonNegotiablesByGoalId = (
   goalId: string,
-  userId: string
+  userId: string,
 ) => {
   return useQuery({
     queryKey: ["nonNegotiables", "goal", goalId, userId],
@@ -286,7 +293,7 @@ export const useUpdateTaskRecurrence = () => {
         };
         queryClient.setQueryData(
           ["masterTask", masterTaskId],
-          updatedMasterTask
+          updatedMasterTask,
         );
       }
 
@@ -299,9 +306,72 @@ export const useUpdateTaskRecurrence = () => {
       if (context?.previousMasterTask) {
         queryClient.setQueryData(
           ["masterTask", variables.masterTaskId],
-          context.previousMasterTask
+          context.previousMasterTask,
         );
       }
     },
+  });
+};
+
+export const useBatchArchiveTasks = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskIds: string[]) => batchArchiveTasks(taskIds),
+    onMutate: async (taskIds) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+
+      const previousQueries = new Map();
+
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["tasks"] })
+        .forEach((query) => {
+          const oldData = query.state.data as Task[] | undefined;
+          previousQueries.set(query.queryKey, oldData);
+
+          if (oldData) {
+            const updatedData = oldData.map((task) =>
+              taskIds.includes(task.id!)
+                ? {
+                    ...task,
+                    status: "archived" as const,
+                    updatedAt: new Date(),
+                  }
+                : task,
+            );
+            queryClient.setQueryData(query.queryKey, updatedData);
+          }
+        });
+
+      return { previousQueries };
+    },
+    onError: (err, taskIds, context) => {
+      console.error("Failed to batch archive tasks:", err);
+
+      // Rollback all queries
+      context?.previousQueries.forEach((data, queryKey) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+  });
+};
+
+export const useGetTasksByStatus = (
+  userId: string,
+  status: "completed" | "archived" | null,
+  limitCount: number = 10,
+) => {
+  return useInfiniteQuery({
+    queryKey: ["tasks", "filtered", userId, status, limitCount],
+    queryFn: async ({ pageParam }) => {
+      if (!status) return [];
+      return fetchTasksByStatus(userId, status, limitCount, pageParam);
+    },
+    initialPageParam: undefined as Task | undefined,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < limitCount) return undefined;
+      return lastPage[lastPage.length - 1];
+    },
+    enabled: !!userId && !!status,
   });
 };

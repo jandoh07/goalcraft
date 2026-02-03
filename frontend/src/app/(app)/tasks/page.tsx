@@ -6,13 +6,17 @@ import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
 import { useState, useMemo, Suspense, useCallback } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
-import { useGetTasks, useUpdateTask } from "@/hooks/use-tasks";
+import {
+  useGetTasks,
+  useUpdateTask,
+  useBatchArchiveTasks,
+  useGetTasksByStatus,
+} from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
 import { groupTasksByDate } from "@/lib/utils/task-grouping";
 import TaskDetails from "@/components/tasks/task-details/task-details";
-import QuickAddTask from "@/components/tasks/quick-add-task";
 import {
   DndContext,
   DragEndEvent,
@@ -37,13 +41,22 @@ import {
   MatrixQuadrant,
 } from "@/components/tasks/eisenhower-matrix";
 import { TaskSortableOverlay } from "@/components/tasks/sortable-task-card";
+import { TaskFilters, TaskStatusFilterType } from "@/components/tasks/filters";
+import { FilteredTasksList } from "@/components/tasks/filtered-tasks-list";
+import { isSameDay } from "date-fns";
 
 const TasksContent = () => {
   const [viewMode, setViewMode] = useState<TaskViewMode>("list");
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [statusFilter, setStatusFilter] = useState<TaskStatusFilterType>(null);
+
   const { user } = useAuth();
   const tasks = useGetTasks(user?.uid || "");
   const updateTask = useUpdateTask();
+  const batchArchive = useBatchArchiveTasks();
+  const filteredTasks = useGetTasksByStatus(user?.uid || "", statusFilter);
+
   const taskDialog = useTaskDialog();
   const taskForm = useTasksForm({
     initialData: taskDialog.activeTask,
@@ -62,16 +75,45 @@ const TasksContent = () => {
 
   const isFullyLoaded = !tasks.isLoading;
 
-  // Filter out completed tasks for display (optional)
+  // Filter out completed and archived tasks for display
   const activeTasks = useMemo(() => {
     if (!tasks.data) return [];
-    return tasks.data.filter((t) => t.status !== "completed");
-  }, [tasks.data]);
+    let filtered = tasks.data.filter(
+      (t) => t.status !== "completed" && t.status !== "archived",
+    );
+
+    // Apply date filter if selected
+    if (selectedDate) {
+      filtered = filtered.filter((t) => {
+        if (!t.dueDate) return false;
+        return isSameDay(new Date(t.dueDate), selectedDate);
+      });
+    }
+
+    return filtered;
+  }, [tasks.data, selectedDate]);
 
   const groupedTasks = useMemo(() => {
     if (!activeTasks) return null;
     return groupTasksByDate(activeTasks);
   }, [activeTasks]);
+
+  // Flatten paginated filtered tasks
+  const flatFilteredTasks = useMemo(() => {
+    if (!filteredTasks.data?.pages) return [];
+    return filteredTasks.data.pages.flat();
+  }, [filteredTasks.data?.pages]);
+
+  // Handler for archiving all overdue tasks
+  const handleArchiveOverdue = useCallback(() => {
+    if (!groupedTasks?.overdue.length) return;
+    const overdueIds = groupedTasks.overdue
+      .map((t) => t.id)
+      .filter((id): id is string => !!id);
+    if (overdueIds.length > 0) {
+      batchArchive.mutate(overdueIds);
+    }
+  }, [groupedTasks?.overdue, batchArchive]);
 
   // DnD handlers
   const handleDragStart = (event: DragStartEvent) => {
@@ -171,7 +213,13 @@ const TasksContent = () => {
             <p className="hidden md:block text-lg font-semibold">My Tasks</p>
             <MobileHeader title="My Tasks" />
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-2">
+            <TaskFilters
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+            />
             <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
           </div>
         </div>
@@ -183,21 +231,44 @@ const TasksContent = () => {
           </div>
         ) : (
           <>
-            <div className="md:hidden">
+            {/* Mobile controls */}
+            <div className="md:hidden flex items-center justify-between gap-2 mb-2">
+              <TaskFilters
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+              />
               <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
             </div>
-            {/* {viewMode === "list" && <QuickAddTask />} */}
 
             <div className="flex-1 mb-13 md:mb-5 overflow-auto">
-              {activeTasks.length === 0 ? (
+              {/* Show filtered tasks when status filter is active */}
+              {statusFilter ? (
+                <FilteredTasksList
+                  tasks={flatFilteredTasks}
+                  statusFilter={statusFilter}
+                  onTaskClick={taskDialog.handleTaskClick}
+                  hasNextPage={!!filteredTasks.hasNextPage}
+                  isFetchingNextPage={filteredTasks.isFetchingNextPage}
+                  onLoadMore={() => filteredTasks.fetchNextPage()}
+                  isLoading={filteredTasks.isLoading}
+                />
+              ) : activeTasks.length === 0 ? (
                 <div className="text-center text-muted-foreground mt-10">
-                  <p className="mb-2">No tasks found.</p>
+                  <p className="mb-2">
+                    {selectedDate
+                      ? "No tasks for this date."
+                      : "No tasks found."}
+                  </p>
                 </div>
               ) : viewMode === "list" && groupedTasks ? (
                 <SortableTaskList
                   groupedTasks={groupedTasks}
                   onTaskClick={taskDialog.handleTaskClick}
                   isFetching={tasks.isFetching}
+                  onArchiveOverdue={handleArchiveOverdue}
+                  isArchivingOverdue={batchArchive.isPending}
                 />
               ) : (
                 <EisenhowerMatrix

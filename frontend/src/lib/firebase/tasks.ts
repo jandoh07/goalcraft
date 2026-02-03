@@ -409,3 +409,76 @@ export const getNonNegotiablesByGoalId = async (
     throw error;
   }
 };
+
+/**
+ * Batch archive multiple tasks at once
+ * @param taskIds - Array of task IDs to archive
+ */
+export const batchArchiveTasks = async (taskIds: string[]) => {
+  if (!taskIds.length) return;
+
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
+
+  taskIds.forEach((taskId) => {
+    const taskRef = doc(db, "tasks", taskId);
+    batch.update(taskRef, {
+      status: "archived",
+      updatedAt: now,
+    });
+  });
+
+  await batch.commit();
+};
+
+/**
+ * Fetch tasks by status with pagination
+ * @param userId - User ID
+ * @param status - Task status to filter by
+ * @param limitCount - Number of tasks to fetch
+ * @param lastTask - Last task from previous page for pagination
+ */
+export const fetchTasksByStatus = async (
+  userId: string,
+  status: "completed" | "archived",
+  limitCount: number = 10,
+  lastTask?: Task,
+) => {
+  const { limit, startAfter } = await import("firebase/firestore");
+
+  let q;
+  const tasksCollection = collection(db, "tasks");
+
+  const baseConstraints = [
+    where("userId", "==", userId),
+    where("status", "==", status),
+    orderBy("updatedAt", "desc"),
+    limit(limitCount),
+  ];
+
+  if (lastTask) {
+    q = query(
+      tasksCollection,
+      ...baseConstraints,
+      startAfter(Timestamp.fromDate(lastTask.updatedAt)),
+    );
+  } else {
+    q = query(tasksCollection, ...baseConstraints);
+  }
+
+  const querySnapshot = await getDocs(q);
+  const tasks: Task[] = [];
+
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    tasks.push({
+      id: docSnap.id,
+      ...data,
+      dueDate: data.dueDate?.toDate(),
+      createdAt: data.createdAt?.toDate(),
+      updatedAt: data.updatedAt?.toDate(),
+    } as Task);
+  });
+
+  return tasks;
+};
