@@ -5,6 +5,22 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { TimeBlock, HOUR_HEIGHT } from "../../types/schedule";
 
+// Helper to ensure we have a Date object (handles Firestore Timestamps)
+function ensureDate(value: Date | { toDate: () => Date } | unknown): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  return new Date(value as string | number);
+}
+
 interface DraggableTimeBlockProps {
   block: TimeBlock;
   onEdit: (block: TimeBlock) => void;
@@ -17,8 +33,12 @@ export function DraggableTimeBlock({ block, onEdit }: DraggableTimeBlockProps) {
       data: { block },
     });
 
-  const style = getBlockStyle(block, transform, isDragging);
-  const durationMinutes = (block.end.getTime() - block.start.getTime()) / 60000;
+  // Ensure dates are properly converted
+  const startDate = ensureDate(block.start);
+  const endDate = ensureDate(block.end);
+
+  const style = getBlockStyle(startDate, endDate, transform, isDragging);
+  const durationMinutes = (endDate.getTime() - startDate.getTime()) / 60000;
   const isShort = durationMinutes <= 30;
 
   return (
@@ -51,7 +71,7 @@ export function DraggableTimeBlock({ block, onEdit }: DraggableTimeBlockProps) {
       </p>
       {!isShort && (
         <p className="text-[10px] opacity-70 truncate">
-          {format(block.start, "h:mm a")} - {format(block.end, "h:mm a")}
+          {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")}
         </p>
       )}
     </div>
@@ -59,16 +79,17 @@ export function DraggableTimeBlock({ block, onEdit }: DraggableTimeBlockProps) {
 }
 
 function getBlockStyle(
-  block: TimeBlock,
+  start: Date,
+  end: Date,
   transform: { x: number; y: number } | null,
   isDragging: boolean,
 ) {
-  const startHour = block.start.getHours() + block.start.getMinutes() / 60;
-  let endHour = block.end.getHours() + block.end.getMinutes() / 60;
+  const startHour = start.getHours() + start.getMinutes() / 60;
+  let endHour = end.getHours() + end.getMinutes() / 60;
 
   // Handle midnight case: if end is at 00:00, treat it as 24:00 for display
   // This happens when a block ends at midnight (12 AM)
-  if (endHour === 0 && block.end.getTime() > block.start.getTime()) {
+  if (endHour === 0 && end.getTime() > start.getTime()) {
     endHour = 24;
   }
 

@@ -15,6 +15,7 @@ interface ScheduleHeaderProps {
   onScroll?: () => void;
   aiButton?: ReactNode;
   filterButton?: ReactNode;
+  tasksButton?: ReactNode;
   isFetching?: boolean;
 }
 
@@ -28,6 +29,7 @@ export function ScheduleHeader({
   onScroll,
   aiButton,
   filterButton,
+  tasksButton,
   isFetching,
 }: ScheduleHeaderProps) {
   return (
@@ -54,6 +56,7 @@ export function ScheduleHeader({
           {isFetching && (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           )}
+          {tasksButton}
           {filterButton}
           {aiButton}
         </div>

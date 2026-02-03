@@ -24,24 +24,26 @@ export function DroppableDayColumn({
   onCreateClick,
   onEditClick,
 }: DroppableDayColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `day-${dayIndex}`,
-    data: { date, dayIndex },
-  });
-
   return (
     <div
-      ref={setNodeRef}
       className={cn(
         "flex-1 min-w-50 md:min-w-25 border-r last:border-r-0 relative",
         isCurrentDay && "bg-primary/2",
-        isOver && "bg-primary/10"
       )}
       style={{ height: `${24 * HOUR_HEIGHT}px` }}
     >
-      <HourGridLines onClick={(hour) => onCreateClick(date, hour)} />
-      <HalfHourLines />
+      {/* Hour-level drop zones */}
+      {HOURS.map((hour) => (
+        <DroppableHourSlot
+          key={`${dayIndex}-${hour}`}
+          dayIndex={dayIndex}
+          hour={hour}
+          date={date}
+          onClick={() => onCreateClick(date, hour)}
+        />
+      ))}
 
+      {/* Time blocks */}
       {blocks.map((block) => (
         <DraggableTimeBlock key={block.id} block={block} onEdit={onEditClick} />
       ))}
@@ -51,37 +53,42 @@ export function DroppableDayColumn({
   );
 }
 
-function HourGridLines({ onClick }: { onClick: (hour: number) => void }) {
-  return (
-    <>
-      {HOURS.map((hour) => (
-        <div
-          key={hour}
-          onClick={() => onClick(hour)}
-          className="absolute inset-x-0 border-t border-border/40 hover:bg-muted/30 transition-colors cursor-pointer"
-          style={{
-            top: `${hour * HOUR_HEIGHT}px`,
-            height: `${HOUR_HEIGHT}px`,
-          }}
-        />
-      ))}
-    </>
-  );
-}
+// Each hour is its own droppable zone
+function DroppableHourSlot({
+  dayIndex,
+  hour,
+  date,
+  onClick,
+}: {
+  dayIndex: number;
+  hour: number;
+  date: Date;
+  onClick: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `day-${dayIndex}-hour-${hour}`,
+    data: { date, dayIndex, hour },
+  });
 
-function HalfHourLines() {
   return (
-    <>
-      {HOURS.map((hour) => (
-        <div
-          key={`half-${hour}`}
-          className="absolute inset-x-0 border-t border-border/20 pointer-events-none"
-          style={{
-            top: `${hour * HOUR_HEIGHT + HOUR_HEIGHT / 2}px`,
-          }}
-        />
-      ))}
-    </>
+    <div
+      ref={setNodeRef}
+      onClick={onClick}
+      className={cn(
+        "absolute inset-x-0 border-t border-border/40 hover:bg-muted/30 transition-colors cursor-pointer",
+        isOver && "bg-primary/20",
+      )}
+      style={{
+        top: `${hour * HOUR_HEIGHT}px`,
+        height: `${HOUR_HEIGHT}px`,
+      }}
+    >
+      {/* Half-hour line */}
+      <div
+        className="absolute inset-x-0 border-t border-border/20 pointer-events-none"
+        style={{ top: `${HOUR_HEIGHT / 2}px` }}
+      />
+    </div>
   );
 }
 

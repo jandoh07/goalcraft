@@ -1,34 +1,49 @@
 "use client";
 
 import MobileHeader from "@/components/layout/mobile/header";
-import TaskCard from "@/components/tasks/task-card";
 import AddButton from "@/components/ui/add-button";
 import ResponsiveDialog from "@/components/ui/responsive-dialog";
 import { Loader2 } from "lucide-react";
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useCallback } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
-import { useGetTasks } from "@/hooks/use-tasks";
+import { useGetTasks, useUpdateTask } from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
-import { groupTasksByDate, getTaskType } from "@/lib/utils/task-grouping";
-import TaskGroupHeader from "@/components/tasks/task-group-header";
+import { groupTasksByDate } from "@/lib/utils/task-grouping";
 import TaskDetails from "@/components/tasks/task-details/task-details";
-import DateStrip from "@/components/tasks/date-strip";
 import QuickAddTask from "@/components/tasks/quick-add-task";
-
-type Groupkey =
-  | "overdue"
-  | "today"
-  | "tomorrow"
-  | "this-week"
-  | "later"
-  | "no-date";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { Task } from "@/types";
+import {
+  TaskViewToggle,
+  TaskViewMode,
+} from "@/components/tasks/task-view-toggle";
+import { SortableTaskList } from "@/components/tasks/sortable-task-list";
+import {
+  EisenhowerMatrix,
+  MatrixQuadrant,
+} from "@/components/tasks/eisenhower-matrix";
+import { TaskSortableOverlay } from "@/components/tasks/sortable-task-card";
 
 const TasksContent = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<TaskViewMode>("list");
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const { user } = useAuth();
   const tasks = useGetTasks(user?.uid || "");
+  const updateTask = useUpdateTask();
   const taskDialog = useTaskDialog();
   const taskForm = useTasksForm({
     initialData: taskDialog.activeTask,
@@ -36,146 +51,197 @@ const TasksContent = () => {
     openDialog: (open) => taskDialog.handleClose(open),
   });
 
-  // With edge auth, if user reaches this page they are authenticated
-  // Only wait for data loading, not auth loading
+  // DnD sensors
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 10 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 5 },
+  });
+  const sensors = useSensors(mouseSensor, touchSensor);
+
   const isFullyLoaded = !tasks.isLoading;
 
-  // Filter tasks by selected date
-  const filteredTasks = useMemo(() => {
-    if (!tasks.data) return null;
-    if (!selectedDate) return tasks.data;
-
-    return tasks.data.filter((task) => {
-      if (!task.dueDate) return false;
-      const taskDate = new Date(task.dueDate);
-      return (
-        taskDate.getDate() === selectedDate.getDate() &&
-        taskDate.getMonth() === selectedDate.getMonth() &&
-        taskDate.getFullYear() === selectedDate.getFullYear()
-      );
-    });
-  }, [tasks.data, selectedDate]);
+  // Filter out completed tasks for display (optional)
+  const activeTasks = useMemo(() => {
+    if (!tasks.data) return [];
+    return tasks.data.filter((t) => t.status !== "completed");
+  }, [tasks.data]);
 
   const groupedTasks = useMemo(() => {
-    if (!filteredTasks) return null;
-    return groupTasksByDate(filteredTasks);
-  }, [filteredTasks]);
+    if (!activeTasks) return null;
+    return groupTasksByDate(activeTasks);
+  }, [activeTasks]);
 
-  const renderTaskGroup = (
-    groupKey: Groupkey,
-    groupTasks: typeof tasks.data,
-    showLoading?: boolean,
-  ) => {
-    if (!groupTasks || groupTasks.length === 0) return null;
-
-    return (
-      <div key={groupKey}>
-        <TaskGroupHeader
-          group={groupKey}
-          count={groupTasks.length}
-          showLoading={showLoading}
-        />
-        {groupTasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onClick={() => taskDialog.handleTaskClick(task)}
-            type={getTaskType(task.dueDate)}
-          />
-        ))}
-      </div>
-    );
+  // DnD handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    if (active.data.current?.type === "task") {
+      setActiveTask(active.data.current.task);
+    }
   };
 
-  return (
-    <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
-      <p className="hidden md:block text-lg font-semibold">My Tasks</p>
-      <MobileHeader title="My Tasks" />
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveTask(null);
 
-      {/* Show loading state while auth or tasks are loading */}
-      {!isFullyLoaded ? (
-        <div className="flex-1 flex justify-center items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          {/* <DateStrip
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            className="mb-3"
-          /> */}
-          <QuickAddTask />
-          <div className="pb-50 md:pb-5">
-            {tasks.isSuccess && filteredTasks?.length === 0 ? (
-              <div className="text-center text-muted-foreground mt-10">
-                <p className="mb-2">
-                  {selectedDate ? "No tasks for this date." : "No tasks found."}
-                </p>
-              </div>
-            ) : (
-              groupedTasks && (
-                <div className="">
-                  {(() => {
-                    const isFetching = tasks.isFetching;
-                    const groups: {
-                      key: Groupkey;
-                      tasks: typeof tasks.data;
-                    }[] = [
-                      { key: "overdue", tasks: groupedTasks.overdue },
-                      { key: "today", tasks: groupedTasks.today },
-                      { key: "tomorrow", tasks: groupedTasks.tomorrow },
-                      { key: "this-week", tasks: groupedTasks["this-week"] },
-                      { key: "later", tasks: groupedTasks.later },
-                      { key: "no-date", tasks: groupedTasks["no-date"] },
-                    ];
-                    let hasShownLoading = false;
-                    return groups.map(({ key, tasks: groupTasks }) => {
-                      const showLoading =
-                        isFetching &&
-                        !hasShownLoading &&
-                        groupTasks &&
-                        groupTasks.length > 0;
-                      if (showLoading) hasShownLoading = true;
-                      return renderTaskGroup(key, groupTasks, showLoading);
-                    });
-                  })()}
-                </div>
-              )
-            )}
-          </div>
-          <AddButton onClick={taskDialog.handleAddNew} />
-          <ResponsiveDialog
-            open={taskDialog.open}
-            setOpen={taskDialog.handleClose}
-            title={taskDialog.getTitle()}
-            description={taskDialog.getDescription()}
-            submitLabel={taskDialog.getSubmitLabel()}
-            onSubmit={taskDialog.handleExternalFormSubmit}
-            isSubmitting={taskForm.mutation.isPending}
-            hideSubmitButton={taskDialog.hideSubmitButton()}
-            backIconAction={
-              taskDialog.mode === "edit"
-                ? () => taskDialog.setMode("view")
-                : undefined
+      if (!over || !user?.uid || !tasks.data) return;
+
+      const activeId = active.id as string;
+      const overId = over.id as string;
+
+      // Extract task ID from sortable ID (e.g., "task-abc123" -> "abc123")
+      const activeTaskId = activeId.replace("task-", "");
+      const task = tasks.data.find((t) => t.id === activeTaskId);
+      if (!task) return;
+
+      // Handle dropping on a quadrant (Eisenhower Matrix)
+      if (over.data.current?.type === "quadrant") {
+        const quadrant = over.data.current.quadrant as MatrixQuadrant;
+        let isImportant = false;
+        let isUrgent = false;
+
+        switch (quadrant) {
+          case "important-urgent":
+            isImportant = true;
+            isUrgent = true;
+            break;
+          case "important-not-urgent":
+            isImportant = true;
+            isUrgent = false;
+            break;
+          case "not-important-urgent":
+            isImportant = false;
+            isUrgent = true;
+            break;
+          case "not-important-not-urgent":
+            isImportant = false;
+            isUrgent = false;
+            break;
+        }
+
+        // Only update if tags changed
+        if (task.isImportant !== isImportant || task.isUrgent !== isUrgent) {
+          updateTask.mutate({
+            taskId: activeTaskId,
+            updates: { isImportant, isUrgent },
+          });
+        }
+        return;
+      }
+
+      // Handle reordering within same container
+      if (activeId !== overId && overId.startsWith("task-")) {
+        const overTaskId = overId.replace("task-", "");
+        const activeIndex = tasks.data.findIndex((t) => t.id === activeTaskId);
+        const overIndex = tasks.data.findIndex((t) => t.id === overTaskId);
+
+        if (activeIndex !== -1 && overIndex !== -1) {
+          // Calculate new order values
+          const reordered = arrayMove(tasks.data, activeIndex, overIndex);
+
+          // Update order for affected tasks
+          reordered.forEach((t: Task, index: number) => {
+            if (t.order !== index) {
+              updateTask.mutate({
+                taskId: t.id!,
+                updates: { order: index },
+              });
             }
-          >
-            {taskDialog.mode === "view" ? (
-              <TaskDetails
-                setMode={taskDialog.setMode}
-                task={taskDialog.activeTask}
-                setDialogOpen={(open) => {
-                  const value =
-                    typeof open === "function" ? open(taskDialog.open) : open;
-                  taskDialog.handleClose(value);
-                }}
-              />
-            ) : (
-              <TaskForm taskForm={taskForm} />
-            )}
-          </ResponsiveDialog>
-        </>
-      )}
-    </div>
+          });
+        }
+      }
+    },
+    [tasks.data, user?.uid, updateTask],
+  );
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToWindowEdges]}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
+        {/* Header */}
+        <div className="md:flex items-center justify-between mb-3">
+          <div>
+            <p className="hidden md:block text-lg font-semibold">My Tasks</p>
+            <MobileHeader title="My Tasks" />
+          </div>
+          <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
+        </div>
+
+        {/* Loading state */}
+        {!isFullyLoaded ? (
+          <div className="flex-1 flex justify-center items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {viewMode === "list" && <QuickAddTask />}
+
+            <div className="flex-1 pb-20 md:pb-5 overflow-auto">
+              {activeTasks.length === 0 ? (
+                <div className="text-center text-muted-foreground mt-10">
+                  <p className="mb-2">No tasks found.</p>
+                </div>
+              ) : viewMode === "list" && groupedTasks ? (
+                <SortableTaskList
+                  groupedTasks={groupedTasks}
+                  onTaskClick={taskDialog.handleTaskClick}
+                  isFetching={tasks.isFetching}
+                />
+              ) : (
+                <EisenhowerMatrix
+                  tasks={activeTasks}
+                  onTaskClick={taskDialog.handleTaskClick}
+                />
+              )}
+            </div>
+
+            <AddButton onClick={taskDialog.handleAddNew} />
+
+            <ResponsiveDialog
+              open={taskDialog.open}
+              setOpen={taskDialog.handleClose}
+              title={taskDialog.getTitle()}
+              description={taskDialog.getDescription()}
+              submitLabel={taskDialog.getSubmitLabel()}
+              onSubmit={taskDialog.handleExternalFormSubmit}
+              isSubmitting={taskForm.mutation.isPending}
+              hideSubmitButton={taskDialog.hideSubmitButton()}
+              backIconAction={
+                taskDialog.mode === "edit"
+                  ? () => taskDialog.setMode("view")
+                  : undefined
+              }
+            >
+              {taskDialog.mode === "view" ? (
+                <TaskDetails
+                  setMode={taskDialog.setMode}
+                  task={taskDialog.activeTask}
+                  setDialogOpen={(open) => {
+                    const value =
+                      typeof open === "function" ? open(taskDialog.open) : open;
+                    taskDialog.handleClose(value);
+                  }}
+                />
+              ) : (
+                <TaskForm taskForm={taskForm} />
+              )}
+            </ResponsiveDialog>
+          </>
+        )}
+      </div>
+
+      {/* Drag overlay */}
+      <DragOverlay>
+        {activeTask ? <TaskSortableOverlay task={activeTask} /> : null}
+      </DragOverlay>
+    </DndContext>
   );
 };
 

@@ -26,6 +26,11 @@ export interface Task {
   nextRun?: Date;
   timeZone?: string;
   recurringMasterId?: string;
+  // Eisenhower Matrix tags
+  isImportant?: boolean;
+  isUrgent?: boolean;
+  // Order for drag-and-drop sorting
+  order?: number;
   createdAt: Date;
   updatedAt: Date;
 }
