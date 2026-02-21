@@ -15,7 +15,11 @@ import {
 import { useTaskDialog } from "@/hooks/use-task-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import useTasksForm from "@/hooks/use-tasks-form";
-import { groupTasksByDate } from "@/lib/utils/task-grouping";
+import {
+  groupTasksByDate,
+  getDateForGroup,
+  TaskGroup,
+} from "@/lib/utils/task-grouping";
 import TaskDetails from "@/components/tasks/task-details/task-details";
 import {
   DndContext,
@@ -28,25 +32,16 @@ import {
   useSensors,
   closestCenter,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { Task } from "@/types";
-import {
-  TaskViewToggle,
-  TaskViewMode,
-} from "@/components/tasks/task-view-toggle";
 import { SortableTaskList } from "@/components/tasks/sortable-task-list";
-import {
-  EisenhowerMatrix,
-  MatrixQuadrant,
-} from "@/components/tasks/eisenhower-matrix";
 import { TaskSortableOverlay } from "@/components/tasks/sortable-task-card";
 import { TaskFilters, TaskStatusFilterType } from "@/components/tasks/filters";
 import { FilteredTasksList } from "@/components/tasks/filtered-tasks-list";
 import { isSameDay } from "date-fns";
+import { generateKeyBetween } from "fractional-indexing";
 
 const TasksContent = () => {
-  const [viewMode, setViewMode] = useState<TaskViewMode>("list");
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilterType>(null);
@@ -128,7 +123,7 @@ const TasksContent = () => {
       const { active, over } = event;
       setActiveTask(null);
 
-      if (!over || !user?.uid || !tasks.data) return;
+      if (!over || !user?.uid || !tasks.data || !groupedTasks) return;
 
       const activeId = active.id as string;
       const overId = over.id as string;
@@ -138,64 +133,109 @@ const TasksContent = () => {
       const task = tasks.data.find((t) => t.id === activeTaskId);
       if (!task) return;
 
-      // Handle dropping on a quadrant (Eisenhower Matrix)
-      if (over.data.current?.type === "quadrant") {
-        const quadrant = over.data.current.quadrant as MatrixQuadrant;
-        let isImportant = false;
-        let isUrgent = false;
+      // Determine source group from task's current date
+      const getTaskGroup = (t: Task): TaskGroup => {
+        if (!t.dueDate) return "no-date";
+        const now = new Date();
+        const today = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(endOfWeek.getDate() + (7 - today.getDay()));
 
-        switch (quadrant) {
-          case "important-urgent":
-            isImportant = true;
-            isUrgent = true;
-            break;
-          case "important-not-urgent":
-            isImportant = true;
-            isUrgent = false;
-            break;
-          case "not-important-urgent":
-            isImportant = false;
-            isUrgent = true;
-            break;
-          case "not-important-not-urgent":
-            isImportant = false;
-            isUrgent = false;
-            break;
-        }
+        const dueDate = new Date(t.dueDate);
+        const dueDateOnly = new Date(
+          dueDate.getFullYear(),
+          dueDate.getMonth(),
+          dueDate.getDate(),
+        );
 
-        // Only update if tags changed
-        if (task.isImportant !== isImportant || task.isUrgent !== isUrgent) {
-          updateTask.mutate({
-            taskId: activeTaskId,
-            updates: { isImportant, isUrgent },
-          });
-        }
+        if (dueDateOnly < today) return "overdue";
+        if (dueDateOnly.getTime() === today.getTime()) return "today";
+        if (dueDateOnly.getTime() === tomorrow.getTime()) return "tomorrow";
+        if (dueDateOnly <= endOfWeek) return "this-week";
+        return "later";
+      };
+
+      const sourceGroup = getTaskGroup(task);
+
+      // Handle dropping on a group
+      if (over.data.current?.type === "group") {
+        const targetGroup = over.data.current.group as TaskGroup;
+
+        // Prevent dropping into overdue
+        if (targetGroup === "overdue") return;
+
+        // If same group, no action needed
+        if (sourceGroup === targetGroup) return;
+
+        // Get new date for the target group
+        const newDate = getDateForGroup(targetGroup);
+
+        // Get tasks in target group sorted by order
+        const targetTasks = groupedTasks[targetGroup]
+          .slice()
+          .sort((a, b) => (a.order ?? "").localeCompare(b.order ?? ""));
+
+        // Generate order for end of list
+        const lastOrder =
+          targetTasks.length > 0
+            ? targetTasks[targetTasks.length - 1].order
+            : null;
+        const newOrder = generateKeyBetween(lastOrder ?? null, null);
+
+        updateTask.mutate({
+          taskId: activeTaskId,
+          updates: { dueDate: newDate, order: newOrder },
+        });
         return;
       }
 
-      // Handle reordering within same container
-      if (activeId !== overId && overId.startsWith("task-")) {
+      // Handle dropping on another task
+      if (overId.startsWith("task-")) {
         const overTaskId = overId.replace("task-", "");
-        const activeIndex = tasks.data.findIndex((t) => t.id === activeTaskId);
-        const overIndex = tasks.data.findIndex((t) => t.id === overTaskId);
+        const overTask = tasks.data.find((t) => t.id === overTaskId);
+        if (!overTask || overTaskId === activeTaskId) return;
 
-        if (activeIndex !== -1 && overIndex !== -1) {
-          // Calculate new order values
-          const reordered = arrayMove(tasks.data, activeIndex, overIndex);
+        const targetGroup = getTaskGroup(overTask);
 
-          // Update order for affected tasks
-          reordered.forEach((t: Task, index: number) => {
-            if (t.order !== index) {
-              updateTask.mutate({
-                taskId: t.id!,
-                updates: { order: index },
-              });
-            }
-          });
+        // Prevent dropping into overdue
+        if (targetGroup === "overdue") return;
+
+        // Get tasks in target group sorted by order
+        const targetTasks = groupedTasks[targetGroup]
+          .slice()
+          .sort((a, b) => (a.order ?? "").localeCompare(b.order ?? ""));
+
+        // Find the index where we're dropping
+        const overIndex = targetTasks.findIndex((t) => t.id === overTaskId);
+        if (overIndex === -1) return;
+
+        // Calculate the new fractional order
+        const prevOrder =
+          overIndex > 0 ? targetTasks[overIndex - 1].order : null;
+        const nextOrder = targetTasks[overIndex].order ?? null;
+        const newOrder = generateKeyBetween(prevOrder ?? null, nextOrder);
+
+        // Prepare updates
+        const updates: Partial<Task> = { order: newOrder };
+
+        // If moving to a different group, also update the date
+        if (sourceGroup !== targetGroup) {
+          updates.dueDate = getDateForGroup(targetGroup);
         }
+
+        updateTask.mutate({
+          taskId: activeTaskId,
+          updates,
+        });
       }
     },
-    [tasks.data, user?.uid, updateTask],
+    [tasks.data, user?.uid, updateTask, groupedTasks],
   );
 
   return (
@@ -220,7 +260,6 @@ const TasksContent = () => {
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
             />
-            <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
           </div>
         </div>
 
@@ -232,14 +271,13 @@ const TasksContent = () => {
         ) : (
           <>
             {/* Mobile controls */}
-            <div className="md:hidden flex items-center justify-between gap-2 mb-2">
+            <div className="md:hidden flex items-center justify-end gap-2 mb-2">
               <TaskFilters
                 selectedDate={selectedDate}
                 onDateChange={setSelectedDate}
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
               />
-              <TaskViewToggle mode={viewMode} onModeChange={setViewMode} />
             </div>
 
             <div className="flex-1 mb-13 md:mb-5 overflow-auto">
@@ -262,7 +300,7 @@ const TasksContent = () => {
                       : "No tasks found."}
                   </p>
                 </div>
-              ) : viewMode === "list" && groupedTasks ? (
+              ) : groupedTasks ? (
                 <SortableTaskList
                   groupedTasks={groupedTasks}
                   onTaskClick={taskDialog.handleTaskClick}
@@ -270,12 +308,7 @@ const TasksContent = () => {
                   onArchiveOverdue={handleArchiveOverdue}
                   isArchivingOverdue={batchArchive.isPending}
                 />
-              ) : (
-                <EisenhowerMatrix
-                  tasks={activeTasks}
-                  onTaskClick={taskDialog.handleTaskClick}
-                />
-              )}
+              ) : null}
             </div>
 
             <AddButton onClick={taskDialog.handleAddNew} />

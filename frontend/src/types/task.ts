@@ -31,8 +31,8 @@ export interface Task {
   // Eisenhower Matrix tags
   isImportant?: boolean;
   isUrgent?: boolean;
-  // Order for drag-and-drop sorting
-  order?: number;
+  // Order for drag-and-drop sorting (fractional indexing string)
+  order?: string;
   createdAt: Date;
   updatedAt: Date;
 }

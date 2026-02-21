@@ -95,16 +95,37 @@ function SortableTaskGroup({
   onArchiveAll,
   isArchiving,
 }: SortableTaskGroupProps) {
+  // Disable dropping into overdue group
   const { setNodeRef, isOver } = useDroppable({
     id: `group-${groupKey}`,
     data: { type: "group", group: groupKey },
+    disabled: groupKey === "overdue",
   });
 
   const taskIds = useMemo(() => tasks.map((t) => `task-${t.id}`), [tasks]);
 
-  // Sort tasks by order within each group
+  // Sort tasks by order within each group (string comparison for fractional indexing)
+  // Handle both string and legacy number orders during migration
   const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return [...tasks].sort((a, b) => {
+      const orderA = a.order;
+      const orderB = b.order;
+
+      // Handle undefined/null orders - put them at the end
+      if (orderA == null && orderB == null) return 0;
+      if (orderA == null) return 1;
+      if (orderB == null) return -1;
+
+      // If both are numbers (legacy), compare numerically
+      if (typeof orderA === "number" && typeof orderB === "number") {
+        return orderA - orderB;
+      }
+
+      // Convert to strings for comparison
+      const strA = String(orderA);
+      const strB = String(orderB);
+      return strA.localeCompare(strB);
+    });
   }, [tasks]);
 
   return (
@@ -112,7 +133,9 @@ function SortableTaskGroup({
       ref={setNodeRef}
       className={cn(
         "transition-colors rounded-lg",
-        isOver && "bg-primary/5 ring-2 ring-primary/20",
+        groupKey !== "overdue" &&
+          isOver &&
+          "bg-primary/5 ring-2 ring-primary/20",
       )}
     >
       <TaskGroupHeader
