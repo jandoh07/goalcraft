@@ -1,31 +1,19 @@
-import { ChartLine, Goal, ListTodo, User, Calendar } from "lucide-react";
+import { Goal, ListTodo, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabItems = [
   {
     id: 1,
-    label: "Goals",
-    icon: Goal,
-    href: "/goals",
+    label: "Today",
+    icon: ListTodo,
+    href: "/today",
   },
   {
     id: 2,
-    label: "Tasks",
-    icon: ListTodo,
-    href: "/tasks",
-  },
-  {
-    id: 3,
-    label: "Schedule",
-    icon: Calendar,
-    href: "/schedule",
-  },
-  {
-    id: 4,
-    label: "Analytics",
-    icon: ChartLine,
-    href: "/analytics",
+    label: "Goals",
+    icon: Goal,
+    href: "/goals",
   },
   {
     id: 5,
