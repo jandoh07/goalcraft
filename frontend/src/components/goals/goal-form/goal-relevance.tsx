@@ -1,4 +1,3 @@
-import AISuggestion from "@/components/ai/ai-suggestion";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -30,12 +29,6 @@ const GoalRelevance = ({
         placeholder="What's this for... This is important because..."
         value={relevance}
         onChange={(e) => setRelevance(e.target.value)}
-      />
-      <AISuggestion
-        value={title}
-        setValue={handleSetRelevance}
-        promptType="goalRelevanceGeneration"
-        lastAcceptedSuggestion={initialRelevance}
       />
     </div>
   );

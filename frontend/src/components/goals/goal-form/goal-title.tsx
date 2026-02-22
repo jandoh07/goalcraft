@@ -1,4 +1,3 @@
-import AISuggestion from "@/components/ai/ai-suggestion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -19,12 +18,6 @@ const GoalTitle = ({ title, setTitle, initialTitle }: GoalTitleProps) => {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         required
-      />
-      <AISuggestion
-        value={title}
-        setValue={setTitle}
-        promptType="goalTitleSuggestion"
-        lastAcceptedSuggestion={initialTitle}
       />
     </div>
   );
