@@ -3,28 +3,30 @@
 import MobileHeader from "@/components/layout/mobile/header";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { NonNegotiablesList } from "@/components/today/non-negotiables-list";
+import { DailyReviewSection } from "@/components/review/daily-review-section";
+import { PerformanceCharts } from "@/components/review/performance-charts";
 
-const TodayContent = () => {
+const ReviewContent = () => {
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
       {/* Header */}
       <div className="md:flex items-center justify-between mb-3">
         <div>
-          <p className="hidden md:block text-lg font-semibold">Today</p>
-          <MobileHeader title="Today" />
+          <p className="hidden md:block text-lg font-semibold">Review</p>
+          <MobileHeader title="Review" />
         </div>
       </div>
 
-      {/* Non-negotiables */}
-      <div className="flex-1 mb-13 md:mb-5 overflow-auto">
-        <NonNegotiablesList />
+      {/* Content */}
+      <div className="flex-1 mb-13 md:mb-5 overflow-auto space-y-6">
+        <DailyReviewSection />
+        <PerformanceCharts />
       </div>
     </div>
   );
 };
 
-const Today = () => {
+const Review = () => {
   return (
     <Suspense
       fallback={
@@ -33,9 +35,9 @@ const Today = () => {
         </div>
       }
     >
-      <TodayContent />
+      <ReviewContent />
     </Suspense>
   );
 };
 
-export default Today;
+export default Review;

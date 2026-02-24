@@ -40,12 +40,12 @@ export function TaskDateFilter({
           variant="outline"
           size="sm"
           className={cn(
-            "h-8 gap-1.5 text-xs",
-            selectedDate && "bg-primary/10 border-primary/30",
+            "h-8 gap-1.5 text-xs border-none cursor-pointer",
+            selectedDate && "bg-primary/10",
           )}
         >
-          <CalendarIcon className="h-3.5 w-3.5" />
-          {selectedDate ? (
+          <CalendarIcon className="size-4" />
+          {selectedDate && (
             <>
               <span className="hidden sm:inline">
                 {format(selectedDate, "MMM d, yyyy")}
@@ -56,8 +56,6 @@ export function TaskDateFilter({
                 onClick={handleClear}
               />
             </>
-          ) : (
-            <span className="hidden sm:inline">Filter by Date</span>
           )}
         </Button>
       </PopoverTrigger>

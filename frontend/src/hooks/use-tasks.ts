@@ -10,16 +10,10 @@ import {
   updateTaskRecurrence,
   getNonNegotiablesByGoalId,
   batchArchiveTasks,
-  fetchTasksByStatus,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
 import { Task } from "@/types";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
 export const useGetTasks = (
@@ -61,7 +55,11 @@ export const useGetTasks = (
 export const useAddTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) =>
+    mutationFn: (
+      task: Omit<Task, "id" | "createdAt" | "updatedAt"> & {
+        isRecurring?: boolean;
+      },
+    ) =>
       addTask(
         removeEmptyFields(task) as Omit<Task, "id" | "createdAt" | "updatedAt">,
       ),
@@ -353,25 +351,5 @@ export const useBatchArchiveTasks = () => {
         queryClient.setQueryData(queryKey, data);
       });
     },
-  });
-};
-
-export const useGetTasksByStatus = (
-  userId: string,
-  status: "completed" | "archived" | null,
-  limitCount: number = 10,
-) => {
-  return useInfiniteQuery({
-    queryKey: ["tasks", "filtered", userId, status, limitCount],
-    queryFn: async ({ pageParam }) => {
-      if (!status) return [];
-      return fetchTasksByStatus(userId, status, limitCount, pageParam);
-    },
-    initialPageParam: undefined as Task | undefined,
-    getNextPageParam: (lastPage) => {
-      if (lastPage.length < limitCount) return undefined;
-      return lastPage[lastPage.length - 1];
-    },
-    enabled: !!userId && !!status,
   });
 };

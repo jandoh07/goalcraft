@@ -1,8 +1,3 @@
-export type AssociatedGoal = {
-  goalId: string;
-  goalTitle: string;
-} | null;
-
 export type SubTask = {
   id: string;
   title: string;
@@ -14,9 +9,6 @@ export type TaskStatus = "in-progress" | "completed" | "archived";
 export interface Task {
   id?: string;
   userId: string;
-  goalId?: string;
-  goalTitle?: string;
-  goalCategory?: string;
   title: string;
   description?: string;
   dueDate?: Date | null;
@@ -25,13 +17,10 @@ export interface Task {
   status: TaskStatus;
   subtasks?: SubTask[];
   frequency?: string;
-  nextRun?: Date;
-  timeZone?: string;
   recurringMasterId?: string;
-  // Eisenhower Matrix tags
   isImportant?: boolean;
   isUrgent?: boolean;
-  // Order for drag-and-drop sorting (fractional indexing string)
+  tags?: string[];
   order?: string;
   createdAt: Date;
   updatedAt: Date;

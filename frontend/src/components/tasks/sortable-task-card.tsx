@@ -11,20 +11,20 @@ import {
   Repeat,
   AlertTriangle,
   Star,
+  Tags,
 } from "lucide-react";
-import GoalIcon from "../goals/goal-icon";
 import { useToggleTaskStatus } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 
 interface SortableTaskCardProps {
   task: Task;
-  onClick: () => void;
+  onClick?: () => void;
   showQuadrantBadges?: boolean;
 }
 
 export function SortableTaskCard({
   task,
-  onClick,
+  onClick = () => {},
   showQuadrantBadges = false,
 }: SortableTaskCardProps) {
   const toggleTaskStatus = useToggleTaskStatus();
@@ -57,7 +57,7 @@ export function SortableTaskCard({
       style={style}
       className={cn(
         "rounded-lg border px-2 py-3 flex justify-start items-start gap-2 shadow-sm bg-background hover:bg-muted/50 cursor-pointer overflow-hidden",
-        isDragging && "opacity-50 shadow-lg z-50",
+        isDragging && "shadow-lg z-50 opacity-0 pointer-events-none",
       )}
       onClick={onClick}
     >
@@ -65,7 +65,9 @@ export function SortableTaskCard({
       <div
         {...listeners}
         {...attributes}
-        className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground"
+        className={cn(
+          "cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="size-4" />
@@ -80,21 +82,28 @@ export function SortableTaskCard({
             toggleTaskStatus.mutate({
               taskId: task.id || "",
               currentStatus: task.status,
-              goalId: task.goalId,
             })
           }
         />
       </div>
 
       <div className="space-y-1 min-w-0 flex-1">
-        <p
-          className={cn(
-            "font-medium text-sm",
-            task.status === "completed" && "line-through text-muted-foreground",
+        <div className="flex justify-between items-start">
+          <p
+            className={cn(
+              "font-medium text-sm",
+              task.status === "completed" &&
+                "line-through text-muted-foreground",
+            )}
+          >
+            {task.title}
+          </p>
+          {task.recurringMasterId && (
+            <Badge className="text-[10px] px-1.5 py-0 h-5" variant="outline">
+              <Repeat className="size-2.5" />
+            </Badge>
           )}
-        >
-          {task.title}
-        </p>
+        </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {showQuadrantBadges && (
@@ -118,12 +127,6 @@ export function SortableTaskCard({
                 </Badge>
               )}
             </>
-          )}
-
-          {task.recurringMasterId && (
-            <Badge className="text-[10px] px-1.5 py-0 h-5" variant="outline">
-              <Repeat className="size-2.5" />
-            </Badge>
           )}
 
           {task.priority && (
@@ -151,34 +154,21 @@ export function SortableTaskCard({
             </Badge>
           )}
 
-          {task.goalId && (
-            <Badge className="text-[10px] px-1.5 py-0 h-5" variant="outline">
-              <GoalIcon category="Finance" onlyIcon={true} />
-              <span className="truncate max-w-15">{task.goalTitle}</span>
-            </Badge>
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {task.tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 h-5 gap-1"
+                >
+                  <Tags className="size-2.5" />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Compact overlay for dragging
-export function TaskSortableOverlay({ task }: { task: Task }) {
-  return (
-    <div className="rounded-md border-l-3 border-primary px-2 py-2 bg-background shadow-xl w-48">
-      <p className="font-medium text-xs truncate">{task.title}</p>
-      <div className="flex gap-1 mt-1">
-        {task.isImportant && (
-          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-            <Star className="size-2" />
-          </Badge>
-        )}
-        {task.isUrgent && (
-          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-            <AlertTriangle className="size-2" />
-          </Badge>
-        )}
       </div>
     </div>
   );

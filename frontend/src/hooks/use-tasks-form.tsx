@@ -43,7 +43,7 @@ const useTasksForm = ({
   openDialog: (isOpen: boolean) => void;
 }) => {
   const [subtasks, setSubtasks] = useState<SubTask[]>(
-    initialData?.subtasks || []
+    initialData?.subtasks || [],
   );
   const [newSubtask, setNewSubtask] = useState("");
 
@@ -57,10 +57,6 @@ const useTasksForm = ({
     defaultValues: {
       title: initialData?.title || "",
       description: initialData?.description || "",
-      associatedGoal: {
-        goalId: initialData?.goalId || "",
-        goalTitle: initialData?.goalTitle || "",
-      },
       dueDate: initialData?.dueDate || undefined,
       time: initialData?.time || "",
       priority: (initialData?.priority || "") as "high" | "medium" | "low" | "",
@@ -75,7 +71,7 @@ const useTasksForm = ({
   const { data: masterTask } = useGetMasterTask(
     mode === "edit" && initialData?.recurringMasterId
       ? initialData.recurringMasterId
-      : ""
+      : "",
   );
 
   const resetForm = useCallback(() => {
@@ -100,10 +96,6 @@ const useTasksForm = ({
       form.reset({
         title: initialData.title || "",
         description: initialData.description || "",
-        associatedGoal: {
-          goalId: initialData.goalId || "",
-          goalTitle: initialData.goalTitle || "",
-        },
         dueDate: initialData.dueDate || undefined,
         time: initialData.time || "",
         priority: (initialData.priority || "") as
@@ -177,7 +169,7 @@ const useTasksForm = ({
       toast.success(
         isOnline
           ? "Task added successfully"
-          : "Task added! Will sync when online."
+          : "Task added! Will sync when online.",
       );
     } else if (mode === "edit" && initialData) {
       updateTaskMutation.mutate({
@@ -189,14 +181,14 @@ const useTasksForm = ({
       toast.success(
         isOnline
           ? "Task updated successfully"
-          : "Task updated! Will sync when online."
+          : "Task updated! Will sync when online.",
       );
     }
   });
 
   const handleDeleteTask = (
     taskId: string,
-    handleClose: (isOpen: boolean) => void
+    handleClose: (isOpen: boolean) => void,
   ) => {
     const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
 
@@ -205,7 +197,7 @@ const useTasksForm = ({
     toast.success(
       isOnline
         ? "Task deleted successfully"
-        : "Task deleted! Will sync when online."
+        : "Task deleted! Will sync when online.",
     );
   };
 

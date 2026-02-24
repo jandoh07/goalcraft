@@ -157,19 +157,8 @@ export const addTask = async (
       updatedAt: now,
     };
 
-    delete instanceTask.nextRun;
-    delete instanceTask.timeZone;
-
     batch.set(masterTaskRef, masterTask);
     batch.set(instanceTaskRef, instanceTask);
-
-    // Update goal task counts if task has a goalId
-    if (taskData.goalId) {
-      const goalRef = doc(db, "goals", taskData.goalId);
-      batch.update(goalRef, {
-        totalTasks: increment(1),
-      });
-    }
 
     await batch.commit();
 
@@ -185,14 +174,6 @@ export const addTask = async (
       createdAt: now,
       updatedAt: now,
     });
-
-    // Update goal task counts if task has a goalId
-    if (taskData.goalId) {
-      const goalRef = doc(db, "goals", taskData.goalId);
-      batch.update(goalRef, {
-        totalTasks: increment(1),
-      });
-    }
 
     await batch.commit();
     return taskRef.id;
@@ -328,7 +309,7 @@ export const getMasterTask = async (masterTaskId: string) => {
     createdAt: data.createdAt?.toDate(),
     updatedAt: data.updatedAt?.toDate(),
     nextRun: data.nextRun?.toDate(),
-  } as Task;
+  } as Task & { nextRun?: Date };
 };
 
 export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
@@ -357,7 +338,7 @@ export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
         nextRun: data.nextRun?.toDate(),
-      } as Task);
+      } as Task & { nextRun?: Date });
     });
   }
 
@@ -400,7 +381,7 @@ export const getNonNegotiablesByGoalId = async (
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
         nextRun: data.nextRun?.toDate(),
-      } as Task);
+      } as Task & { nextRun?: Date });
     });
 
     return masterTasks;
@@ -429,56 +410,4 @@ export const batchArchiveTasks = async (taskIds: string[]) => {
   });
 
   await batch.commit();
-};
-
-/**
- * Fetch tasks by status with pagination
- * @param userId - User ID
- * @param status - Task status to filter by
- * @param limitCount - Number of tasks to fetch
- * @param lastTask - Last task from previous page for pagination
- */
-export const fetchTasksByStatus = async (
-  userId: string,
-  status: "completed" | "archived",
-  limitCount: number = 10,
-  lastTask?: Task,
-) => {
-  const { limit, startAfter } = await import("firebase/firestore");
-
-  let q;
-  const tasksCollection = collection(db, "tasks");
-
-  const baseConstraints = [
-    where("userId", "==", userId),
-    where("status", "==", status),
-    orderBy("updatedAt", "desc"),
-    limit(limitCount),
-  ];
-
-  if (lastTask) {
-    q = query(
-      tasksCollection,
-      ...baseConstraints,
-      startAfter(Timestamp.fromDate(lastTask.updatedAt)),
-    );
-  } else {
-    q = query(tasksCollection, ...baseConstraints);
-  }
-
-  const querySnapshot = await getDocs(q);
-  const tasks: Task[] = [];
-
-  querySnapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-    tasks.push({
-      id: docSnap.id,
-      ...data,
-      dueDate: data.dueDate?.toDate(),
-      createdAt: data.createdAt?.toDate(),
-      updatedAt: data.updatedAt?.toDate(),
-    } as Task);
-  });
-
-  return tasks;
 };
