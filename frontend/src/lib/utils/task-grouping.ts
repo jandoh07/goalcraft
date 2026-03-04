@@ -136,3 +136,42 @@ export const getTaskType = (dueDate?: Date | string | null): TaskGroup => {
     return "later";
   }
 };
+
+/**
+ * Gets a representative date for a task group (for when moving tasks between groups)
+ * @param group - The task group type
+ * @returns A Date object representing that group, or null for no-date
+ */
+export const getDateForGroup = (group: TaskGroup): Date | null => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (group) {
+    case "today":
+      return today;
+    case "tomorrow": {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow;
+    }
+    case "this-week": {
+      // Return the day after tomorrow (first day in this-week that's not tomorrow)
+      const dayAfterTomorrow = new Date(today);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+      return dayAfterTomorrow;
+    }
+    case "later": {
+      // Return a week from now
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      return nextWeek;
+    }
+    case "no-date":
+      return null;
+    case "overdue":
+      // Should not be used - can't drop into overdue
+      return null;
+    default:
+      return null;
+  }
+};

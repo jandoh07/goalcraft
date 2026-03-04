@@ -1,7 +1,21 @@
-import React from "react";
+import type { Metadata } from "next";
+import { BlogHero } from "./blog-hero";
+import { BlogList } from "./blog-list";
 
-const Blog = () => {
-  return <div>Blog</div>;
+export const metadata: Metadata = {
+  title: "Blog",
+  description:
+    "Tips, insights, and strategies for achieving your goals and boosting productivity.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
-export default Blog;
+export default function BlogPage() {
+  return (
+    <>
+      <BlogHero />
+      <BlogList />
+    </>
+  );
+}

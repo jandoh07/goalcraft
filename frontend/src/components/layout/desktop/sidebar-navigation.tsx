@@ -2,33 +2,33 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Goal, ListTodo, ChartLine, Calendar } from "lucide-react";
+import { Goal, Sun, Inbox, BarChart3 } from "lucide-react";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 const sidebarItems = [
   {
     id: 1,
+    label: "Today",
+    icon: Sun,
+    href: "/today",
+  },
+  {
+    id: 2,
+    label: "Inbox",
+    icon: Inbox,
+    href: "/inbox",
+  },
+  {
+    id: 3,
     label: "Goals",
     icon: Goal,
     href: "/goals",
   },
   {
-    id: 2,
-    label: "Tasks",
-    icon: ListTodo,
-    href: "/tasks",
-  },
-  {
-    id: 3,
-    label: "Schedule",
-    icon: Calendar,
-    href: "/schedule",
-  },
-  {
     id: 4,
-    label: "Analytics",
-    icon: ChartLine,
-    href: "/analytics",
+    label: "Review",
+    icon: BarChart3,
+    href: "/review",
   },
 ];
 

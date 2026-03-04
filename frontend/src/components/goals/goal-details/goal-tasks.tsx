@@ -1,9 +1,9 @@
-import TaskCard from "@/components/tasks/task-card";
 import { getTaskType } from "@/lib/utils/task-grouping";
 import { Task } from "@/types";
 import { Loader2, Repeat, Calendar, Pause, Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { SortableTaskCard } from "@/components/tasks/sortable-task-card";
 
 type TabType = "all" | "pending" | "completed" | "non-negotiable";
 
@@ -168,13 +168,13 @@ const GoalTasks = ({
 
             {!isLoading &&
               filteredTasks.map((task) => (
-                <TaskCard
+                <SortableTaskCard
                   key={task.id}
                   task={task}
                   onClick={() => {
                     console.log("Task clicked:", task);
                   }}
-                  type={getTaskType(task.dueDate)}
+                  // type={getTaskType(task.dueDate)}
                 />
               ))}
           </>
@@ -251,7 +251,7 @@ const GoalTasks = ({
                         <Repeat className="h-4 w-4" />
                         <span>{getFrequencyLabel(masterTask.frequency)}</span>
                       </div>
-                      {masterTask.nextRun && (
+                      {/* {masterTask.nextRun && (
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
@@ -259,7 +259,7 @@ const GoalTasks = ({
                             {new Date(masterTask.nextRun).toLocaleDateString()}
                           </span>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 );

@@ -5,6 +5,9 @@ const AUTH_ROUTES = ["/login", "/signup"];
 const PROTECTED_ROUTES = [
   "/goals",
   "/tasks",
+  "/today",
+  "/inbox",
+  "/review",
   "/schedule",
   "/analytics",
   "/settings",

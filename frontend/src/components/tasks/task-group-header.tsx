@@ -5,19 +5,25 @@ import {
   Clock,
   CalendarX2,
   Loader2,
+  Archive,
 } from "lucide-react";
 import { TaskGroup } from "@/lib/utils/task-grouping";
+import { Button } from "@/components/ui/button";
 
 interface TaskGroupHeaderProps {
   group: TaskGroup;
   count: number;
   showLoading?: boolean;
+  onArchiveAll?: () => void;
+  isArchiving?: boolean;
 }
 
 const TaskGroupHeader = ({
   group,
   count,
   showLoading,
+  onArchiveAll,
+  isArchiving,
 }: TaskGroupHeaderProps) => {
   const getIcon = () => {
     switch (group) {
@@ -81,9 +87,27 @@ const TaskGroupHeader = ({
           {getLabel()} ({count})
         </p>
       </div>
-      {showLoading && (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      )}
+      <div className="flex items-center gap-2">
+        {group === "overdue" && onArchiveAll && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onArchiveAll}
+            disabled={isArchiving}
+            className="h-7 text-xs text-muted-foreground hover:text-destructive gap-1.5"
+          >
+            {isArchiving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Archive className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline">Archive All</span>
+          </Button>
+        )}
+        {showLoading && (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
     </div>
   );
 };

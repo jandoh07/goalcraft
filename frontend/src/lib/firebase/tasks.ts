@@ -157,19 +157,8 @@ export const addTask = async (
       updatedAt: now,
     };
 
-    delete instanceTask.nextRun;
-    delete instanceTask.timeZone;
-
     batch.set(masterTaskRef, masterTask);
     batch.set(instanceTaskRef, instanceTask);
-
-    // Update goal task counts if task has a goalId
-    if (taskData.goalId) {
-      const goalRef = doc(db, "goals", taskData.goalId);
-      batch.update(goalRef, {
-        totalTasks: increment(1),
-      });
-    }
 
     await batch.commit();
 
@@ -185,14 +174,6 @@ export const addTask = async (
       createdAt: now,
       updatedAt: now,
     });
-
-    // Update goal task counts if task has a goalId
-    if (taskData.goalId) {
-      const goalRef = doc(db, "goals", taskData.goalId);
-      batch.update(goalRef, {
-        totalTasks: increment(1),
-      });
-    }
 
     await batch.commit();
     return taskRef.id;
@@ -328,7 +309,7 @@ export const getMasterTask = async (masterTaskId: string) => {
     createdAt: data.createdAt?.toDate(),
     updatedAt: data.updatedAt?.toDate(),
     nextRun: data.nextRun?.toDate(),
-  } as Task;
+  } as Task & { nextRun?: Date };
 };
 
 export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
@@ -357,7 +338,7 @@ export const getMasterTasksByIds = async (masterTaskIds: string[]) => {
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
         nextRun: data.nextRun?.toDate(),
-      } as Task);
+      } as Task & { nextRun?: Date });
     });
   }
 
@@ -400,7 +381,7 @@ export const getNonNegotiablesByGoalId = async (
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
         nextRun: data.nextRun?.toDate(),
-      } as Task);
+      } as Task & { nextRun?: Date });
     });
 
     return masterTasks;
@@ -408,4 +389,25 @@ export const getNonNegotiablesByGoalId = async (
     console.error("Error fetching non-negotiables:", error);
     throw error;
   }
+};
+
+/**
+ * Batch archive multiple tasks at once
+ * @param taskIds - Array of task IDs to archive
+ */
+export const batchArchiveTasks = async (taskIds: string[]) => {
+  if (!taskIds.length) return;
+
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
+
+  taskIds.forEach((taskId) => {
+    const taskRef = doc(db, "tasks", taskId);
+    batch.update(taskRef, {
+      status: "archived",
+      updatedAt: now,
+    });
+  });
+
+  await batch.commit();
 };

@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { aiPrompts } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Milestone } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
@@ -59,7 +58,7 @@ const Milestones = ({
     try {
       if (!goalTitle) return;
       setLoading(true);
-      const prompt = aiPrompts.goalMilestoneGeneration(goalTitle);
+      // const prompt = aiPrompts.goalMilestoneGeneration(goalTitle);
       // const result = await flashLiteModel.generateContent(prompt);
       // const responseText = result.response.text().trim();
       const responseText = "Ai disabled";

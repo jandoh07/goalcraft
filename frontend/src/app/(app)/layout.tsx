@@ -3,6 +3,7 @@ import NetworkStatus from "@/components/ui/network-status";
 import ReviewDialogWrapper from "@/components/layout/review-dialog-wrapper";
 import ProtectedRoute from "@/components/auth/protected-route";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { NotificationHandler } from "@/components/notifications/notification-handler";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <NetworkStatus />
+      <NotificationHandler />
       <InstallPrompt />
       <AppLayout>{children}</AppLayout>
       <ReviewDialogWrapper />

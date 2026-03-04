@@ -1,7 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { aiPrompts } from "@/constants/ai";
 import { Milestone } from "@/types";
 import TaskForm from "./task-form";
 import TaskCard from "./task-card";
@@ -59,11 +58,11 @@ const Tasks = ({
     setLoading(true);
     try {
       const milestoneTitles = milestones?.map((m) => m.title);
-      const prompt = aiPrompts.taskSuggestionBasic(
-        goalTitle,
-        relevance,
-        milestoneTitles as [string] | undefined,
-      );
+      // const prompt = aiPrompts.taskSuggestionBasic(
+      //   goalTitle,
+      //   relevance,
+      //   milestoneTitles as [string] | undefined,
+      // );
 
       // const result = await flashLiteModel.generateContent(prompt);
       const responseText = "Ai disabled";

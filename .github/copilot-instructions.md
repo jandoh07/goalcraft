@@ -91,6 +91,20 @@ Forms use **react-hook-form** + **zod** schemas. Pattern in [use-tasks-form.tsx]
 - Tasks can be standalone or linked to goals via `goalId`
 - Recurring tasks use master tasks in `masterTasks` collection (Cloud Function handles spawning)
 - Task grouping by date in [task-grouping.ts](frontend/src/lib/utils/task-grouping.ts): overdue, today, tomorrow, this-week, later, no-date
+- **Eisenhower Matrix**: Tasks have `isImportant` and `isUrgent` boolean fields for priority classification
+- Tasks page supports both list view and Eisenhower Matrix view with drag-and-drop reordering
+
+### Schedule System
+
+The schedule page uses `@dnd-kit` for drag-and-drop functionality:
+
+- **Time Blocks**: Stored in Firestore `timeBlocks` collection, linked to tasks via `taskId`
+- **Drag-Drop Architecture**: See [schedule-drag-drop.md](frontend/docs/schedule-drag-drop.md) for detailed documentation
+- **Components**:
+  - [unscheduled-tasks-panel.tsx](frontend/src/components/schedule/unscheduled-tasks-panel.tsx) - Desktop sidebar + mobile drawer for unscheduled tasks
+  - [droppable-day-column.tsx](frontend/src/components/schedule/droppable-day-column.tsx) - Hour-level drop zones for precise scheduling
+  - [time-grid.tsx](frontend/src/components/schedule/time-grid.tsx) - Main schedule grid display
+- **Mobile**: Uses a fixed-position top drawer that overlays the grid (doesn't shift content)
 
 ## Development Commands
 

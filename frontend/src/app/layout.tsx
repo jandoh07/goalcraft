@@ -6,7 +6,7 @@ import { AuthProviderWithServerUser } from "@/components/providers/auth-provider
 import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
-import { NotificationHandler } from "@/components/notifications/notification-handler";
+import { AppProgressProvider } from "@/components/providers/progress-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -97,21 +97,22 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthProviderWithServerUser>
-              <ServiceWorkerProvider />
-              <NotificationHandler />
-              {children}
-              <Toaster position="top-right" />
-            </AuthProviderWithServerUser>
-          </ThemeProvider>
-        </QueryProvider>
+        <AppProgressProvider>
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <AuthProviderWithServerUser>
+                <ServiceWorkerProvider />
+                {children}
+                <Toaster position="top-right" />
+              </AuthProviderWithServerUser>
+            </ThemeProvider>
+          </QueryProvider>
+        </AppProgressProvider>
       </body>
     </html>
   );

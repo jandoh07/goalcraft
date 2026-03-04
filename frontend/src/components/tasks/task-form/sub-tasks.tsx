@@ -19,7 +19,7 @@ const SubTasks = ({
   removeSubtask: (id: string) => void;
 }) => {
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 mt-2 md:mt-0">
       <Label>Subtasks</Label>
       <div className="flex gap-2">
         <Input

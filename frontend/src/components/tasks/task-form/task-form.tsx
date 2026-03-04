@@ -1,109 +1,240 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
-import AssociatedGoal from "./associated-goal";
-import useTasksForm from "@/hooks/use-tasks-form";
-import DueDateAndTime from "./due-date-and-time";
-import SubTasks from "./sub-tasks";
-import RecurringTask from "./recurring-task";
-import Priority from "./priority";
-import InputBox from "@/components/ui/input-box";
-import { Form } from "@/components/ui/form";
+import { ComponentProps, useState, useEffect, useRef } from "react";
+import AddTaskOptions from "../add-task-options";
+import { Drawer, DrawerContent, DrawerHeader } from "@/components/ui/drawer";
+import { useAddTaskOptions } from "@/hooks/use-add-task-options";
+import HighlightedInput from "../highlighted-input";
+import { useAddTask, useUpdateTask, useDeleteTask } from "@/hooks/use-tasks";
+import { useAddSubtask, useDeleteSubtask } from "@/hooks/use-sub-task";
+import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
+import { Task, SubTask } from "@/types";
+import { Button } from "@/components/ui/button";
 
-interface AddTaskFormProps extends ComponentProps<"form"> {
-  taskForm: ReturnType<typeof useTasksForm>;
+interface TaskFormProps extends ComponentProps<"form"> {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  task?: Task;
+  mode?: "add" | "view";
 }
 
-export default function TaskForm({ className, taskForm }: AddTaskFormProps) {
-  const { form, subtasks, onSubmit, mode } = taskForm;
+export default function TaskForm({
+  className,
+  open,
+  setOpen,
+  task,
+  mode = "add",
+}: TaskFormProps) {
+  const [taskTitle, setTaskTitle] = useState("");
+  const [subtasks, setSubtasks] = useState<SubTask[]>([]);
+  const [newSubtask, setNewSubtask] = useState("");
+  const taskOptions = useAddTaskOptions();
+  const addTaskMutation = useAddTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
+  const addSubtaskMutation = useAddSubtask();
+  const deleteSubtaskMutation = useDeleteSubtask();
+  const { user } = useAuth();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const title = form.watch("title");
-  const description = form.watch("description");
-  const associatedGoal = form.watch("associatedGoal");
-  const dueDate = form.watch("dueDate");
-  const time = form.watch("time");
-  const priority = form.watch("priority");
-  const isRecurring = form.watch("isRecurring");
-  const frequency = form.watch("frequency");
-  const recurringMasterId = form.watch("recurringMasterId");
-  const stopRecurring = form.watch("stopRecurring");
+  const isEditing = mode === "view" && !!task;
+
+  // Prefill when editing an existing task
+  useEffect(() => {
+    if (task && open && mode === "view") {
+      setTaskTitle(task.title);
+      setSubtasks(task.subtasks ?? []);
+      taskOptions.prefillFromTask(task);
+    } else if (!task && open && mode === "add") {
+      setTaskTitle("");
+      setSubtasks([]);
+      setNewSubtask("");
+      taskOptions.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, open, mode]);
+
+  const handleAddSubtask = () => {
+    if (!newSubtask.trim()) return;
+    const subtask: SubTask = {
+      id: crypto.randomUUID(),
+      title: newSubtask.trim(),
+      completed: false,
+    };
+    if (isEditing && task?.id && user?.uid) {
+      addSubtaskMutation.mutate({
+        taskId: task.id,
+        subtask,
+        userId: user.uid,
+      });
+    }
+    setSubtasks((prev) => [...prev, subtask]);
+    setNewSubtask("");
+  };
+
+  const handleRemoveSubtask = (subtaskId: string) => {
+    const subtask = subtasks.find((s) => s.id === subtaskId);
+    if (isEditing && task?.id && user?.uid && subtask) {
+      deleteSubtaskMutation.mutate({
+        taskId: task.id,
+        subtask,
+        userId: user.uid,
+      });
+    }
+    setSubtasks((prev) => prev.filter((s) => s.id !== subtaskId));
+  };
+
+  const handleToggleSubtask = (subtaskId: string) => {
+    const updatedSubtasks = subtasks.map((s) =>
+      s.id === subtaskId ? { ...s, completed: !s.completed } : s,
+    );
+    setSubtasks(updatedSubtasks);
+    if (isEditing && task?.id) {
+      updateTaskMutation.mutate({
+        taskId: task.id,
+        updates: { subtasks: updatedSubtasks },
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (!task?.id) return;
+    deleteTaskMutation.mutate(task.id);
+    toast.success("Task deleted");
+    setOpen(false);
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTaskTitle(value);
+    taskOptions.parseTitle(value);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskTitle.trim()) return;
+
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+    const cleanTitle = taskOptions.getCleanTitle(taskTitle);
+
+    if (isEditing && task?.id) {
+      updateTaskMutation.mutate({
+        taskId: task.id,
+        updates: {
+          title: cleanTitle,
+          dueDate: taskOptions.options.dueDate || null,
+          time: taskOptions.options.time || "",
+          isImportant: taskOptions.options.isImportant,
+          isUrgent: taskOptions.options.isUrgent,
+          tags:
+            taskOptions.options.tags.length > 0
+              ? taskOptions.options.tags
+              : undefined,
+        },
+      });
+      toast.success(
+        isOnline
+          ? "Task updated successfully"
+          : "Task updated! Will sync when online.",
+      );
+    } else {
+      addTaskMutation.mutate({
+        userId: user?.uid || "",
+        title: cleanTitle,
+        status: "in-progress",
+        dueDate: taskOptions.options.dueDate || new Date(),
+        time: taskOptions.options.time || undefined,
+        isImportant: taskOptions.options.isImportant || undefined,
+        isUrgent: taskOptions.options.isUrgent || undefined,
+        frequency: taskOptions.options.isRecurring
+          ? taskOptions.options.frequency
+          : undefined,
+        isRecurring: taskOptions.options.isRecurring || undefined,
+        tags:
+          taskOptions.options.tags.length > 0
+            ? taskOptions.options.tags
+            : undefined,
+        subtasks: subtasks.length > 0 ? subtasks : undefined,
+      });
+      toast.success(
+        isOnline
+          ? "Task added successfully"
+          : "Task added! Will sync when online.",
+      );
+    }
+
+    setTaskTitle("");
+    setSubtasks([]);
+    setNewSubtask("");
+    taskOptions.reset();
+    setOpen(false);
+  };
+
+  const highlights = taskOptions.getHighlightRanges(taskTitle);
 
   return (
-    <Form {...form}>
-      <form
-        id="task-form"
-        className={cn("grid items-start gap-6 pb-3 md:pb-2", className)}
-        onSubmit={onSubmit}
-      >
-        <InputBox
-          label="Task Title"
-          value={title}
-          onChange={(e) => form.setValue("title", e.target.value)}
-          placeholder="Enter task title"
-          id="title"
-        />
-        <InputBox
-          label="Description"
-          value={description || ""}
-          onChange={(e) => form.setValue("description", e.target.value)}
-          placeholder="Add task description (optional)"
-          id="description"
-        />
-        <AssociatedGoal
-          associatedGoal={associatedGoal ?? null}
-          setAssociatedGoal={(value) => {
-            if (typeof value === "function") {
-              const currentValue = associatedGoal ?? null;
-              const newValue = value(currentValue);
-              form.setValue(
-                "associatedGoal",
-                newValue === null ? undefined : newValue
-              );
-            } else {
-              form.setValue(
-                "associatedGoal",
-                value === null ? undefined : value
-              );
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerContent hideBar title={isEditing ? "Edit Task" : "Add Task"}>
+        <form
+          id="task-form"
+          className={cn("grid items-start gap-4 py-3 px-3", className)}
+          onSubmit={handleSubmit}
+        >
+          {isEditing && (
+            <DrawerHeader className="flex flex-row flex-1 justify-between items-center p-0 -mb-2">
+              <Button
+                variant={"ghost"}
+                type="button"
+                size="sm"
+                className="h-7 w-10 text-xs text-red-500"
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+              <Button
+                variant={"ghost"}
+                type="submit"
+                size="sm"
+                className="h-7 w-10 text-xs px-0"
+              >
+                Save
+              </Button>
+            </DrawerHeader>
+          )}
+          <HighlightedInput
+            ref={inputRef}
+            value={taskTitle}
+            onChange={handleTitleChange}
+            highlights={highlights}
+            placeholder={
+              isEditing ? "Edit task title" : "Enter task you want to add"
             }
-          }}
-        />
-        <DueDateAndTime
-          time={time || ""}
-          setTime={(value) => form.setValue("time", value)}
-          date={dueDate}
-          setDate={(value) => form.setValue("dueDate", value)}
-          mode={mode}
-          defaultValue="Today"
-        />
-        <SubTasks
-          subtasks={subtasks.items}
-          newSubtask={subtasks.newSubtask}
-          setNewSubtask={subtasks.setNewSubtask}
-          addSubtask={subtasks.addSubtask}
-          removeSubtask={subtasks.removeSubtask}
-        />
-        <RecurringTask
-          isRecurring={isRecurring ?? false}
-          setIsRecurring={(value) => form.setValue("isRecurring", value)}
-          frequency={frequency || ""}
-          setFrequency={(value) => form.setValue("frequency", value)}
-          recurringMasterId={recurringMasterId || ""}
-          setStopRecurring={(value) => form.setValue("stopRecurring", value)}
-          stopRecurring={stopRecurring ?? false}
-        />
-        <Priority
-          priority={priority || ""}
-          setPriority={(value) => {
-            if (typeof value === "function") {
-              const currentValue = priority || "";
-              form.setValue("priority", value(currentValue));
-            } else {
-              form.setValue("priority", value);
-            }
-          }}
-        />
-      </form>
-    </Form>
+            className="font-medium"
+            autoFocus
+            onFocus={() => taskOptions.setIsFocused(true)}
+            onBlur={() => taskOptions.setIsFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmit(e);
+              }
+            }}
+          />
+          <div className="items-start justify-between">
+            <AddTaskOptions
+              taskOptions={taskOptions}
+              subtaskProps={{
+                subtasks,
+                newSubtask,
+                setNewSubtask,
+                addSubtask: handleAddSubtask,
+                removeSubtask: handleRemoveSubtask,
+                toggleSubtask: handleToggleSubtask,
+              }}
+            />
+          </div>
+        </form>
+      </DrawerContent>
+    </Drawer>
   );
 }
