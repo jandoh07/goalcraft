@@ -9,13 +9,10 @@ import { Button } from "@/components/ui/button";
 import {
   Calendar,
   Clock,
-  Flag,
   MoreVertical,
   Pencil,
   Trash2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import GoalIcon from "@/components/goals/goal-icon";
 import { format } from "date-fns";
 import { useDeleteTask, useToggleTaskStatus } from "@/hooks/use-tasks";
 import { useState } from "react";
@@ -45,7 +42,6 @@ const Header = ({ task, setMode, setDialogOpen }: HeaderProps) => {
                 toggleTaskStatus.mutate({
                   taskId: task.id || "",
                   currentStatus: task.status,
-                  goalId: task.goalId,
                 })
               }
             />
@@ -76,30 +72,6 @@ const Header = ({ task, setMode, setDialogOpen }: HeaderProps) => {
           </DropdownMenu>
         </div>
       </div>
-      {task.goalId && task.goalTitle && (
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {task.priority && (
-            <Badge
-              className={`capitalize text-xs ${
-                task.priority === "high"
-                  ? "bg-red-400"
-                  : task.priority === "medium"
-                  ? "bg-yellow-600"
-                  : "bg-green-600"
-              }`}
-            >
-              <Flag />
-            </Badge>
-          )}
-          <Badge
-            variant="outline"
-            className="text-xs line-clamp-1 flex items-center"
-          >
-            <GoalIcon category={task.goalCategory || ""} onlyIcon={true} />
-            {task.goalTitle}
-          </Badge>
-        </div>
-      )}
       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-2">
         <div className="flex items-center gap-2">
           <Calendar className="size-4" />
