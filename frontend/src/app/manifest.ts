@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "GoalCraft",
     short_name: "GoalCraft",
     description: "An app to help you achieve your goals",
-    start_url: "/goals",
+    start_url: "/today",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
