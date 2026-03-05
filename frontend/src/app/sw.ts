@@ -32,7 +32,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
     networkTimeoutSeconds: 3,
@@ -46,7 +46,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxAgeSeconds: 3 * 24 * 60 * 60,
       }),
     ],
   }),
@@ -62,7 +62,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
   }),
@@ -75,7 +75,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 150,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        maxAgeSeconds: 30 * 24 * 60 * 60,
       }),
     ],
   }),
@@ -88,7 +88,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+        maxAgeSeconds: 365 * 24 * 60 * 60,
       }),
     ],
   }),
