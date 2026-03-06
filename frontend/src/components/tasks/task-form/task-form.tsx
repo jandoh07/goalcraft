@@ -143,7 +143,7 @@ export default function TaskForm({
         userId: user?.uid || "",
         title: cleanTitle,
         status: "in-progress",
-        dueDate: taskOptions.options.dueDate || new Date(),
+        dueDate: taskOptions.options.dueDate,
         time: taskOptions.options.time || undefined,
         isImportant: taskOptions.options.isImportant || undefined,
         isUrgent: taskOptions.options.isUrgent || undefined,
@@ -211,7 +211,7 @@ export default function TaskForm({
               isEditing ? "Edit task title" : "Enter task you want to add"
             }
             className="font-medium"
-            autoFocus
+            autoFocus={mode === "add"}
             onFocus={() => taskOptions.setIsFocused(true)}
             onBlur={() => taskOptions.setIsFocused(false)}
             onKeyDown={(e) => {

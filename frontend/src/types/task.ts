@@ -13,8 +13,8 @@ export interface Task {
   description?: string;
   dueDate?: Date | null;
   time?: string;
-  priority?: "high" | "medium" | "low" | "" | null;
   status: TaskStatus;
+  completedAt?: Date | null;
   subtasks?: SubTask[];
   frequency?: string;
   recurringMasterId?: string;
@@ -25,3 +25,11 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type TaskGroup =
+  | "overdue"
+  | "today"
+  | "tomorrow"
+  | "upcoming"
+  | "no-date"
+  | "completed";

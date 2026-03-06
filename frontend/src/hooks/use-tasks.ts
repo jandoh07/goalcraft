@@ -1,7 +1,6 @@
 import {
   addTask,
   updateTask,
-  fetchUserTasks,
   removeTask,
   subscribeToUserTasks,
   toggleTaskStatus,
@@ -16,35 +15,37 @@ import { Task } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
-export const useGetTasks = (
+export const useTasks = (
   userId: string,
-  filters?: { status?: string; goalId?: string },
+  date: Date | null,
 ) => {
   const queryClient = useQueryClient();
-  // const queryKey = ["tasks", userId, filters];
-  const queryKey = useMemo(
-    () => ["tasks", userId, filters] as const,
-    // We only care about the actual filter values, not the object reference
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userId, filters?.status, filters?.goalId],
-  );
+  const dateKey = date ? date.toISOString().split('T')[0] : 'current';
+  const queryKey = useMemo(() => ["tasks", userId, dateKey] as const, [userId, dateKey]);
 
   useEffect(() => {
     if (!userId) return;
 
-    const unsubscribe = subscribeToUserTasks(userId, filters, (tasks) => {
-      queryClient.setQueryData(queryKey, tasks);
+    const unsubscribe = subscribeToUserTasks(userId, (tasks) => {
+      const sortedTasks = tasks.sort((a, b) => {
+    if (a.status === 'in-progress' && b.status !== 'in-progress') return -1;
+    if (a.status !== 'in-progress' && b.status === 'in-progress') return 1;
+
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+      queryClient.setQueryData(queryKey, sortedTasks);
     });
 
+
     return () => unsubscribe();
-    // We only care about the actual filter values, not the object reference
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, filters?.status, filters?.goalId, queryClient, queryKey]);
+  }, [userId, queryClient, queryKey, date]);
 
   return useQuery({
     queryKey,
-    queryFn: () => fetchUserTasks(userId, filters),
-    enabled: !!userId,
+    queryFn: () => [],
+    enabled: false,
+    initialData: () => queryClient.getQueryData(queryKey) || [],
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

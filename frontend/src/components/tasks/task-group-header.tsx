@@ -6,9 +6,17 @@ import {
   CalendarX2,
   Loader2,
   Archive,
+  CircleCheck,
 } from "lucide-react";
-import { TaskGroup } from "@/lib/utils/task-grouping";
 import { Button } from "@/components/ui/button";
+
+type TaskGroup =
+  | "overdue"
+  | "today"
+  | "tomorrow"
+  | "upcoming"
+  | "no-date"
+  | "completed";
 
 interface TaskGroupHeaderProps {
   group: TaskGroup;
@@ -28,21 +36,21 @@ const TaskGroupHeader = ({
   const getIcon = () => {
     switch (group) {
       case "overdue":
-        return <TriangleAlert className="text-destructive" strokeWidth={2.5} />;
+        return <TriangleAlert className="text-destructive" strokeWidth={2.5} size={"18px"}  />;
       case "today":
-        return <Calendar className="text-accent" strokeWidth={2.5} />;
+        return <Calendar className="text-accent" strokeWidth={2.5} size={"18px"} />;
       case "tomorrow":
-        return <CalendarDays className="text-orange-500" strokeWidth={2.5} />;
-      case "this-week":
-        return <CalendarDays className="text-blue-400" strokeWidth={2.5} />;
-      case "later":
-        return <Clock className="text-muted-foreground" strokeWidth={2.5} />;
+        return <CalendarDays className="text-orange-500" strokeWidth={2.5} size={"18px"} />;
+      case "upcoming":
+        return <Clock className="text-blue-400" strokeWidth={2.5} size={"18px"} />;
       case "no-date":
         return (
-          <CalendarX2 className="text-muted-foreground" strokeWidth={2.5} />
+          <CalendarX2 className="text-muted-foreground" strokeWidth={2.5} size={"18px"} />
         );
+      case "completed":
+        return <CircleCheck className="text-green-500" strokeWidth={2.5} size={"18px"} />;
       default:
-        return <Calendar className="text-muted-foreground" strokeWidth={2.5} />;
+        return <Calendar className="text-muted-foreground" strokeWidth={2.5} size={"18px"} />;
     }
   };
 
@@ -54,12 +62,12 @@ const TaskGroupHeader = ({
         return "text-accent";
       case "tomorrow":
         return "text-orange-500";
-      case "this-week":
+      case "upcoming":
         return "text-blue-400";
-      case "later":
-        return "text-muted-foreground";
       case "no-date":
         return "text-muted-foreground";
+      case "completed":
+        return "text-green-500";
       default:
         return "text-foreground";
     }
@@ -70,9 +78,9 @@ const TaskGroupHeader = ({
       overdue: "Overdue",
       today: "Today",
       tomorrow: "Tomorrow",
-      "this-week": "This Week",
-      later: "Later",
+      upcoming: "Upcoming",
       "no-date": "No Date",
+      completed: "Completed Today",
     };
     return labels[group];
   };
@@ -83,7 +91,7 @@ const TaskGroupHeader = ({
     <div className={`flex items-center justify-between mb-3 mt-5`}>
       <div className={`flex items-center gap-2 ${getTextColor()}`}>
         {getIcon()}
-        <p className="font-semibold">
+        <p className="font-semibold text-sm">
           {getLabel()} ({count})
         </p>
       </div>

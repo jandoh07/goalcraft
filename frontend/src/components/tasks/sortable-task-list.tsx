@@ -1,55 +1,89 @@
 "use client";
 
+import { TaskGroup, Task } from "@/types";
+import { SortableTaskGroup } from "./sortable-task-group";
 import { useMemo } from "react";
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { Task } from "@/types";
-import { SortableTaskCard } from "./sortable-task-card";
-import TaskGroupHeader from "./task-group-header";
-import { cn } from "@/lib/utils";
-
-export type GroupKey =
-  | "overdue"
-  | "today"
-  | "tomorrow"
-  | "this-week"
-  | "later"
-  | "no-date";
 
 interface GroupedTasks {
   overdue: Task[];
   today: Task[];
   tomorrow: Task[];
-  "this-week": Task[];
-  later: Task[];
+  upcoming: Task[];
   "no-date": Task[];
+  completed: Task[];
 }
 
 interface SortableTaskListProps {
-  groupedTasks: GroupedTasks;
+  tasks: Task[];
   onTaskClick: (task: Task) => void;
   isFetching?: boolean;
-  onArchiveOverdue?: () => void;
-  isArchivingOverdue?: boolean;
 }
 
 export function SortableTaskList({
-  groupedTasks,
   onTaskClick,
   isFetching,
-  onArchiveOverdue,
-  isArchivingOverdue,
+  tasks
 }: SortableTaskListProps) {
-  const groups: { key: GroupKey; tasks: Task[] }[] = [
-    { key: "overdue", tasks: groupedTasks.overdue },
-    { key: "today", tasks: groupedTasks.today },
-    { key: "tomorrow", tasks: groupedTasks.tomorrow },
-    { key: "this-week", tasks: groupedTasks["this-week"] },
-    { key: "later", tasks: groupedTasks.later },
-    { key: "no-date", tasks: groupedTasks["no-date"] },
+  const groupTasksByDate = (tasks: Task[]): GroupedTasks => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+  
+    const grouped: GroupedTasks = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      upcoming: [],
+      "no-date": [],
+      completed: [],
+    };
+  
+    tasks.forEach((task) => {
+      if (task.status === "completed") {
+        grouped.completed.push(task);
+        return;
+      }
+  
+      // Handle tasks without due dates
+      if (!task.dueDate) {
+        grouped["no-date"].push(task);
+        return;
+      }
+  
+      const dueDate = new Date(task.dueDate);
+      const dueDateOnly = new Date(
+        dueDate.getFullYear(),
+        dueDate.getMonth(),
+        dueDate.getDate(),
+      );
+  
+      if (dueDateOnly < today) {
+        grouped.overdue.push(task);
+      } else if (dueDateOnly.getTime() === today.getTime()) {
+        grouped.today.push(task);
+      } else if (dueDateOnly.getTime() === tomorrow.getTime()) {
+        grouped.tomorrow.push(task);
+      } else {
+        grouped.upcoming.push(task);
+      }
+    });
+  
+    return grouped;
+  };
+
+  const groupedTasks = useMemo(() => {
+    if (!tasks) return null;
+    return groupTasksByDate(tasks);
+  }, [tasks]); 
+
+  const groups = [
+    { key: "overdue", tasks: groupedTasks?.overdue || [] },
+    { key: "today", tasks: groupedTasks?.today || [] },
+    { key: "tomorrow", tasks: groupedTasks?.tomorrow || [] },
+    { key: "upcoming", tasks: groupedTasks?.upcoming || [] },
+    { key: "no-date", tasks: groupedTasks?.["no-date"] || [] },
+    { key: "completed", tasks: groupedTasks?.completed || [] },
   ];
 
   let hasShownLoading = false;
@@ -65,12 +99,10 @@ export function SortableTaskList({
         return (
           <SortableTaskGroup
             key={key}
-            groupKey={key}
+            groupKey={key as TaskGroup}
             tasks={tasks}
             onTaskClick={onTaskClick}
             showLoading={showLoading}
-            onArchiveAll={key === "overdue" ? onArchiveOverdue : undefined}
-            isArchiving={key === "overdue" ? isArchivingOverdue : undefined}
           />
         );
       })}
@@ -78,85 +110,4 @@ export function SortableTaskList({
   );
 }
 
-interface SortableTaskGroupProps {
-  groupKey: GroupKey;
-  tasks: Task[];
-  onTaskClick: (task: Task) => void;
-  showLoading?: boolean;
-  onArchiveAll?: () => void;
-  isArchiving?: boolean;
-}
 
-function SortableTaskGroup({
-  groupKey,
-  tasks,
-  onTaskClick,
-  showLoading,
-  onArchiveAll,
-  isArchiving,
-}: SortableTaskGroupProps) {
-  // Disable dropping into overdue group
-  const { setNodeRef, isOver } = useDroppable({
-    id: `group-${groupKey}`,
-    data: { type: "group", group: groupKey },
-    disabled: groupKey === "overdue",
-  });
-
-  const taskIds = useMemo(() => tasks.map((t) => `task-${t.id}`), [tasks]);
-
-  // Sort tasks by order within each group (string comparison for fractional indexing)
-  // Handle both string and legacy number orders during migration
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      const orderA = a.order;
-      const orderB = b.order;
-
-      // Handle undefined/null orders - put them at the end
-      if (orderA == null && orderB == null) return 0;
-      if (orderA == null) return 1;
-      if (orderB == null) return -1;
-
-      // If both are numbers (legacy), compare numerically
-      if (typeof orderA === "number" && typeof orderB === "number") {
-        return orderA - orderB;
-      }
-
-      // Convert to strings for comparison
-      const strA = String(orderA);
-      const strB = String(orderB);
-      return strA.localeCompare(strB);
-    });
-  }, [tasks]);
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "transition-colors rounded-lg",
-        groupKey !== "overdue" &&
-          isOver &&
-          "bg-primary/5 ring-2 ring-primary/20",
-      )}
-    >
-      <TaskGroupHeader
-        group={groupKey}
-        count={tasks.length}
-        showLoading={showLoading}
-        onArchiveAll={onArchiveAll}
-        isArchiving={isArchiving}
-      />
-      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2 pb-2">
-          {sortedTasks.map((task) => (
-            <SortableTaskCard
-              key={task.id}
-              task={task}
-              onClick={() => onTaskClick(task)}
-              showQuadrantBadges={true}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
