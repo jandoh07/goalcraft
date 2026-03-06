@@ -13,9 +13,11 @@ export function ServiceWorkerProvider() {
         .catch(console.error);
     }
 
+    if (process.env.NODE_ENV === "production") {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       window.location.reload();
     });
+    }
   }, []);
 
   return null;
