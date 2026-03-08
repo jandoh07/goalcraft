@@ -11,6 +11,7 @@ import {
   batchArchiveTasks,
 } from "@/lib/firebase/tasks";
 import { removeEmptyFields } from "@/lib/utils";
+import { computeInitialOrder } from "@/lib/utils/task-order";
 import { Task } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
@@ -27,14 +28,7 @@ export const useTasks = (
     if (!userId) return;
 
     const unsubscribe = subscribeToUserTasks(userId, (tasks) => {
-      const sortedTasks = tasks.sort((a, b) => {
-    if (a.status === 'in-progress' && b.status !== 'in-progress') return -1;
-    if (a.status !== 'in-progress' && b.status === 'in-progress') return 1;
-
-    return b.createdAt.getTime() - a.createdAt.getTime();
-  });
-
-      queryClient.setQueryData(queryKey, sortedTasks);
+      queryClient.setQueryData(queryKey, tasks);
     });
 
 
@@ -55,20 +49,46 @@ export const useTasks = (
 
 export const useAddTask = () => {
   const queryClient = useQueryClient();
+
+  // Returns all real (non-optimistic) tasks from any "tasks" cache entry.
+  // Deduplicates by id so tasks shared across date-keyed query entries are
+  // only counted once.
+  const getRealCachedTasks = (): Task[] => {
+    const queries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] });
+    const taskMap = new Map<string, Task>();
+    queries.forEach(([, tasks]) => {
+      tasks?.forEach((t) => {
+        if (t.id && !t.id.startsWith("temp-")) taskMap.set(t.id, t);
+      });
+    });
+    return Array.from(taskMap.values());
+  };
+
   return useMutation({
     mutationFn: (
       task: Omit<Task, "id" | "createdAt" | "updatedAt"> & {
         isRecurring?: boolean;
       },
-    ) =>
-      addTask(
-        removeEmptyFields(task) as Omit<Task, "id" | "createdAt" | "updatedAt">,
-      ),
+    ) => {
+      // Re-compute order from cache (temp tasks are filtered out by getRealCachedTasks).
+      // If the caller already provided an order (e.g. from the onMutate snapshot) this
+      // is a no-op, keeping both paths in sync.
+      const order = task.order ?? computeInitialOrder(task, getRealCachedTasks());
+      return addTask(
+        removeEmptyFields({ ...task, order }) as Omit<Task, "id" | "createdAt" | "updatedAt">,
+      );
+    },
     onMutate: async (newTask) => {
+      // Snapshot real tasks BEFORE the optimistic update so the order computation
+      // sees the same data as the mutationFn will (after temp-task filtering).
+      const allTasks = getRealCachedTasks();
+      const order = newTask.order ?? computeInitialOrder(newTask, allTasks);
+
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
 
       const tempTask: Task = {
         ...newTask,
+        order,
         id: `temp-${Date.now()}`,
         createdAt: new Date(),
         updatedAt: new Date(),

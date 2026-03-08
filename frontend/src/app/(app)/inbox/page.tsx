@@ -7,7 +7,6 @@ import { useState, Suspense } from "react";
 import TaskForm from "@/components/tasks/task-form/task-form";
 import TaskEditDialog from "@/components/tasks/task-form/task-edit-dialog";
 import {
-  useUpdateTask,
   useTasks,
 } from "@/hooks/use-tasks";
 import { useTaskDialog } from "@/hooks/use-task-dialog";
@@ -22,9 +21,6 @@ const InboxContent = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { user } = useAuth();
   const tasks = useTasks(user?.uid || "", selectedDate);
-  const updateTask = useUpdateTask();
-  
-
   const taskDialog = useTaskDialog();
   const isMobile = useIsMobile();
 

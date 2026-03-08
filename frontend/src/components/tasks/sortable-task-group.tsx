@@ -1,8 +1,10 @@
 import TaskGroupHeader from "./task-group-header";
 import { cn } from "@/lib/utils";
 import {DragDropProvider, DragEndEvent} from '@dnd-kit/react';
+import { isSortableOperation } from '@dnd-kit/react/sortable';
+import { generateKeyBetween } from 'fractional-indexing';
 import { TaskCard } from "./task-card";
-import { useBatchArchiveTasks } from "@/hooks/use-tasks";
+import { useBatchArchiveTasks, useUpdateTask } from "@/hooks/use-tasks";
 import { useCallback, useMemo } from "react";
 import { Task, TaskGroup } from "@/types";
 
@@ -22,28 +24,24 @@ export function SortableTaskGroup({
   showLoading,
 }: SortableTaskGroupProps) {
 
-
-  // Sort tasks by order within each group (string comparison for fractional indexing)
-  // Handle both string and legacy number orders during migration
   const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
       const orderA = a.order;
       const orderB = b.order;
 
-      // Handle undefined/null orders - put them at the end
       if (orderA == null && orderB == null) return 0;
       if (orderA == null) return 1;
       if (orderB == null) return -1;
 
-      // If both are numbers (legacy), compare numerically
       if (typeof orderA === "number" && typeof orderB === "number") {
         return orderA - orderB;
       }
 
-      // Convert to strings for comparison
       const strA = String(orderA);
       const strB = String(orderB);
-      return strA.localeCompare(strB);
+      if (strA < strB) return -1;
+      if (strA > strB) return 1;
+      return 0;
     });
   }, [tasks]);
 
@@ -58,8 +56,37 @@ export function SortableTaskGroup({
     }
   }, [batchArchive, groupKey, sortedTasks]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const updateTask = useUpdateTask();
+  const handleDragEnd: DragEndEvent = (event) => {
+    const { operation, canceled } = event;
+    if (canceled || !isSortableOperation(operation)) return;
 
+    const { source, target } = operation;
+    if (!source || !target) return;
+
+    const fromIndex = source.initialIndex;
+    const toIndex = target.index;
+    if (fromIndex === toIndex) return;
+
+    const task = source.data?.task as Task | undefined;
+    if (!task?.id) return;
+
+    // Build the new sorted array with the item moved to its new position
+    const reordered = [...sortedTasks];
+    reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, task);
+
+    const prevOrder = reordered[toIndex - 1]?.order ?? null;
+    const nextOrder = reordered[toIndex + 1]?.order ?? null;
+
+    const newOrder = generateKeyBetween(
+      prevOrder ? String(prevOrder) : null,
+      nextOrder ? String(nextOrder) : null,
+    );
+
+    console.log("Drag end:", { fromIndex, toIndex, task: task.title, prevOrder, nextOrder, newOrder });
+
+    updateTask.mutate({ taskId: task.id, updates: { order: newOrder } });
   }
 
   return (
@@ -76,7 +103,7 @@ export function SortableTaskGroup({
         onArchiveAll={handleArchiveOverdue}
         isArchiving={batchArchive.isPending}
       />
-      <DragDropProvider onDragEnd={(event) => handleDragEnd(event)}>
+      <DragDropProvider onDragEnd={handleDragEnd}>
         <div className="space-y-2 pb-2">
           {sortedTasks.map((task, index) => (
             <TaskCard

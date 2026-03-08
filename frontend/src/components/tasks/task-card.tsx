@@ -27,7 +27,7 @@ export function TaskCard({
   showQuadrantBadges = false,
 }: TaskCardProps) {
   const toggleTaskStatus = useToggleTaskStatus();
-  const {ref, handleRef} = useSortable({ id: task.id!, index});
+  const {ref, handleRef} = useSortable({ id: task.id!, index, data: { task } });
 
   const getCompletedSubtasksCount = () => {
     if (!task.subtasks) return 0;
