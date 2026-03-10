@@ -50,9 +50,6 @@ export const useTasks = (
 export const useAddTask = () => {
   const queryClient = useQueryClient();
 
-  // Returns all real (non-optimistic) tasks from any "tasks" cache entry.
-  // Deduplicates by id so tasks shared across date-keyed query entries are
-  // only counted once.
   const getRealCachedTasks = (): Task[] => {
     const queries = queryClient.getQueriesData<Task[]>({ queryKey: ["tasks"] });
     const taskMap = new Map<string, Task>();
@@ -70,17 +67,12 @@ export const useAddTask = () => {
         isRecurring?: boolean;
       },
     ) => {
-      // Re-compute order from cache (temp tasks are filtered out by getRealCachedTasks).
-      // If the caller already provided an order (e.g. from the onMutate snapshot) this
-      // is a no-op, keeping both paths in sync.
       const order = task.order ?? computeInitialOrder(task, getRealCachedTasks());
       return addTask(
         removeEmptyFields({ ...task, order }) as Omit<Task, "id" | "createdAt" | "updatedAt">,
       );
     },
     onMutate: async (newTask) => {
-      // Snapshot real tasks BEFORE the optimistic update so the order computation
-      // sees the same data as the mutationFn will (after temp-task filtering).
       const allTasks = getRealCachedTasks();
       const order = newTask.order ?? computeInitialOrder(newTask, allTasks);
 
@@ -234,6 +226,7 @@ export const useToggleTaskStatus = () => {
                     ...task,
                     status: newStatus as "in-progress" | "completed",
                     updatedAt: new Date(),
+                    completedAt: newStatus === "completed" ? new Date() : null,
                   }
                 : task,
             );

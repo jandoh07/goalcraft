@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 interface TaskCardProps {
   task: Task;
   index: number;
+  group: string;
+  groupStart?: boolean;
+  groupEnd?: boolean;
   onClick?: () => void;
   showQuadrantBadges?: boolean;
 }
@@ -23,11 +26,14 @@ interface TaskCardProps {
 export function TaskCard({
   task,
   index,
+  group,
+  groupStart = false,
+  groupEnd = false,
   onClick = () => {},
   showQuadrantBadges = false,
 }: TaskCardProps) {
   const toggleTaskStatus = useToggleTaskStatus();
-  const {ref, handleRef} = useSortable({ id: task.id!, index, data: { task } });
+  const {ref, handleRef } = useSortable({ id: task.id!, index, data: { task, group, groupStart, groupEnd } });
 
   const getCompletedSubtasksCount = () => {
     if (!task.subtasks) return 0;
@@ -38,7 +44,7 @@ export function TaskCard({
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border px-2 py-3 flex justify-start items-start gap-2 shadow-sm bg-background hover:bg-muted/50 cursor-pointer overflow-hidden"
+        "rounded-lg border px-2 py-3 flex justify-start items-start gap-2 shadow-sm bg-background hover:bg-muted/50 cursor-pointer overflow-hidden",
       )}
       onClick={onClick}
     >

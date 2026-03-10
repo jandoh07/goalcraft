@@ -253,6 +253,9 @@ export const toggleTaskStatus = async (
     batch.update(taskRef, {
       status: newStatus,
       updatedAt: Timestamp.now(),
+      ...(newStatus === "completed"
+        ? { completedAt: Timestamp.now() }
+        : { completedAt: deleteField() }),
     });
 
     // If completing, increment completedTasks; if uncompleting, decrement
@@ -265,6 +268,9 @@ export const toggleTaskStatus = async (
     await updateDoc(taskRef, {
       status: newStatus,
       updatedAt: Timestamp.now(),
+      ...(newStatus === "completed"
+        ? { completedAt: Timestamp.now() }
+        : { completedAt: deleteField() }),
     });
   }
 };

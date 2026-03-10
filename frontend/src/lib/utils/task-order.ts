@@ -1,11 +1,6 @@
 import { generateKeyBetween } from "fractional-indexing";
-import { Task } from "@/types";
+import { Task, TaskGroup } from "@/types";
 
-// Priority tiers: lower number = higher priority
-// Q1 (0): important + urgent  → Do First
-// Q2 (1): urgent only         → Schedule
-// Q3 (2): important only      → Delegate
-// Q4 (3): neither             → Eliminate
 type TaskPriority = 0 | 1 | 2 | 3;
 
 function getTaskPriority(task: {
@@ -35,13 +30,47 @@ function getTaskGroup(dueDate: Date | null | undefined): string {
   return "upcoming";
 }
 
-// Fractional-indexing keys always start with a letter. Legacy numeric values
-// (e.g. 0, 1, 2) stored from before the migration are not valid keys and must
-// be treated as "no position" to avoid passing invalid strings to generateKeyBetween.
-function toFractionalKey(order: unknown): string | null {
+export function toFractionalKey(order: unknown): string | null {
   if (order == null) return null;
   const str = String(order);
   return /^[a-zA-Z]/.test(str) ? str : null;
+}
+
+/** Sort a flat array of tasks by their fractional index, ascending. */
+export function sortByOrder(tasks: Task[]): Task[] {
+  return [...tasks].sort((a, b) => {
+    const oA = a.order;
+    const oB = b.order;
+    if (oA == null && oB == null) return 0;
+    if (oA == null) return 1;
+    if (oB == null) return -1;
+    if (typeof oA === "number" && typeof oB === "number") return oA - oB;
+    const sA = String(oA);
+    const sB = String(oB);
+    if (sA < sB) return -1;
+    if (sA > sB) return 1;
+    return 0;
+  });
+}
+
+/**
+ * Given an already-sorted list of tasks in a group, the dropped item, and the
+ * target index, compute the fractional key that places the task at that index.
+ * The droppedTask should NOT already be present in the sorted list.
+ */
+export function computeOrderForIndex(
+  sortedGroupTasks: Task[],
+  toIndex: number,
+): string {
+  const prevOrder =
+    toIndex > 0
+      ? toFractionalKey(sortedGroupTasks[toIndex - 1]?.order)
+      : null;
+  const nextOrder =
+    toIndex < sortedGroupTasks.length
+      ? toFractionalKey(sortedGroupTasks[toIndex]?.order)
+      : null;
+  return generateKeyBetween(prevOrder, nextOrder);
 }
 
 /**
@@ -61,33 +90,19 @@ export function computeInitialOrder(
   const group = getTaskGroup(newTask.dueDate);
   const newPriority = getTaskPriority(newTask);
 
-  const groupTasks = allTasks
-    .filter(
+  const groupTasks = sortByOrder(
+    allTasks.filter(
       (t) =>
         t.status !== "completed" &&
         t.status !== "archived" &&
         getTaskGroup(t.dueDate) === group,
-    )
-    .sort((a, b) => {
-      const oA = a.order;
-      const oB = b.order;
-      if (oA == null && oB == null) return 0;
-      if (oA == null) return 1;
-      if (oB == null) return -1;
-      const sA = String(oA);
-      const sB = String(oB);
-      if (sA < sB) return -1;
-      if (sA > sB) return 1;
-      return 0;
-    });
+    ),
+  );
 
   if (groupTasks.length === 0) {
     return generateKeyBetween(null, null);
   }
 
-  // Q4 always goes to the end.
-  // All others go after the last task of equal-or-higher priority (lower number).
-  // If no such task exists, insertAfterIndex stays -1 → insert before everything.
   let insertAfterIndex = -1;
 
   if (newPriority === 3) {
@@ -101,15 +116,24 @@ export function computeInitialOrder(
     }
   }
 
-  const prevOrder =
-    insertAfterIndex >= 0
-      ? toFractionalKey(groupTasks[insertAfterIndex].order)
-      : null;
+  // insertAfterIndex is the last same-or-higher-priority item.
+  // We want to insert AFTER it, i.e. at index insertAfterIndex + 1.
+  // computeOrderForIndex takes the sorted list WITHOUT the item being inserted.
+  return computeOrderForIndex(groupTasks, insertAfterIndex + 1);
+}
 
-  const nextOrder =
-    insertAfterIndex + 1 < groupTasks.length
-      ? toFractionalKey(groupTasks[insertAfterIndex + 1].order)
-      : null;
-
-  return generateKeyBetween(prevOrder, nextOrder);
+/**
+ * Given the final flat index of the dragged item (use `source.index` from the
+ * drag-end event — the optimistically-sorted position the item landed at) and
+ * the pre-drag flat task array, returns the TaskGroup the item belongs to.
+ *
+ * Using `source.index` (dragged item’s final position) rather than
+ * `target.index` (hover target’s position) avoids an off-by-one error when the
+ * source moves forward past the target.
+ */
+export function computeGroupFromIndex(
+  toFlatIndex: number,
+  flatTasks: { task: Task; group: TaskGroup }[],
+): TaskGroup | undefined {
+  return flatTasks[toFlatIndex]?.group;
 }
