@@ -10,8 +10,13 @@ export function ServiceWorkerProvider() {
         .register(`/sw.js?v=${SW_VERSION}`, {
           updateViaCache: "none",
         })
-        .then(() => console.log("✅ Service worker registered"))
         .catch(console.error);
+    }
+
+    if (process.env.NODE_ENV === "production") {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      window.location.reload();
+    });
     }
   }, []);
 

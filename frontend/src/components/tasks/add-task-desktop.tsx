@@ -29,7 +29,7 @@ const AddTaskDesktop = () => {
       userId: user?.uid || "",
       title: cleanTitle,
       status: "in-progress",
-      dueDate: taskOptions.options.dueDate || new Date(),
+      dueDate: taskOptions.options.dueDate,
       time: taskOptions.options.time || undefined,
       isImportant: taskOptions.options.isImportant || undefined,
       isUrgent: taskOptions.options.isUrgent || undefined,

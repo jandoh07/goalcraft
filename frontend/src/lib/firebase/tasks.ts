@@ -2,13 +2,11 @@ import { SubTask, Task } from "@/types";
 import {
   collection,
   getDocs,
-  getDocsFromCache,
   doc,
   updateDoc,
   deleteDoc,
   query,
   where,
-  orderBy,
   Timestamp,
   DocumentData,
   onSnapshot,
@@ -22,93 +20,88 @@ import {
 import { db } from "./firebase";
 import { calculateNextRun } from "../utils/calculate-next-run-date";
 
-const userTasksQuery = (
-  userId: string,
-  filters?: { status?: string; goalId?: string },
-) => {
-  let q;
-  const tasksCollection = collection(db, "tasks");
-  const baseQuery = query(tasksCollection, where("userId", "==", userId));
-
-  if (filters?.status) {
-    q = query(
-      baseQuery,
-      where("status", "==", filters.status),
-      orderBy("createdAt", "desc"),
-    );
-  } else if (filters?.goalId) {
-    q = query(
-      baseQuery,
-      where("goalId", "==", filters.goalId),
-      orderBy("createdAt", "desc"),
-    );
-  } else {
-    q = query(baseQuery, orderBy("createdAt", "desc"));
-  }
-  return q;
-};
-
-export const fetchUserTasks = async (
-  userId: string,
-  filters?: { status?: string; goalId?: string },
-) => {
-  try {
-    const q = userTasksQuery(userId, filters);
-
-    try {
-      const querySnapshot = await getDocsFromCache(q);
-      const tasks: Task[] = [];
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        tasks.push({
-          id: doc.id,
-          ...data,
-          dueDate: data.dueDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-        } as Task);
-      });
-
-      return tasks;
-    } catch {
-      return [];
-    }
-  } catch (error) {
-    console.error("Error fetching tasks from cache:", error);
-    return [];
-  }
-};
 
 export const subscribeToUserTasks = (
   userId: string,
-  filters: { status?: string; goalId?: string } | undefined,
   callback: (tasks: Task[]) => void,
   onError?: (error: Error) => void,
 ) => {
-  const q = userTasksQuery(userId, filters);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
 
-  return onSnapshot(
-    q,
+  const tasksRef = collection(db, "tasks");
+
+  const inProgressQuery = query(
+    tasksRef,
+    where("userId", "==", userId),
+    where("status", "==", "in-progress"),
+  );
+
+  const completedTodayQuery = query(
+    tasksRef,
+    where("userId", "==", userId),
+    where("status", "==", "completed"),
+    where("completedAt", ">=", Timestamp.fromDate(startOfToday)),
+  );
+
+  const taskMap = new Map<string, Task>();
+
+  const mergeAndEmit = () => {
+    const tasks = Array.from(taskMap.values());
+    callback(tasks);
+  };
+
+  const parseTask = (docSnap: { id: string; data: () => DocumentData }): Task => {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      dueDate: data.dueDate?.toDate(),
+      createdAt: data.createdAt?.toDate(),
+      updatedAt: data.updatedAt?.toDate(),
+    } as Task;
+  };
+
+  const unsubInProgress = onSnapshot(
+    inProgressQuery,
     (querySnapshot) => {
-      const tasks: Task[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        tasks.push({
-          id: doc.id,
-          ...data,
-          dueDate: data.dueDate?.toDate(),
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-        } as Task);
+      querySnapshot.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          taskMap.delete(change.doc.id);
+        } else {
+          taskMap.set(change.doc.id, parseTask(change.doc));
+        }
       });
-      callback(tasks);
+      mergeAndEmit();
     },
     (error) => {
-      console.error("Error in tasks subscription:", error);
+      console.error("Error in in-progress tasks subscription:", error);
       onError?.(error);
     },
   );
+
+  const unsubCompleted = onSnapshot(
+    completedTodayQuery,
+    (querySnapshot) => {
+      querySnapshot.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          taskMap.delete(change.doc.id);
+        } else {
+          taskMap.set(change.doc.id, parseTask(change.doc));
+        }
+      });
+      mergeAndEmit();
+    },
+    (error) => {
+      console.error("Error in completed-today tasks subscription:", error);
+      onError?.(error);
+    },
+  );
+
+  return () => {
+    unsubInProgress();
+    unsubCompleted();
+  };
 };
 
 export const addTask = async (
@@ -194,9 +187,6 @@ export const updateTask = async (
     updateData.dueDate = Timestamp.fromDate(updates.dueDate);
   }
 
-  if (updates.priority === null) {
-    updateData.priority = deleteField();
-  }
   if (updates.dueDate === null) {
     updateData.dueDate = deleteField();
   }
@@ -263,6 +253,9 @@ export const toggleTaskStatus = async (
     batch.update(taskRef, {
       status: newStatus,
       updatedAt: Timestamp.now(),
+      ...(newStatus === "completed"
+        ? { completedAt: Timestamp.now() }
+        : { completedAt: deleteField() }),
     });
 
     // If completing, increment completedTasks; if uncompleting, decrement
@@ -275,6 +268,9 @@ export const toggleTaskStatus = async (
     await updateDoc(taskRef, {
       status: newStatus,
       updatedAt: Timestamp.now(),
+      ...(newStatus === "completed"
+        ? { completedAt: Timestamp.now() }
+        : { completedAt: deleteField() }),
     });
   }
 };

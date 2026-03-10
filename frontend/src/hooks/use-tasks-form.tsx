@@ -59,7 +59,6 @@ const useTasksForm = ({
       description: initialData?.description || "",
       dueDate: initialData?.dueDate || undefined,
       time: initialData?.time || "",
-      priority: (initialData?.priority || "") as "high" | "medium" | "low" | "",
       isRecurring: false,
       frequency: initialData?.frequency || "",
       recurringMasterId: initialData?.recurringMasterId || "",
@@ -98,11 +97,6 @@ const useTasksForm = ({
         description: initialData.description || "",
         dueDate: initialData.dueDate || undefined,
         time: initialData.time || "",
-        priority: (initialData.priority || "") as
-          | "high"
-          | "medium"
-          | "low"
-          | "",
         frequency: initialData.frequency || "",
         recurringMasterId: initialData.recurringMasterId || "",
         stopRecurring: false,

@@ -1,9 +1,8 @@
-import { getTaskType } from "@/lib/utils/task-grouping";
 import { Task } from "@/types";
-import { Loader2, Repeat, Calendar, Pause, Play } from "lucide-react";
+import { Loader2, Repeat, Pause, Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { SortableTaskCard } from "@/components/tasks/sortable-task-card";
+import { TaskCard } from "@/components/tasks/task-card";
 
 type TabType = "all" | "pending" | "completed" | "non-negotiable";
 
@@ -167,9 +166,11 @@ const GoalTasks = ({
             )}
 
             {!isLoading &&
-              filteredTasks.map((task) => (
-                <SortableTaskCard
+              filteredTasks.map((task, index) => (
+                <TaskCard
                   key={task.id}
+                  index={index}
+                  group=""
                   task={task}
                   onClick={() => {
                     console.log("Task clicked:", task);

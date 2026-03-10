@@ -14,7 +14,7 @@ export default function DashboardLayout({
     <ProtectedRoute>
       <NetworkStatus />
       <NotificationHandler />
-      <InstallPrompt />
+      {/* <InstallPrompt /> */}
       <AppLayout>{children}</AppLayout>
       <ReviewDialogWrapper />
     </ProtectedRoute>

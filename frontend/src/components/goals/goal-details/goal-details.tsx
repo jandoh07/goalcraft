@@ -1,8 +1,8 @@
 "use client";
 
-import { Goal } from "@/types";
+import { Goal, Task } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
-import { useGetTasks, useGetNonNegotiablesByGoalId } from "@/hooks/use-tasks";
+import { useGetNonNegotiablesByGoalId } from "@/hooks/use-tasks";
 import { useMemo } from "react";
 import Milestones from "./milestones";
 import GoalTasks from "./goal-tasks";
@@ -15,9 +15,13 @@ interface GoalDetailsProps {
 
 const GoalDetails = ({ goal }: GoalDetailsProps) => {
   const { user } = useAuth();
-  const { data: allTasks, isLoading } = useGetTasks(user?.uid || "", {
-    goalId: goal.id,
-  });
+  // const { data: allTasks, isLoading } = useGetTasks(user?.uid || "", {
+  //   goalId: goal.id,
+  // });
+
+  const allTasks: Task[] = useMemo(() => [], []);
+  const isLoading = false;
+  
 
   // Get non-negotiables (recurring master tasks) for this goal
   const { data: nonNegotiables, isLoading: isLoadingNonNegotiables } =

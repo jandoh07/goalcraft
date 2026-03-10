@@ -5,7 +5,6 @@ import { join } from "path";
 import { createHash } from "crypto";
 import { execSync } from "child_process";
 
-// Load environment variables from .env.local
 try {
   const envFile = readFileSync(".env.local", "utf-8");
   envFile.split("\n").forEach((line) => {
@@ -47,17 +46,15 @@ function getAppRoutes(dir: string, baseRoute = ""): string[] {
       if (
         entry.name.startsWith("_") ||
         entry.name.startsWith(".") ||
-        entry.name.includes("[") // Skip dynamic folders like [id]
+        entry.name.includes("[")
       ) {
         continue;
       }
 
-      // Handle Route Groups (marketing) -> /
       if (entry.name.startsWith("(") && entry.name.endsWith(")")) {
         const subRoutes = getAppRoutes(fullPath, baseRoute);
         routes.push(...subRoutes);
       } else {
-        // Regular route segment
         const routePath = baseRoute + "/" + entry.name;
         const subRoutes = getAppRoutes(fullPath, routePath);
         routes.push(...subRoutes);
@@ -77,7 +74,6 @@ function getAppRoutes(dir: string, baseRoute = ""): string[] {
 async function buildSW() {
   const tempSwPath = "public/sw-temp.js";
 
-  // Validate required environment variables
   const requiredEnvVars = [
     "NEXT_PUBLIC_FIREBASE_API_KEY",
     "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",

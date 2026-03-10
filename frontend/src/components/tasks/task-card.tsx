@@ -1,11 +1,9 @@
 "use client";
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@/types";
 import { Badge } from "../ui/badge";
+import {useSortable} from '@dnd-kit/react/sortable';
 import {
-  Flag,
   GitBranch,
   GripVertical,
   Repeat,
@@ -15,36 +13,27 @@ import {
 } from "lucide-react";
 import { useToggleTaskStatus } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
-
-interface SortableTaskCardProps {
+interface TaskCardProps {
   task: Task;
+  index: number;
+  group: string;
+  groupStart?: boolean;
+  groupEnd?: boolean;
   onClick?: () => void;
   showQuadrantBadges?: boolean;
 }
 
-export function SortableTaskCard({
+export function TaskCard({
   task,
+  index,
+  group,
+  groupStart = false,
+  groupEnd = false,
   onClick = () => {},
   showQuadrantBadges = false,
-}: SortableTaskCardProps) {
+}: TaskCardProps) {
   const toggleTaskStatus = useToggleTaskStatus();
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: `task-${task.id}`,
-    data: { task, type: "task" },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const {ref, handleRef } = useSortable({ id: task.id!, index, data: { task, group, groupStart, groupEnd } });
 
   const getCompletedSubtasksCount = () => {
     if (!task.subtasks) return 0;
@@ -53,25 +42,22 @@ export function SortableTaskCard({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
+      ref={ref}
       className={cn(
         "rounded-lg border px-2 py-3 flex justify-start items-start gap-2 shadow-sm bg-background hover:bg-muted/50 cursor-pointer overflow-hidden",
-        isDragging && "shadow-lg z-50 opacity-0 pointer-events-none",
       )}
       onClick={onClick}
     >
       {/* Drag handle */}
-      <div
-        {...listeners}
-        {...attributes}
+      <button
+        ref={handleRef}
         className={cn(
           "cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground",
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="size-4" />
-      </div>
+      </button>
 
       <div onClick={(e) => e.stopPropagation()}>
         <input
@@ -127,21 +113,6 @@ export function SortableTaskCard({
                 </Badge>
               )}
             </>
-          )}
-
-          {task.priority && (
-            <Badge
-              className={cn(
-                "text-[10px] px-1.5 py-0 h-5",
-                task.priority === "high"
-                  ? "bg-red-400"
-                  : task.priority === "medium"
-                    ? "bg-yellow-600"
-                    : "bg-green-600",
-              )}
-            >
-              <Flag className="size-2.5" />
-            </Badge>
           )}
 
           {task.subtasks && task.subtasks.length > 0 && (
