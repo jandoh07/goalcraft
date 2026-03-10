@@ -170,6 +170,7 @@ const GoalTasks = ({
                 <TaskCard
                   key={task.id}
                   index={index}
+                  group=""
                   task={task}
                   onClick={() => {
                     console.log("Task clicked:", task);
