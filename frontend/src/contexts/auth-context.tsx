@@ -8,7 +8,7 @@ import {
   signIn as firebaseSignIn,
   signUp as firebaseSignUp,
   signInWithGoogle as firebaseSignInWithGoogle,
-  logout as firebaseLogout,
+  firebaseLogout,
   setupAuthListener,
   fetchUserData,
 } from "@/lib/firebase/auth";
@@ -90,19 +90,13 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
 
   useEffect(() => {
     const cleanup = setupAuthListener(
-      async (authUser) => {
-        if (authUser) {
-          setUser(authUser);
-        } else {
-          setUser(null);
-        }
-      },
-      setTheme,
-      setLoading,
-      theme,
+      (authUser) => setUser(authUser),
+      (newTheme) => setTheme(newTheme),
+      (isLoading) => setLoading(isLoading),
     );
-    return cleanup;
-  }, [theme, setTheme]);
+
+    return () => cleanup();
+  }, [setTheme]);
 
   const signIn = async (email: string, password: string) => {
     const credential = await firebaseSignIn(email, password);

@@ -14,7 +14,7 @@ import { AppUser } from "@/types";
 // Function to fetch and merge Firestore user data with Firebase Auth user
 export const fetchUserData = async (
   authUser: User,
-  fallbackTheme: string = "system"
+  fallbackTheme: string = "system",
 ): Promise<AppUser> => {
   try {
     const userDoc = await getDoc(doc(db, "users", authUser.uid));
@@ -68,7 +68,7 @@ export const signIn = async (email: string, password: string) => {
 export const signUp = async (
   email: string,
   password: string,
-  theme: string
+  theme: string,
 ) => {
   // Normal sign up flow
   return createUserWithEmailAndPassword(auth, email, password).then(
@@ -83,7 +83,7 @@ export const signUp = async (
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       return userCredential;
-    }
+    },
   );
 };
 
@@ -123,69 +123,63 @@ export const signInWithGoogle = async (theme: string) => {
 };
 
 // Sign out
-export const logout = async () => {
+export const firebaseLogout = async () => {
   return signOut(auth);
 };
 
-// Set up auth state listener with real-time Firestore sync
 export const setupAuthListener = (
   setUser: (user: AppUser | null) => void,
   setTheme: (theme: string) => void,
   setLoading: (loading: boolean) => void,
-  fallbackTheme: string = "system"
+  fallbackTheme: string = "system",
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
 
   const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
     if (authUser) {
-      // Fetch and merge Firestore data
-      const appUser = await fetchUserData(authUser, fallbackTheme);
-      setUser(appUser);
+      try {
+        const appUser = await fetchUserData(authUser, fallbackTheme);
+        setUser(appUser);
 
-      // Set up real-time listener for user document changes
-      const userDocRef = doc(db, "users", authUser.uid);
-      userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const firestoreData = docSnapshot.data();
+        const userDocRef = doc(db, "users", authUser.uid);
+        userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const firestoreData = docSnapshot.data();
 
-          // Update user with latest Firestore data
-          const updatedUser = {
-            ...authUser,
-            name: firestoreData.name || authUser.displayName || undefined,
-            subscription: firestoreData.subscription || "free",
-            createdAt: firestoreData.createdAt?.toDate(),
-            theme: firestoreData.theme || "system",
-            pushNotifications: firestoreData.pushNotifications ?? false,
-            customCategories: firestoreData.customCategories || [],
-            timezone:
-              firestoreData.timezone ||
-              Intl.DateTimeFormat().resolvedOptions().timeZone,
-            notificationTime: firestoreData.notificationTime,
-          } as AppUser;
+            const updatedUser = {
+              ...authUser,
+              name: firestoreData.name || authUser.displayName || undefined,
+              subscription: firestoreData.subscription || "free",
+              createdAt: firestoreData.createdAt?.toDate(),
+              theme: firestoreData.theme || "system",
+              pushNotifications: firestoreData.pushNotifications ?? false,
+              customCategories: firestoreData.customCategories || [],
+              timezone:
+                firestoreData.timezone ||
+                Intl.DateTimeFormat().resolvedOptions().timeZone,
+              notificationTime: firestoreData.notificationTime,
+            } as AppUser;
 
-          setUser(updatedUser);
+            setUser(updatedUser);
 
-          // Sync theme when it changes in Firestore
-          if (firestoreData.theme) {
-            setTheme(firestoreData.theme);
+            if (firestoreData.theme) {
+              setTheme(firestoreData.theme);
+            }
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error("Firestore user sync failed:", error);
+        setUser(null);
+      }
     } else {
       setUser(null);
-      // Clean up user doc listener if user logs out
-      if (userDocUnsubscribe) {
-        userDocUnsubscribe();
-      }
+      if (userDocUnsubscribe) userDocUnsubscribe();
     }
     setLoading(false);
   });
 
-  // Return cleanup function
   return () => {
     unsubscribe();
-    if (userDocUnsubscribe) {
-      userDocUnsubscribe();
-    }
+    if (userDocUnsubscribe) userDocUnsubscribe();
   };
 };

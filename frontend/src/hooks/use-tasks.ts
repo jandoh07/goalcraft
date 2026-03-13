@@ -24,10 +24,13 @@ export const useTasks = (
   const dateKey = date ? date.toISOString().split('T')[0] : 'current';
   const queryKey = useMemo(() => ["tasks", userId, dateKey] as const, [userId, dateKey]);
 
+  console.log("Query key for tasks:", queryKey);
+
   useEffect(() => {
     if (!userId) return;
 
     const unsubscribe = subscribeToUserTasks(userId, (tasks) => {
+      console.log("Received tasks update:", tasks);
       queryClient.setQueryData(queryKey, tasks);
     });
 
