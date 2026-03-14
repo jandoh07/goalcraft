@@ -1,13 +1,3 @@
-/**
- * Client-side session management utilities
- * These functions sync the Firebase client-side auth state with server-side session cookies
- */
-
-/**
- * Create a server session after successful authentication
- * Call this after signIn, signUp, or signInWithGoogle
- * @param idToken - Firebase ID token from getIdToken()
- */
 export async function createSession(idToken: string): Promise<boolean> {
   try {
     const response = await fetch("/api/auth/session", {
@@ -32,10 +22,6 @@ export async function createSession(idToken: string): Promise<boolean> {
   }
 }
 
-/**
- * Clear the server session on logout
- * Call this before or after signOut
- */
 export async function clearSession(): Promise<boolean> {
   try {
     const response = await fetch("/api/auth/session", {
@@ -49,11 +35,6 @@ export async function clearSession(): Promise<boolean> {
   }
 }
 
-/**
- * Update the user data cookie with new values
- * Call this when user preferences change (e.g., theme)
- * @param updates - Partial user data to update
- */
 export async function updateUserDataCookie(updates: {
   theme?: string;
   name?: string;

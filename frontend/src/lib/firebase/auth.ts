@@ -10,6 +10,9 @@ import {
 import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
+import { USER_DATA_COOKIE_NAME } from "./cookies";
+import { createSession } from "./session";
+import Cookies from "js-cookie";
 
 // Function to fetch and merge Firestore user data with Firebase Auth user
 export const fetchUserData = async (
@@ -135,9 +138,31 @@ export const setupAuthListener = (
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
 
+  const refreshSessionIfNeeded = async (authUser: User) => {
+    const userData = Cookies.get(USER_DATA_COOKIE_NAME);
+
+    if (!userData) return;
+
+    const { sessionCreatedAt } = JSON.parse(userData);
+    const idToken = await authUser.getIdToken();
+
+    if (!sessionCreatedAt) {
+      await createSession(idToken);
+      return;
+    }
+
+    const sessionAge = Date.now() - new Date(sessionCreatedAt).getTime();
+    const maxSessionAge = 1000 * 60 * 60 * 24 * 7;
+
+    if (sessionAge >= maxSessionAge) {
+      await createSession(idToken);
+    }
+  };
+
   const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
     if (authUser) {
       try {
+        refreshSessionIfNeeded(authUser);
         const appUser = await fetchUserData(authUser, fallbackTheme);
         setUser(appUser);
 

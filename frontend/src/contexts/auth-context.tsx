@@ -21,6 +21,7 @@ export interface InitialUser {
   name?: string;
   theme?: string;
   subscription?: string;
+  sessionCreatedAt?: Date;
 }
 
 interface AuthContextType {
