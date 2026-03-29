@@ -17,10 +17,7 @@ const ThemeSettings = () => {
 
   const handleThemeChange = (selectedTheme: "light" | "dark" | "system") => {
     if (user?.uid && selectedTheme !== theme) {
-      updateUserPreferences.mutate({
-        userId: user.uid,
-        preferences: { theme: selectedTheme },
-      });
+      updateUserPreferences.mutate({ theme: selectedTheme });
     } else if (!user?.uid) {
       setTheme(selectedTheme);
     }

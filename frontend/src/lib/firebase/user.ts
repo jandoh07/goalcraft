@@ -40,16 +40,6 @@ export const updateUserPreferences = async (
   await updateDoc(docRef, updateData);
 };
 
-export const updateUserCustomCategories = async (
-  userId: string,
-  customCategories: string[],
-) => {
-  const docRef = doc(db, "users", userId);
-  await updateDoc(docRef, { customCategories });
-};
-
-// FCM Token Management
-
 const getDeviceType = (): "desktop" | "mobile" | "tablet" => {
   if (typeof navigator === "undefined") return "desktop";
 
@@ -72,12 +62,10 @@ export const saveFcmToken = async (
 ): Promise<void> => {
   const fcmTokensRef = collection(db, "users", userId, "fcmTokens");
 
-  // Check if token already exists
   const existingTokenQuery = query(fcmTokensRef, where("token", "==", token));
   const existingTokens = await getDocs(existingTokenQuery);
 
   if (!existingTokens.empty) {
-    // Token already exists, update the timestamp
     const existingDoc = existingTokens.docs[0];
     await updateDoc(existingDoc.ref, {
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
@@ -86,7 +74,6 @@ export const saveFcmToken = async (
     return;
   }
 
-  // Create new token document
   const tokenDocRef = doc(fcmTokensRef);
   await setDoc(tokenDocRef, {
     token,
@@ -127,3 +114,5 @@ export const deleteAllFcmTokens = async (userId: string): Promise<void> => {
   const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
   await Promise.all(deletePromises);
 };
+
+// Create new token document

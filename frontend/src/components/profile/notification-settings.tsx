@@ -20,17 +20,18 @@ import {
 } from "../ui/select";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  useUpdateUserPreferences,
-  useGetFcmTokens,
-  useSaveFcmToken,
-  useDeleteFcmToken,
-} from "@/hooks/use-user";
+import { useUpdateUserPreferences } from "@/hooks/use-user";
 import { getMessaging, getToken } from "firebase/messaging";
 import app from "@/lib/firebase/firebase";
 import { toast } from "sonner";
 import { FcmToken } from "@/types";
 import { Separator } from "../ui/separator";
+import useQuery from "@/hooks/use-query";
+import {
+  deleteFcmToken,
+  getFcmTokens,
+  saveFcmToken,
+} from "@/lib/firebase/user";
 
 const DeviceIcon = ({ deviceType }: { deviceType: FcmToken["deviceType"] }) => {
   switch (deviceType) {
@@ -75,11 +76,9 @@ const NotificationSettings = () => {
   const { user } = useAuth();
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
   const updateUserPreferences = useUpdateUserPreferences();
-  const { data: fcmTokens, isLoading: isLoadingTokens } = useGetFcmTokens(
-    user?.uid || "",
+  const { data: fcmTokens, isLoading: isLoadingTokens } = useQuery(() =>
+    getFcmTokens(user?.uid || ""),
   );
-  const saveFcmToken = useSaveFcmToken();
-  const deleteFcmToken = useDeleteFcmToken();
 
   const pushNotifications = user?.pushNotifications || false;
   const notificationTime = user?.notificationTime ?? DEFAULT_NOTIFICATION_HOUR;
@@ -119,21 +118,15 @@ const NotificationSettings = () => {
       try {
         const token = await requestNotificationPermission();
         if (token) {
-          await saveFcmToken.mutateAsync({ userId: user.uid, token });
-          await updateUserPreferences.mutateAsync({
-            userId: user.uid,
-            preferences: { pushNotifications: true },
-          });
+          await saveFcmToken(user.uid, token);
+          await updateUserPreferences.mutate({ pushNotifications: true });
           toast.success("Notifications enabled for this device");
         }
       } finally {
         setIsRequestingPermission(false);
       }
     } else {
-      await updateUserPreferences.mutateAsync({
-        userId: user.uid,
-        preferences: { pushNotifications: false },
-      });
+      await updateUserPreferences.mutate({ pushNotifications: false });
       toast.success("Notifications disabled");
     }
   };
@@ -142,10 +135,7 @@ const NotificationSettings = () => {
     if (!user?.uid) return;
 
     const hour = parseInt(value, 10);
-    await updateUserPreferences.mutateAsync({
-      userId: user.uid,
-      preferences: { notificationTime: hour },
-    });
+    await updateUserPreferences.mutate({ notificationTime: hour });
     toast.success(`Notification time updated to ${formatHour(hour)}`);
   };
 
@@ -155,10 +145,7 @@ const NotificationSettings = () => {
     try {
       const token = await requestNotificationPermission();
       if (token) {
-        await saveFcmToken.mutateAsync({
-          userId: user.uid,
-          token,
-        });
+        await saveFcmToken(user.uid, token);
         toast.success("Device added successfully");
       }
     } finally {
@@ -170,7 +157,7 @@ const NotificationSettings = () => {
     if (!user?.uid) return;
 
     try {
-      await deleteFcmToken.mutateAsync({ userId: user.uid, tokenId });
+      await deleteFcmToken(user.uid, tokenId);
       toast.success("Device removed");
     } catch {
       toast.error("Failed to remove device");
@@ -204,7 +191,7 @@ const NotificationSettings = () => {
           id="push-notifications"
           checked={pushNotifications}
           onCheckedChange={handlePushNotificationsChange}
-          disabled={isRequestingPermission || updateUserPreferences.isPending}
+          disabled={isRequestingPermission || updateUserPreferences.loading}
           className="cursor-pointer"
         />
       </div>
@@ -233,7 +220,7 @@ const NotificationSettings = () => {
             <Select
               value={notificationTime.toString()}
               onValueChange={handleNotificationTimeChange}
-              disabled={updateUserPreferences.isPending}
+              disabled={updateUserPreferences.loading}
             >
               <SelectTrigger className="w-full md:w-32 mt-3 md:mt-0">
                 <SelectValue placeholder="Select time" />
@@ -267,7 +254,7 @@ const NotificationSettings = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleAddDevice}
-                disabled={isRequestingPermission || saveFcmToken.isPending}
+                disabled={isRequestingPermission}
                 className="mt-3 md:mt-0 w-full md:w-32"
               >
                 {isRequestingPermission ? (
@@ -303,7 +290,6 @@ const NotificationSettings = () => {
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => handleDeleteToken(token.id)}
-                      disabled={deleteFcmToken.isPending}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
