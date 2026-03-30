@@ -45,13 +45,10 @@ export function UserNav() {
     }
   };
 
-  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+  const handleThemeChange = async (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
     if (user?.uid && newTheme !== theme) {
-      updatePreferences({
-        userId: user.uid,
-        preferences: { theme: newTheme },
-      });
+      await updatePreferences({ theme: newTheme });
     }
   };
 

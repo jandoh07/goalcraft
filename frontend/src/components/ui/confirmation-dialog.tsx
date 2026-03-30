@@ -8,20 +8,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ConfirmDialogPresetType } from "@/types";
-
-interface ConfirmationDialogProps {
-  onConfirm: () => void;
-  onCancel: () => void;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  title?: string;
-  description?: string;
-  preset?: ConfirmDialogPresetType;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: "default" | "destructive";
-}
 
 const presets = {
   deleteGoal: {
@@ -48,7 +34,22 @@ const presets = {
     cancelText: "Continue Later",
     variant: "destructive" as const,
   },
-};
+} as const;
+
+export type ConfirmDialogPresetType = keyof typeof presets;
+
+interface ConfirmationDialogProps {
+  onConfirm: () => void;
+  onCancel: () => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  title?: string;
+  description?: string;
+  preset?: ConfirmDialogPresetType;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: "default" | "destructive";
+}
 
 const ConfirmationDialog = ({
   onConfirm,

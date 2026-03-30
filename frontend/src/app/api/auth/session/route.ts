@@ -14,6 +14,7 @@ interface UserDataCookie {
   name?: string;
   theme?: string;
   subscription?: string;
+  sessionCreatedAt?: Date;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
     let userData: UserDataCookie = {
       uid: decodedToken.uid,
       email: decodedToken.email,
+      sessionCreatedAt: new Date(),
     };
 
     try {
@@ -48,6 +50,7 @@ export async function POST(request: NextRequest) {
           name: firestoreData?.name,
           theme: firestoreData?.theme ?? "system",
           subscription: firestoreData?.subscription ?? "free",
+          sessionCreatedAt: new Date(),
         };
       }
     } catch (firestoreError) {

@@ -1,7 +1,6 @@
 "use client";
 import { Bell } from "lucide-react";
 import { useNotification } from "@/contexts/notification-context";
-import { StreakBadge } from "@/components/layout/streak-badge";
 
 interface MobileHeaderProps {
   title: string;
@@ -16,7 +15,6 @@ const MobileHeader = ({ title }: MobileHeaderProps) => {
       <div className="flex items-center justify-between py-3 px-3 border-b border-b-border fixed top-0 left-0 w-full bg-background shadow-sm z-10">
         <p className="text-lg font-semibold">{title}</p>
         <div className="flex items-center gap-2">
-          <StreakBadge size="sm" />
           <button
             onClick={openNotifications}
             className="p-2 hover:bg-accent rounded-lg transition-colors relative"

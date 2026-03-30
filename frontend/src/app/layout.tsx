@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AuthProviderWithServerUser } from "@/components/providers/auth-provider-server";
-import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 import { AppProgressProvider } from "@/components/providers/progress-provider";
@@ -98,20 +97,18 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <AppProgressProvider>
-          <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <AuthProviderWithServerUser>
-                <ServiceWorkerProvider />
-                {children}
-                <Toaster position="top-right" />
-              </AuthProviderWithServerUser>
-            </ThemeProvider>
-          </QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProviderWithServerUser>
+              <ServiceWorkerProvider />
+              {children}
+              <Toaster position="top-right" />
+            </AuthProviderWithServerUser>
+          </ThemeProvider>
         </AppProgressProvider>
       </body>
     </html>

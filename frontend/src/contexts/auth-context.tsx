@@ -8,11 +8,9 @@ import {
   signIn as firebaseSignIn,
   signUp as firebaseSignUp,
   signInWithGoogle as firebaseSignInWithGoogle,
-  logout as firebaseLogout,
+  firebaseLogout,
   setupAuthListener,
-  fetchUserData,
 } from "@/lib/firebase/auth";
-import { auth } from "@/lib/firebase/firebase";
 import { createSession, clearSession } from "@/lib/firebase/session";
 
 export interface InitialUser {
@@ -21,6 +19,7 @@ export interface InitialUser {
   name?: string;
   theme?: string;
   subscription?: string;
+  sessionCreatedAt?: Date;
 }
 
 interface AuthContextType {
@@ -30,7 +29,6 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -80,29 +78,15 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
   const [loading, setLoading] = useState(!initialUser);
   const { theme, setTheme } = useTheme();
 
-  const refreshUser = async () => {
-    if (auth.currentUser) {
-      const updatedUser = await fetchUserData(auth.currentUser, theme);
-      setUser(updatedUser);
-      setTheme(updatedUser.theme || "system");
-    }
-  };
-
   useEffect(() => {
     const cleanup = setupAuthListener(
-      async (authUser) => {
-        if (authUser) {
-          setUser(authUser);
-        } else {
-          setUser(null);
-        }
-      },
-      setTheme,
-      setLoading,
-      theme,
+      (authUser) => setUser(authUser),
+      (newTheme) => setTheme(newTheme),
+      (isLoading) => setLoading(isLoading),
     );
-    return cleanup;
-  }, [theme, setTheme]);
+
+    return () => cleanup();
+  }, [setTheme]);
 
   const signIn = async (email: string, password: string) => {
     const credential = await firebaseSignIn(email, password);
@@ -146,7 +130,6 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
     signUp,
     signInWithGoogle,
     logout,
-    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

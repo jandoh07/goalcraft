@@ -15,6 +15,7 @@ export async function AuthProviderWithServerUser({
         name: serverUser.name,
         theme: serverUser.theme,
         subscription: serverUser.subscription,
+        sessionCreatedAt: serverUser.sessionCreatedAt,
       }
     : null;
 

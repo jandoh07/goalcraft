@@ -22,12 +22,8 @@ export function MarketingThemeToggle() {
   const handleThemeChange = (theme: ThemeValue) => {
     setTheme(theme);
 
-    // If user is authenticated, save theme preference to database
     if (user) {
-      updatePreferences({
-        userId: user.uid,
-        preferences: { theme },
-      });
+      updatePreferences({ theme });
     }
   };
 

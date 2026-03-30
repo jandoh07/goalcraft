@@ -12,6 +12,7 @@ interface UserDataCookie {
   name?: string;
   theme?: string;
   subscription?: string;
+  sessionCreatedAt: Date;
 }
 
 export async function PATCH(request: NextRequest) {
@@ -34,6 +35,7 @@ export async function PATCH(request: NextRequest) {
     let userData: UserDataCookie = {
       uid: decodedClaims.uid,
       email: decodedClaims.email,
+      sessionCreatedAt: new Date(),
     };
 
     if (existingCookie) {

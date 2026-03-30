@@ -25,7 +25,7 @@ interface EditProfileDialogProps {
 }
 
 const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -56,7 +56,6 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
         name: data.name,
       });
 
-      await refreshUser();
       toast.success("Profile updated successfully");
       onOpenChange(false);
     } catch (error) {

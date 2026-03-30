@@ -10,11 +10,58 @@ import {
 import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
+import { USER_DATA_COOKIE_NAME } from "./cookies";
+import { createSession, updateUserDataCookie } from "./session";
+import Cookies from "js-cookie";
 
-// Function to fetch and merge Firestore user data with Firebase Auth user
+function getCookieTheme(): string | null {
+  const rawCookie = Cookies.get(USER_DATA_COOKIE_NAME);
+
+  if (!rawCookie) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawCookie) as { theme?: string };
+    return parsed.theme ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function toAppUser(
+  authUser: User,
+  options: {
+    name?: string;
+    subscription?: "free" | "premium";
+    createdAt?: Date;
+    theme?: "dark" | "light" | "system";
+    pushNotifications?: boolean;
+    customCategories?: string[];
+    timezone?: string;
+    notificationTime?: number;
+  },
+  fallbackTheme: string,
+): AppUser {
+  const appUser = authUser as AppUser;
+
+  appUser.name = options.name ?? authUser.displayName ?? undefined;
+  appUser.subscription = options.subscription ?? "free";
+  appUser.createdAt = options.createdAt;
+  appUser.theme =
+    options.theme ?? (fallbackTheme as "dark" | "light" | "system");
+  appUser.pushNotifications = options.pushNotifications ?? false;
+  appUser.customCategories = options.customCategories ?? [];
+  appUser.timezone =
+    options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  appUser.notificationTime = options.notificationTime;
+
+  return appUser;
+}
+
 export const fetchUserData = async (
   authUser: User,
-  fallbackTheme: string = "system"
+  fallbackTheme: string = "system",
 ): Promise<AppUser> => {
   try {
     const userDoc = await getDoc(doc(db, "users", authUser.uid));
@@ -22,55 +69,60 @@ export const fetchUserData = async (
     if (userDoc.exists()) {
       const firestoreData = userDoc.data();
 
-      // Merge Firebase Auth user with Firestore data
-      return {
-        ...authUser,
-        name: firestoreData.name || authUser.displayName || undefined,
-        subscription: firestoreData.subscription || "free",
-        createdAt: firestoreData.createdAt?.toDate(),
-        theme: firestoreData.theme || "system",
-        pushNotifications: firestoreData.pushNotifications ?? false,
-        customCategories: firestoreData.customCategories || [],
-        timezone:
-          firestoreData.timezone ||
-          Intl.DateTimeFormat().resolvedOptions().timeZone,
-        notificationTime: firestoreData.notificationTime,
-      } as AppUser;
+      return toAppUser(
+        authUser,
+        {
+          name: firestoreData.name || authUser.displayName || undefined,
+          subscription: firestoreData.subscription || "free",
+          createdAt: firestoreData.createdAt?.toDate(),
+          theme: firestoreData.theme || "system",
+          pushNotifications: firestoreData.pushNotifications ?? false,
+          customCategories: firestoreData.customCategories || [],
+          timezone:
+            firestoreData.timezone ||
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+          notificationTime: firestoreData.notificationTime,
+        },
+        fallbackTheme,
+      );
     } else {
       // If no Firestore doc exists, return auth user with defaults
-      return {
-        ...authUser,
-        subscription: "free",
-        theme: fallbackTheme,
-        pushNotifications: false,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      } as AppUser;
+      return toAppUser(
+        authUser,
+        {
+          subscription: "free",
+          theme: fallbackTheme as "dark" | "light" | "system",
+          pushNotifications: false,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        fallbackTheme,
+      );
     }
   } catch (error) {
     console.error("Error fetching user data:", error);
     // Return auth user with defaults on error
-    return {
-      ...authUser,
-      subscription: "free",
-      theme: fallbackTheme,
-      pushNotifications: false,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    } as AppUser;
+    return toAppUser(
+      authUser,
+      {
+        subscription: "free",
+        theme: fallbackTheme as "dark" | "light" | "system",
+        pushNotifications: false,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      fallbackTheme,
+    );
   }
 };
 
-// Sign in with email and password
 export const signIn = async (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
 };
 
-// Sign up with email and password
 export const signUp = async (
   email: string,
   password: string,
-  theme: string
+  theme: string,
 ) => {
-  // Normal sign up flow
   return createUserWithEmailAndPassword(auth, email, password).then(
     async (userCredential) => {
       const user = userCredential.user;
@@ -83,23 +135,19 @@ export const signUp = async (
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       return userCredential;
-    }
+    },
   );
 };
 
-// Sign in with Google
 export const signInWithGoogle = async (theme: string) => {
   const provider = new GoogleAuthProvider();
 
-  // Normal Google sign in flow
   return signInWithPopup(auth, provider).then(async (userCredential) => {
     const user = userCredential.user;
 
     try {
-      // Check if user document already exists
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
-      // Only create document if it doesn't exist (new user)
       if (!userDoc.exists()) {
         await setDoc(doc(db, "users", user.uid), {
           name: user.displayName,
@@ -122,70 +170,104 @@ export const signInWithGoogle = async (theme: string) => {
   });
 };
 
-// Sign out
-export const logout = async () => {
+export const firebaseLogout = async () => {
   return signOut(auth);
 };
 
-// Set up auth state listener with real-time Firestore sync
 export const setupAuthListener = (
   setUser: (user: AppUser | null) => void,
   setTheme: (theme: string) => void,
   setLoading: (loading: boolean) => void,
-  fallbackTheme: string = "system"
+  fallbackTheme: string = "system",
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
 
+  const refreshSessionIfNeeded = async (authUser: User) => {
+    const idToken = await authUser.getIdToken();
+
+    const userData = Cookies.get(USER_DATA_COOKIE_NAME);
+    if (!userData) {
+      await createSession(idToken);
+      return;
+    }
+
+    let sessionCreatedAt: string | undefined;
+    try {
+      ({ sessionCreatedAt } = JSON.parse(userData) as {
+        sessionCreatedAt?: string;
+      });
+    } catch {
+      await createSession(idToken);
+      return;
+    }
+
+    if (!sessionCreatedAt) {
+      await createSession(idToken);
+      return;
+    }
+
+    const sessionAge = Date.now() - new Date(sessionCreatedAt).getTime();
+    const maxSessionAge = 1000 * 60 * 60 * 24 * 7;
+
+    if (sessionAge >= maxSessionAge) {
+      await createSession(idToken);
+    }
+  };
+
   const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
     if (authUser) {
-      // Fetch and merge Firestore data
-      const appUser = await fetchUserData(authUser, fallbackTheme);
-      setUser(appUser);
+      try {
+        refreshSessionIfNeeded(authUser);
+        const appUser = await fetchUserData(authUser, fallbackTheme);
+        setUser(appUser);
 
-      // Set up real-time listener for user document changes
-      const userDocRef = doc(db, "users", authUser.uid);
-      userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const firestoreData = docSnapshot.data();
+        const userDocRef = doc(db, "users", authUser.uid);
+        userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const firestoreData = docSnapshot.data();
 
-          // Update user with latest Firestore data
-          const updatedUser = {
-            ...authUser,
-            name: firestoreData.name || authUser.displayName || undefined,
-            subscription: firestoreData.subscription || "free",
-            createdAt: firestoreData.createdAt?.toDate(),
-            theme: firestoreData.theme || "system",
-            pushNotifications: firestoreData.pushNotifications ?? false,
-            customCategories: firestoreData.customCategories || [],
-            timezone:
-              firestoreData.timezone ||
-              Intl.DateTimeFormat().resolvedOptions().timeZone,
-            notificationTime: firestoreData.notificationTime,
-          } as AppUser;
+            const updatedUser = toAppUser(
+              authUser,
+              {
+                name: firestoreData.name || authUser.displayName || undefined,
+                subscription: firestoreData.subscription || "free",
+                createdAt: firestoreData.createdAt?.toDate(),
+                theme: firestoreData.theme || "system",
+                pushNotifications: firestoreData.pushNotifications ?? false,
+                customCategories: firestoreData.customCategories || [],
+                timezone:
+                  firestoreData.timezone ||
+                  Intl.DateTimeFormat().resolvedOptions().timeZone,
+                notificationTime: firestoreData.notificationTime,
+              },
+              fallbackTheme,
+            );
 
-          setUser(updatedUser);
+            setUser(updatedUser);
 
-          // Sync theme when it changes in Firestore
-          if (firestoreData.theme) {
-            setTheme(firestoreData.theme);
+            if (firestoreData.theme) {
+              setTheme(firestoreData.theme);
+
+              const cookieTheme = getCookieTheme();
+              if (cookieTheme !== firestoreData.theme) {
+                void updateUserDataCookie({ theme: firestoreData.theme });
+              }
+            }
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error("Firestore user sync failed:", error);
+        setUser(null);
+      }
     } else {
       setUser(null);
-      // Clean up user doc listener if user logs out
-      if (userDocUnsubscribe) {
-        userDocUnsubscribe();
-      }
+      if (userDocUnsubscribe) userDocUnsubscribe();
     }
     setLoading(false);
   });
 
-  // Return cleanup function
   return () => {
     unsubscribe();
-    if (userDocUnsubscribe) {
-      userDocUnsubscribe();
-    }
+    if (userDocUnsubscribe) userDocUnsubscribe();
   };
 };

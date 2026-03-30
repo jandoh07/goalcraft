@@ -132,10 +132,7 @@ const TimezoneSettings = () => {
 
     if (timezone !== currentTimezone) {
       try {
-        await updateUserPreferences.mutateAsync({
-          userId: user.uid,
-          preferences: { timezone },
-        });
+        await updateUserPreferences.mutate({ timezone });
         toast.success(`Timezone updated to ${formatTimezoneDisplay(timezone)}`);
       } catch {
         toast.error("Failed to update timezone");
@@ -151,10 +148,7 @@ const TimezoneSettings = () => {
 
     if (detectedTimezone !== currentTimezone) {
       try {
-        await updateUserPreferences.mutateAsync({
-          userId: user.uid,
-          preferences: { timezone: detectedTimezone },
-        });
+        await updateUserPreferences.mutate({ timezone: detectedTimezone });
         toast.success(
           `Timezone set to ${formatTimezoneDisplay(detectedTimezone)}`,
         );
@@ -186,7 +180,7 @@ const TimezoneSettings = () => {
           variant="ghost"
           size="sm"
           onClick={handleDetectTimezone}
-          disabled={updateUserPreferences.isPending}
+          disabled={updateUserPreferences.loading}
           className="text-xs shrink-0"
         >
           Detect
@@ -198,7 +192,7 @@ const TimezoneSettings = () => {
               role="combobox"
               aria-expanded={open}
               className="grow sm:min-w-50 justify-between text-sm"
-              disabled={updateUserPreferences.isPending}
+              disabled={updateUserPreferences.loading}
             >
               <span className="truncate">
                 {currentTimezone.replace(/_/g, " ")}

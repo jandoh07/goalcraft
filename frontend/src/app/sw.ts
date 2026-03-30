@@ -25,6 +25,8 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
+const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
+
 registerRoute(
   ({ url }) => url.searchParams.has("_rsc"),
   new NetworkFirst({
@@ -32,7 +34,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxAgeSeconds: 7 * ONE_DAY_IN_SECONDS,
       }),
     ],
     networkTimeoutSeconds: 3,
@@ -46,9 +48,10 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 3 * 24 * 60 * 60,
+        maxAgeSeconds: 14 * ONE_DAY_IN_SECONDS,
       }),
     ],
+    networkTimeoutSeconds: 5,
   }),
 );
 
@@ -62,7 +65,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxAgeSeconds: 180 * ONE_DAY_IN_SECONDS,
       }),
     ],
   }),
@@ -75,7 +78,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 150,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxAgeSeconds: 90 * ONE_DAY_IN_SECONDS,
       }),
     ],
   }),
@@ -88,7 +91,7 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 365 * 24 * 60 * 60,
+        maxAgeSeconds: 365 * ONE_DAY_IN_SECONDS,
       }),
     ],
   }),

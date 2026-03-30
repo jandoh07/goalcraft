@@ -3,7 +3,6 @@
 import { useNotification } from "@/contexts/notification-context";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell } from "lucide-react";
-import { StreakBadge } from "@/components/layout/streak-badge";
 
 export function LayoutHeader() {
   const { openNotifications, notifications } = useNotification();
@@ -13,7 +12,6 @@ export function LayoutHeader() {
     <div className="flex items-center justify-between p-4">
       <SidebarTrigger />
       <div className="flex items-center gap-3">
-        <StreakBadge />
         <button
           onClick={openNotifications}
           className="p-2 hover:bg-accent rounded-lg transition-colors relative"

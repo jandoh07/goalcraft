@@ -11,6 +11,7 @@ export interface ServerUser {
   name?: string;
   theme?: string;
   subscription?: string;
+  sessionCreatedAt?: Date;
 }
 
 export async function getServerUser(): Promise<ServerUser | null> {
