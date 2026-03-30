@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "./button";
-import DeleteAlertDialog from "./confirmation-dialog";
+import DeleteAlertDialog, {
+  type ConfirmDialogPresetType,
+} from "./confirmation-dialog";
 import { useState } from "react";
-import { ConfirmDialogPresetType } from "@/types";
 import { Reply } from "lucide-react";
 import { DialogTitle } from "@radix-ui/react-dialog";
 
