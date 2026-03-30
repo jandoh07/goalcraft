@@ -1,18 +1,71 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AuthLayout, LoginForm } from "@/components/auth";
+import { useAuth } from "@/contexts/auth-context";
+import { createSession } from "@/lib/firebase/session";
+
+const DEFAULT_REDIRECT = "/today";
+
+function getSafeRedirectPath(path: string | null): string {
+  if (!path) {
+    return DEFAULT_REDIRECT;
+  }
+
+  if (!path.startsWith("/") || path.startsWith("//")) {
+    return DEFAULT_REDIRECT;
+  }
+
+  return path;
+}
 
 const LoginContent = () => {
   const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirectPath(searchParams.get("redirect"));
+  const { loading, user } = useAuth();
+  const [sessionRecoveryFailed, setSessionRecoveryFailed] = useState(false);
+  const hasAttemptedSessionRecovery = useRef(false);
 
-  // Get redirect URL from query params (set by middleware when redirecting from protected routes)
-  const redirectTo = searchParams.get("redirect") || "/goals";
+  useEffect(() => {
+    if (loading || !user || hasAttemptedSessionRecovery.current) {
+      console.log("Not attempting session recovery:");
+      return;
+    }
 
-  // Note: Auth state checking is handled by edge middleware in proxy.ts
-  // If user reaches this page, they are definitely not authenticated
+    const authenticatedUser = user;
+    hasAttemptedSessionRecovery.current = true;
+
+    const createSessionCookie = async () => {
+      try {
+        const idToken = await authenticatedUser.getIdToken();
+        const sessionCreated = await createSession(idToken);
+        if (!sessionCreated) {
+          console.error("Failed to create session cookie");
+          setSessionRecoveryFailed(true);
+          hasAttemptedSessionRecovery.current = false;
+          return;
+        }
+
+        window.location.replace(redirectTo);
+      } catch (error) {
+        console.error("Failed to recover session cookie", error);
+        setSessionRecoveryFailed(true);
+        hasAttemptedSessionRecovery.current = false;
+      }
+    };
+
+    void createSessionCookie();
+  }, [loading, user, redirectTo]);
+
+  if (loading || (user && !sessionRecoveryFailed)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout
