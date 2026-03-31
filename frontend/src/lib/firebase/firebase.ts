@@ -1,7 +1,10 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
+  Firestore,
+  getFirestore,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
@@ -37,11 +40,35 @@ if (typeof window !== "undefined") {
 }
 
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }),
-});
+
+function createFirestore(): Firestore {
+  if (typeof window === "undefined") {
+    return getFirestore(app);
+  }
+
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch (error) {
+    console.warn(
+      "IndexedDB persistence is unavailable. Falling back to in-memory Firestore cache.",
+      error,
+    );
+
+    try {
+      return initializeFirestore(app, {
+        localCache: memoryLocalCache(),
+      });
+    } catch {
+      return getFirestore(app);
+    }
+  }
+}
+
+export const db = createFirestore();
 
 export const functions = getFunctions(app);
 
