@@ -1,12 +1,11 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
-  Firestore,
-  getFirestore,
   initializeFirestore,
-  memoryLocalCache,
+  getFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
+  Firestore,
 } from "firebase/firestore";
 import {
   initializeAppCheck,
@@ -24,51 +23,45 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+const existingApps = getApps();
 const app =
-  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  existingApps.length === 0 ? initializeApp(firebaseConfig) : existingApps[0];
 
 if (typeof window !== "undefined") {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN =
     process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_DEBUG_TOKEN;
 
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(
-      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
-    ),
-    isTokenAutoRefreshEnabled: true,
-  });
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+      ),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (e) {
+    console.error("[AppCheck] Failed to initialize:", e);
+  }
 }
 
 export const auth = getAuth(app);
 
-function createFirestore(): Firestore {
-  if (typeof window === "undefined") {
-    return getFirestore(app);
-  }
-
+let db: Firestore;
+if (typeof window !== "undefined") {
   try {
-    return initializeFirestore(app, {
+    db = initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
       }),
     });
-  } catch (error) {
-    console.warn(
-      "IndexedDB persistence is unavailable. Falling back to in-memory Firestore cache.",
-      error,
-    );
-
-    try {
-      return initializeFirestore(app, {
-        localCache: memoryLocalCache(),
-      });
-    } catch {
-      return getFirestore(app);
-    }
+  } catch (e) {
+    console.error("[Firestore] Failed to initialize with persistence:", e);
+    db = getFirestore(app);
   }
+} else {
+  db = getFirestore(app);
 }
 
-export const db = createFirestore();
+export { db };
 
 export const functions = getFunctions(app);
 
