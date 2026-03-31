@@ -11,7 +11,7 @@ import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
 import { USER_DATA_COOKIE_NAME } from "./cookies";
-import { createSession, updateUserDataCookie } from "./session";
+import { clearSession, createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";
 
 function getCookieTheme(): string | null {
@@ -262,6 +262,13 @@ export const setupAuthListener = (
     } else {
       setUser(null);
       if (userDocUnsubscribe) userDocUnsubscribe();
+
+      const redirectPaths = ["/today", "/goals", "/settings", "/inbox"];
+      if (redirectPaths.includes(window.location.pathname)) {
+        await clearSession().then(() => {
+          window.location.href = "/login";
+        });
+      }
     }
     setLoading(false);
   });
