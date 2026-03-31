@@ -1,1 +1,1 @@
-export const SW_VERSION = '51740896';
+export const SW_VERSION = '6cfb5f5b';

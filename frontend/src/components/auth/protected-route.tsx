@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { verifySession } from "@/lib/firebase/session";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function ProtectedRoute({
@@ -9,15 +10,33 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      logout();
-      router.push("/login");
+    if (loading || user) {
+      return;
     }
-  }, [user, loading, router, logout]);
+
+    let cancelled = false;
+
+    const validateAndRedirect = async () => {
+      const session = await verifySession();
+      if (!cancelled && !session.authenticated) {
+        const loginUrl = pathname
+          ? `/login?redirect=${encodeURIComponent(pathname)}`
+          : "/login";
+        router.replace(loginUrl);
+      }
+    };
+
+    void validateAndRedirect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, router, pathname]);
 
   return <>{children}</>;
 }

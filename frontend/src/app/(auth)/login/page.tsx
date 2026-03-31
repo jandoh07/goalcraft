@@ -30,7 +30,6 @@ const LoginContent = () => {
 
   useEffect(() => {
     if (loading || !user || hasAttemptedSessionRecovery.current) {
-      console.log("Not attempting session recovery:");
       return;
     }
 
