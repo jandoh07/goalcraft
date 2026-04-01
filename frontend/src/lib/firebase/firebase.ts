@@ -2,10 +2,8 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
-  getFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
-  Firestore,
 } from "firebase/firestore";
 import {
   initializeAppCheck,
@@ -45,23 +43,11 @@ if (typeof window !== "undefined") {
 
 export const auth = getAuth(app);
 
-let db: Firestore;
-if (typeof window !== "undefined") {
-  try {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    });
-  } catch (e) {
-    console.error("[Firestore] Failed to initialize with persistence:", e);
-    db = getFirestore(app);
-  }
-} else {
-  db = getFirestore(app);
-}
-
-export { db };
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
 
 export const functions = getFunctions(app);
 

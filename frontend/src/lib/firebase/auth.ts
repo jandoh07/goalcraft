@@ -59,61 +59,6 @@ function toAppUser(
   return appUser;
 }
 
-export const fetchUserData = async (
-  authUser: User,
-  fallbackTheme: string = "system",
-): Promise<AppUser> => {
-  try {
-    const userDoc = await getDoc(doc(db, "users", authUser.uid));
-
-    if (userDoc.exists()) {
-      const firestoreData = userDoc.data();
-
-      return toAppUser(
-        authUser,
-        {
-          name: firestoreData.name || authUser.displayName || undefined,
-          subscription: firestoreData.subscription || "free",
-          createdAt: firestoreData.createdAt?.toDate(),
-          theme: firestoreData.theme || "system",
-          pushNotifications: firestoreData.pushNotifications ?? false,
-          customCategories: firestoreData.customCategories || [],
-          timezone:
-            firestoreData.timezone ||
-            Intl.DateTimeFormat().resolvedOptions().timeZone,
-          notificationTime: firestoreData.notificationTime,
-        },
-        fallbackTheme,
-      );
-    } else {
-      // If no Firestore doc exists, return auth user with defaults
-      return toAppUser(
-        authUser,
-        {
-          subscription: "free",
-          theme: fallbackTheme as "dark" | "light" | "system",
-          pushNotifications: false,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        fallbackTheme,
-      );
-    }
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    // Return auth user with defaults on error
-    return toAppUser(
-      authUser,
-      {
-        subscription: "free",
-        theme: fallbackTheme as "dark" | "light" | "system",
-        pushNotifications: false,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      fallbackTheme,
-    );
-  }
-};
-
 export const signIn = async (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
 };
@@ -181,6 +126,7 @@ export const setupAuthListener = (
   fallbackTheme: string = "system",
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
+  let redirectTimer: ReturnType<typeof setTimeout> | undefined;
 
   const refreshSessionIfNeeded = async (authUser: User) => {
     const idToken = await authUser.getIdToken();
@@ -218,11 +164,11 @@ export const setupAuthListener = (
     if (authUser) {
       try {
         refreshSessionIfNeeded(authUser);
-        const appUser = await fetchUserData(authUser, fallbackTheme);
-        setUser(appUser);
-
         const userDocRef = doc(db, "users", authUser.uid);
+
+        let userDocExists = false;
         userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+          userDocExists = docSnapshot.exists();
           if (docSnapshot.exists()) {
             const firestoreData = docSnapshot.data();
 
@@ -255,20 +201,54 @@ export const setupAuthListener = (
             }
           }
         });
+
+        if (!userDocExists) {
+          const userData = JSON.parse(
+            Cookies.get(USER_DATA_COOKIE_NAME) || "{}",
+          );
+
+          console.log("No user document found, creating with cookie data:", {
+            userId: authUser.uid,
+            cookieData: userData,
+          });
+          setDoc(
+            userDocRef,
+            {
+              name: authUser.displayName,
+              email: authUser.email,
+              modifiedAt: new Date(),
+              subscription: userData.subscription || "free",
+              theme: userData.theme || fallbackTheme,
+              pushNotifications: userData.pushNotifications ?? false,
+              timezone:
+                userData.timezone ||
+                Intl.DateTimeFormat().resolvedOptions().timeZone,
+            },
+            { merge: true },
+          ).catch((error) => {
+            console.error(
+              "Error creating user document on auth state change:",
+              error,
+            );
+          });
+        }
       } catch (error) {
         console.error("Firestore user sync failed:", error);
         setUser(null);
       }
     } else {
+      console.log("User is not authenticated");
       setUser(null);
       if (userDocUnsubscribe) userDocUnsubscribe();
 
-      const redirectPaths = ["/today", "/goals", "/settings", "/inbox"];
-      if (redirectPaths.includes(window.location.pathname)) {
-        await clearSession().then(() => {
-          window.location.href = "/login";
-        });
-      }
+      redirectTimer = setTimeout(() => {
+        const redirectPaths = ["/today", "/goals", "/settings", "/inbox"];
+        if (redirectPaths.includes(window.location.pathname)) {
+          clearSession().then(() => {
+            window.location.href = "/login";
+          });
+        }
+      }, 5000);
     }
     setLoading(false);
   });
@@ -276,5 +256,6 @@ export const setupAuthListener = (
   return () => {
     unsubscribe();
     if (userDocUnsubscribe) userDocUnsubscribe();
+    if (redirectTimer) clearTimeout(redirectTimer);
   };
 };
