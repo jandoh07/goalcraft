@@ -7,13 +7,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { handleEmailSignUp, handleGoogleSignUp } from "@/hooks/use-sign-up";
 import { GoogleButton } from "./google-button";
 import { AuthDivider } from "./auth-divider";
+import { FirebaseError } from "firebase/app";
+import { useRouter } from "next/navigation";
 
 interface SignUpFormProps {
   redirectTo: string;
 }
+
+const getErrorMessage = (error: FirebaseError) => {
+  switch (error.code) {
+    case "auth/email-already-in-use":
+      return "An account with this email already exists.";
+    case "auth/invalid-email":
+      return "Invalid email address.";
+    case "auth/operation-not-allowed":
+      return "Email/password accounts are not enabled.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters.";
+    default:
+      return "An error occurred. Please try again.";
+  }
+};
 
 export const SignUpForm = ({ redirectTo }: SignUpFormProps) => {
   const [email, setEmail] = useState("");
@@ -24,10 +40,68 @@ export const SignUpForm = ({ redirectTo }: SignUpFormProps) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
   const { signUp, signInWithGoogle } = useAuth();
+  const router = useRouter();
 
   const isDisabled = loading || googleLoading;
+
+  const validatePassword = () => {
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleEmailSignUp = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!validatePassword()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await signUp(email, password);
+      router.refresh();
+      router.replace(redirectTo);
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        setError(getErrorMessage(err));
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      await signInWithGoogle();
+      router.refresh();
+      router.replace(redirectTo);
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === "auth/popup-closed-by-user") {
+          setError("Sign-up cancelled.");
+        } else {
+          setError(getErrorMessage(err));
+        }
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -37,21 +111,7 @@ export const SignUpForm = ({ redirectTo }: SignUpFormProps) => {
         </div>
       )}
 
-      <form
-        onSubmit={(e) =>
-          handleEmailSignUp(
-            e,
-            email,
-            password,
-            confirmPassword,
-            setError,
-            setLoading,
-            signUp,
-            redirectTo,
-          )
-        }
-        className="space-y-4"
-      >
+      <form onSubmit={handleEmailSignUp} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
@@ -142,14 +202,7 @@ export const SignUpForm = ({ redirectTo }: SignUpFormProps) => {
       <AuthDivider />
 
       <GoogleButton
-        onClick={() =>
-          handleGoogleSignUp(
-            setError,
-            setGoogleLoading,
-            signInWithGoogle,
-            redirectTo,
-          )
-        }
+        onClick={handleGoogleSignUp}
         loading={googleLoading}
         disabled={isDisabled}
       />

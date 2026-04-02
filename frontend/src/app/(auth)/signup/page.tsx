@@ -7,12 +7,7 @@ import { AuthLayout, SignUpForm } from "@/components/auth";
 
 const SignUpContent = () => {
   const searchParams = useSearchParams();
-
-  // Get redirect URL from query params (set by middleware when redirecting from protected routes)
-  const redirectTo = searchParams.get("redirect") || "/goals";
-
-  // Note: Auth state checking is handled by edge middleware in proxy.ts
-  // If user reaches this page, they are definitely not authenticated
+  const redirectTo = searchParams.get("redirect") || "/today";
 
   return (
     <AuthLayout

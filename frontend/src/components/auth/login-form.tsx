@@ -7,13 +7,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { handleEmailLogin, handleGoogleLogin } from "@/hooks/use-login";
 import { GoogleButton } from "./google-button";
 import { AuthDivider } from "./auth-divider";
+import { FirebaseError } from "firebase/app";
 
 interface LoginFormProps {
   redirectTo: string;
 }
+
+const getErrorMessage = (error: FirebaseError) => {
+  switch (error.code) {
+    case "auth/invalid-email":
+      return "Invalid email address.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    case "auth/user-not-found":
+      return "No account found with this email.";
+    case "auth/wrong-password":
+      return "Incorrect password.";
+    case "auth/invalid-credential":
+      return "Invalid email or password.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Please try again later.";
+    default:
+      return "An error occurred. Please try again.";
+  }
+};
 
 export const LoginForm = ({ redirectTo }: LoginFormProps) => {
   const [email, setEmail] = useState("");
@@ -26,6 +45,45 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
 
   const isDisabled = loading || googleLoading;
 
+  const handleEmailLogin = async (e: React.SubmitEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      await signIn(email, password);
+      window.location.replace(redirectTo);
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        setError(getErrorMessage(err));
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      await signInWithGoogle();
+      window.location.replace(redirectTo);
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === "auth/popup-closed-by-user") {
+          setError("Sign-in cancelled.");
+        } else {
+          setError(getErrorMessage(err));
+        }
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {error && (
@@ -34,20 +92,7 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
         </div>
       )}
 
-      <form
-        onSubmit={(e) =>
-          handleEmailLogin(
-            e,
-            email,
-            password,
-            setError,
-            setLoading,
-            signIn,
-            redirectTo,
-          )
-        }
-        className="space-y-4"
-      >
+      <form onSubmit={handleEmailLogin} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
@@ -106,14 +151,7 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
       <AuthDivider />
 
       <GoogleButton
-        onClick={() =>
-          handleGoogleLogin(
-            setError,
-            setGoogleLoading,
-            signInWithGoogle,
-            redirectTo,
-          )
-        }
+        onClick={handleGoogleLogin}
         loading={googleLoading}
         disabled={isDisabled}
       />
