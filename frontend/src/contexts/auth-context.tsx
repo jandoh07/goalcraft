@@ -75,7 +75,7 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
     return null;
   });
 
-  const [loading, setLoading] = useState(!initialUser);
+  const [loading, setLoading] = useState(true);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
