@@ -1,3 +1,5 @@
+"use client";
+
 import { useAuth } from "@/contexts/auth-context";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
