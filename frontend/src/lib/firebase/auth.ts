@@ -11,7 +11,7 @@ import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
 import { USER_DATA_COOKIE_NAME } from "./cookies";
-import { clearSession, createSession, updateUserDataCookie } from "./session";
+import { createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";
 
 function getCookieTheme(): string | null {
@@ -51,7 +51,6 @@ function toAppUser(
   appUser.theme =
     options.theme ?? (fallbackTheme as "dark" | "light" | "system");
   appUser.pushNotifications = options.pushNotifications ?? false;
-  appUser.customCategories = options.customCategories ?? [];
   appUser.timezone =
     options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   appUser.notificationTime = options.notificationTime;
@@ -126,7 +125,6 @@ export const setupAuthListener = (
   fallbackTheme: string = "system",
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
-  let redirectTimer: ReturnType<typeof setTimeout> | undefined;
 
   const refreshSessionIfNeeded = async (authUser: User) => {
     const idToken = await authUser.getIdToken();
@@ -166,9 +164,7 @@ export const setupAuthListener = (
         refreshSessionIfNeeded(authUser);
         const userDocRef = doc(db, "users", authUser.uid);
 
-        let userDocExists = false;
         userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-          userDocExists = docSnapshot.exists();
           if (docSnapshot.exists()) {
             const firestoreData = docSnapshot.data();
 
@@ -199,63 +195,28 @@ export const setupAuthListener = (
                 void updateUserDataCookie({ theme: firestoreData.theme });
               }
             }
+            setLoading(false);
+          } else {
+            console.log("No user document found");
+            setUser(toAppUser(authUser, {}, fallbackTheme));
+            setLoading(false);
           }
         });
-
-        if (!userDocExists) {
-          const userData = JSON.parse(
-            Cookies.get(USER_DATA_COOKIE_NAME) || "{}",
-          );
-
-          console.log("No user document found, creating with cookie data:", {
-            userId: authUser.uid,
-            cookieData: userData,
-          });
-          setDoc(
-            userDocRef,
-            {
-              name: authUser.displayName,
-              email: authUser.email,
-              modifiedAt: new Date(),
-              subscription: userData.subscription || "free",
-              theme: userData.theme || fallbackTheme,
-              pushNotifications: userData.pushNotifications ?? false,
-              timezone:
-                userData.timezone ||
-                Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            { merge: true },
-          ).catch((error) => {
-            console.error(
-              "Error creating user document on auth state change:",
-              error,
-            );
-          });
-        }
       } catch (error) {
         console.error("Firestore user sync failed:", error);
         setUser(null);
+        setLoading(false);
       }
     } else {
       console.log("User is not authenticated");
       setUser(null);
       if (userDocUnsubscribe) userDocUnsubscribe();
-
-      redirectTimer = setTimeout(() => {
-        const redirectPaths = ["/today", "/goals", "/settings", "/inbox"];
-        if (redirectPaths.includes(window.location.pathname)) {
-          clearSession().then(() => {
-            window.location.href = "/login";
-          });
-        }
-      }, 5000);
+      setLoading(false);
     }
-    setLoading(false);
   });
 
   return () => {
     unsubscribe();
     if (userDocUnsubscribe) userDocUnsubscribe();
-    if (redirectTimer) clearTimeout(redirectTimer);
   };
 };

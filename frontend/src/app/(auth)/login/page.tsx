@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AuthLayout, LoginForm } from "@/components/auth";
 import { useAuth } from "@/contexts/auth-context";
@@ -27,6 +27,7 @@ const LoginContent = () => {
   const { loading, user } = useAuth();
   const [sessionRecoveryFailed, setSessionRecoveryFailed] = useState(false);
   const hasAttemptedSessionRecovery = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (loading || !user || hasAttemptedSessionRecovery.current) {
@@ -47,7 +48,8 @@ const LoginContent = () => {
           return;
         }
 
-        window.location.replace(redirectTo);
+        router.refresh();
+        router.replace(redirectTo);
       } catch (error) {
         console.error("Failed to recover session cookie", error);
         setSessionRecoveryFailed(true);
@@ -56,7 +58,7 @@ const LoginContent = () => {
     };
 
     void createSessionCookie();
-  }, [loading, user, redirectTo]);
+  }, [loading, user, redirectTo, router]);
 
   if (loading || (user && !sessionRecoveryFailed)) {
     return (
