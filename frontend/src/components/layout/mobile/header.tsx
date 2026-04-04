@@ -29,7 +29,7 @@ const MobileHeader = ({ title }: MobileHeaderProps) => {
           </button>
         </div>
       </div>
-      <div className="w-full h-10"></div>
+      <div className="w-full h-15"></div>
     </div>
   );
 };
