@@ -1,12 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearSession } from "@/lib/firebase/session";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      const redirectToLogin = async () => {
+        await clearSession();
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      };
+
+      void redirectToLogin();
+    }
+  }, [loading, user, pathname, router]);
 
   if (loading && !user) {
     return (
@@ -17,8 +31,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!loading && !user) {
-    const path = window.location.pathname;
-    router.replace(`/login?redirect=${encodeURIComponent(path)}`);
     return null;
   }
 

@@ -11,7 +11,7 @@ import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
 import { USER_DATA_COOKIE_NAME } from "./cookies";
-import { createSession, updateUserDataCookie } from "./session";
+import { clearSession, createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";
 
 function getCookieTheme(): string | null {
@@ -201,7 +201,24 @@ export const setupAuthListener = (
             }
             setLoading(false);
           } else {
-            console.log("No user document found");
+            console.log("No user document found, creating default profile");
+
+            void setDoc(
+              userDocRef,
+              {
+                name: authUser.displayName,
+                email: authUser.email,
+                createdAt: new Date(),
+                subscription: "free",
+                theme: fallbackTheme,
+                pushNotifications: false,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              },
+              { merge: true },
+            ).catch((error) => {
+              console.error("Failed to create missing user document:", error);
+            });
+
             setUser(toAppUser(authUser, {}, fallbackTheme));
             setLoading(false);
           }
@@ -214,6 +231,7 @@ export const setupAuthListener = (
     } else {
       console.log("User is not authenticated");
       setUser(null);
+      void clearSession();
       if (userDocUnsubscribe) userDocUnsubscribe();
       setLoading(false);
     }
