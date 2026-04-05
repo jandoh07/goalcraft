@@ -43,17 +43,21 @@ function toAppUser(
   },
   fallbackTheme: string,
 ): AppUser {
-  const appUser = authUser as AppUser;
-
-  appUser.name = options.name ?? authUser.displayName ?? undefined;
-  appUser.subscription = options.subscription ?? "free";
-  appUser.createdAt = options.createdAt;
-  appUser.theme =
-    options.theme ?? (fallbackTheme as "dark" | "light" | "system");
-  appUser.pushNotifications = options.pushNotifications ?? false;
-  appUser.timezone =
-    options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  appUser.notificationTime = options.notificationTime;
+  const appUser = Object.assign(
+    Object.create(Object.getPrototypeOf(authUser)),
+    authUser,
+    {
+      name: options.name ?? authUser.displayName ?? undefined,
+      subscription: options.subscription ?? "free",
+      createdAt: options.createdAt,
+      theme: options.theme ?? (fallbackTheme as "dark" | "light" | "system"),
+      pushNotifications: options.pushNotifications ?? false,
+      customCategories: options.customCategories ?? [],
+      timezone:
+        options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      notificationTime: options.notificationTime,
+    },
+  ) as AppUser;
 
   return appUser;
 }
