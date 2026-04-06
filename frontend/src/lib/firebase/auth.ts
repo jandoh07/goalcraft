@@ -14,6 +14,14 @@ import { USER_DATA_COOKIE_NAME } from "./cookies";
 import { clearSession, createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";
 
+function isBrowserOffline(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return navigator.onLine === false;
+}
+
 function getCookieTheme(): string | null {
   const rawCookie = Cookies.get(USER_DATA_COOKIE_NAME);
 
@@ -209,9 +217,7 @@ export const setupAuthListener = (
                 name: authUser.displayName,
                 email: authUser.email,
                 createdAt: new Date(),
-                subscription: "free",
                 theme: fallbackTheme,
-                pushNotifications: false,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               },
               { merge: true },
@@ -229,6 +235,12 @@ export const setupAuthListener = (
         setLoading(false);
       }
     } else {
+      if (isBrowserOffline()) {
+        console.log("Auth state is null while offline, skipping logout flow");
+        setLoading(false);
+        return;
+      }
+
       console.log("User is not authenticated");
       setUser(null);
       void clearSession();
