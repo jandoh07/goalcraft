@@ -1,21 +1,68 @@
+"use client";
+
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
 import { Progress } from "../ui/progress";
 import { Activity, EllipsisVertical } from "lucide-react";
 
-const GoalCard = () => {
+interface GoalCardProps {
+  goalId: string;
+  title: string;
+}
+
+const GoalCard = ({ goalId, title }: GoalCardProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleGoalClick = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("mode", "edit");
+    params.set("goalId", goalId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   return (
-    <Card className="gap-2 py-3">
+    <Card
+      className="gap-2 py-3 cursor-pointer"
+      onClick={(event) => {
+        event.stopPropagation();
+        handleGoalClick();
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          handleGoalClick();
+        }
+      }}
+    >
       <CardHeader className="px-3 flex items-center justify-between">
-        <p className="text-[0.95rem] font-semibold">
-          Lorem ipsum dolor sit amet.
-        </p>
-        <div className="flex items-center">
-          <Activity size={15} className="cursor-pointer hover:text-primary" />
-          <p className="opacity-10 pl-1 -mt-1 cursor-default">|</p>
-          <EllipsisVertical
-            size={15}
+        <p className="text-[0.95rem] font-semibold">{title}</p>
+        <div className="hidden md:flex items-center">
+          <button
+            type="button"
             className="cursor-pointer hover:text-primary"
-          />
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            aria-label="Goal activity"
+          >
+            <Activity size={15} />
+          </button>
+          <p className="opacity-10 pl-1 -mt-1 cursor-default">|</p>
+          <button
+            type="button"
+            className="cursor-pointer hover:text-primary"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            aria-label="Goal options"
+          >
+            <EllipsisVertical size={15} />
+          </button>
         </div>
       </CardHeader>
       <CardContent className="px-3">
