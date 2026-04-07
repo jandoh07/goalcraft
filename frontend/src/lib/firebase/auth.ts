@@ -137,6 +137,8 @@ export const setupAuthListener = (
   fallbackTheme: string = "system",
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
+  let pendingLogoutTimeout: ReturnType<typeof setTimeout> | undefined;
+  let lastKnownAuthenticatedUid: string | null = null;
 
   const refreshSessionIfNeeded = async (authUser: User) => {
     const idToken = await authUser.getIdToken();
@@ -172,6 +174,13 @@ export const setupAuthListener = (
 
   const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
     if (authUser) {
+      if (pendingLogoutTimeout) {
+        clearTimeout(pendingLogoutTimeout);
+        pendingLogoutTimeout = undefined;
+      }
+
+      lastKnownAuthenticatedUid = authUser.uid;
+
       try {
         refreshSessionIfNeeded(authUser);
         const userDocRef = doc(db, "users", authUser.uid);
@@ -241,6 +250,33 @@ export const setupAuthListener = (
         return;
       }
 
+      if (lastKnownAuthenticatedUid) {
+        if (pendingLogoutTimeout) {
+          clearTimeout(pendingLogoutTimeout);
+        }
+
+        pendingLogoutTimeout = setTimeout(() => {
+          pendingLogoutTimeout = undefined;
+
+          if (isBrowserOffline()) {
+            return;
+          }
+
+          if (auth.currentUser) {
+            return;
+          }
+
+          console.log("User is not authenticated after recovery window");
+          lastKnownAuthenticatedUid = null;
+          setUser(null);
+          void clearSession();
+          if (userDocUnsubscribe) userDocUnsubscribe();
+          setLoading(false);
+        }, 8000);
+
+        return;
+      }
+
       console.log("User is not authenticated");
       setUser(null);
       void clearSession();
@@ -250,6 +286,10 @@ export const setupAuthListener = (
   });
 
   return () => {
+    if (pendingLogoutTimeout) {
+      clearTimeout(pendingLogoutTimeout);
+    }
+
     unsubscribe();
     if (userDocUnsubscribe) userDocUnsubscribe();
   };
