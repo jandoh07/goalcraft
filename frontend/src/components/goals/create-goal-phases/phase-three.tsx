@@ -29,6 +29,7 @@ const weekdays: Array<{ key: Weekday; label: string }> = [
 
 const createNonNegotiable = () => ({
   id: `nn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  goalId: "",
   title: "",
   frequency: "daily" as const,
   customDays: [] as Weekday[],
@@ -41,7 +42,7 @@ export const CreateGoalPhaseThree = ({
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [pendingItem, setPendingItem] = useState<Omit<
     NonNegotiable,
-    "id"
+    "id" | "goalId"
   > | null>(null);
 
   const updateItem = (id: string, updates: Partial<NonNegotiable>) => {

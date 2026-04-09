@@ -88,7 +88,7 @@ const GoalModeDialog = () => {
       return (
         <CreateGoalFlow
           isOpen={mode !== null}
-          onSubmit={() => handleOpenChange(false)}
+          closeDialog={() => handleOpenChange(false)}
         />
       );
     }

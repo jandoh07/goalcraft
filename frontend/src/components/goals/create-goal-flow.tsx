@@ -8,13 +8,17 @@ import { CreateGoalPhaseTwo } from "@/components/goals/create-goal-phases/phase-
 import { CreateGoalPhaseThree } from "@/components/goals/create-goal-phases/phase-three";
 import { CreateGoalPhaseFour } from "@/components/goals/create-goal-phases/phase-four";
 import { GoalData } from "@/types/goal";
+import useMutation from "@/hooks/use-mutation";
+import { createGoal } from "@/lib/firebase/goals";
+import { useAuth } from "@/contexts/auth-context";
 
 interface CreateGoalFlowProps {
   isOpen: boolean;
-  onSubmit: () => void;
+  closeDialog: () => void;
 }
 
-const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
+const CreateGoalFlow = ({ isOpen, closeDialog }: CreateGoalFlowProps) => {
+  const { user } = useAuth();
   const [phase, setPhase] = useState(1);
   const [goalData, setGoalData] = useState<GoalData>({
     title: "",
@@ -60,6 +64,30 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
     goalData?.milestones.length > 0 &&
     totalMilestoneWeight === 100 &&
     !hasInvalidMilestone;
+
+  const { mutate: createGoalMutate, loading: isCreatingGoal } = useMutation(
+    async (payload: GoalData) => {
+      if (!user?.uid) {
+        throw new Error("You must be logged in to create a goal.");
+      }
+
+      await createGoal(user.uid, payload);
+    },
+    {
+      onSuccess: () => {
+        closeDialog();
+      },
+      onError: "Failed to create goal.",
+    },
+  );
+
+  const handleSubmit = async () => {
+    if (!canSubmit) {
+      return;
+    }
+
+    await createGoalMutate(goalData);
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -148,11 +176,11 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
           ) : (
             <Button
               type="button"
-              onClick={onSubmit}
+              onClick={handleSubmit}
               className="w-30"
-              disabled={!canSubmit}
+              disabled={!canSubmit || isCreatingGoal}
             >
-              Create goal
+              {isCreatingGoal ? "Creating..." : "Create goal"}
             </Button>
           )}
         </div>

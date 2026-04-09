@@ -1,8 +1,8 @@
 import MobileHeader from "@/components/layout/mobile/header";
-import ObjectiveCard from "@/components/objectives/objective-card";
 import GoalModeDialog from "@/components/goals/goal-mode-dialog";
 import OpenGoalDialogButton from "@/components/goals/open-goal-dialog-button";
 import { GoalProvider } from "@/contexts/goal-context";
+import GoalCard from "@/components/goals/goal-card";
 
 const Goals = () => {
   return (
@@ -12,7 +12,7 @@ const Goals = () => {
           <MobileHeader title="Goals" />
 
           <div>
-            <ObjectiveCard />
+            <GoalCard goalId="goal-1" title="Run 10km without stopping" />
           </div>
         </div>
         <OpenGoalDialogButton />

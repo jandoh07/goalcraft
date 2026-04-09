@@ -14,6 +14,7 @@ export type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 export type NonNegotiable = {
   id: string;
   title: string;
+  goalId: string;
   frequency: RecurrenceFrequency;
   customDays: Weekday[];
 };
@@ -22,6 +23,7 @@ export type Milestone = {
   id: string;
   title: string;
   weight: string;
+  status: "in-progress" | "completed";
 };
 
 export interface GoalData {

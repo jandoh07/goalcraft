@@ -19,7 +19,7 @@ export const CreateGoalPhaseFour = ({
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [pendingMilestone, setPendingMilestone] = useState<
     Omit<Milestone, "id">
-  >({ title: "", weight: "" });
+  >({ title: "", weight: "", status: "in-progress" });
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
 
   const addMilestone = () => {
@@ -28,7 +28,7 @@ export const CreateGoalPhaseFour = ({
     }
 
     setIsAddingMilestone(true);
-    setPendingMilestone({ title: "", weight: "" });
+    setPendingMilestone({ title: "", weight: "", status: "in-progress" });
   };
 
   const confirmAddMilestone = () => {
@@ -45,12 +45,12 @@ export const CreateGoalPhaseFour = ({
     ]);
 
     setIsAddingMilestone(false);
-    setPendingMilestone({ title: "", weight: "" });
+    setPendingMilestone({ title: "", weight: "", status: "in-progress" });
   };
 
   const cancelAddMilestone = () => {
     setIsAddingMilestone(false);
-    setPendingMilestone({ title: "", weight: "" });
+    setPendingMilestone({ title: "", weight: "", status: "in-progress" });
   };
 
   const toggleEditing = (id: string) => {
