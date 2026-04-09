@@ -130,15 +130,25 @@ export const firebaseLogout = async () => {
   return signOut(auth);
 };
 
+let globalLastKnownUid: string | null = null;
+
+export const resetGlobalAuthTracker = () => {
+  globalLastKnownUid = null;
+};
+
 export const setupAuthListener = (
   setUser: (user: AppUser | null) => void,
   setTheme: (theme: string) => void,
   setLoading: (loading: boolean) => void,
   fallbackTheme: string = "system",
+  initialServerUid?: string,
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
   let pendingLogoutTimeout: ReturnType<typeof setTimeout> | undefined;
-  let lastKnownAuthenticatedUid: string | null = null;
+
+  if (initialServerUid && !globalLastKnownUid) {
+    globalLastKnownUid = initialServerUid;
+  }
 
   const refreshSessionIfNeeded = async (authUser: User) => {
     const idToken = await authUser.getIdToken();
@@ -179,7 +189,7 @@ export const setupAuthListener = (
         pendingLogoutTimeout = undefined;
       }
 
-      lastKnownAuthenticatedUid = authUser.uid;
+      globalLastKnownUid = authUser.uid;
 
       try {
         refreshSessionIfNeeded(authUser);
@@ -188,6 +198,7 @@ export const setupAuthListener = (
         userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
           if (docSnapshot.exists()) {
             const firestoreData = docSnapshot.data();
+            console.log("User document exists");
 
             const updatedUser = toAppUser(
               authUser,
@@ -218,7 +229,16 @@ export const setupAuthListener = (
             }
             setLoading(false);
           } else {
-            console.log("No user document found, creating default profile");
+            if (docSnapshot.metadata.fromCache) {
+              console.log(
+                "Ignoring cached missing user document, waiting for server",
+              );
+              return;
+            }
+
+            console.log(
+              "No user document found on server, creating default profile",
+            );
 
             void setDoc(
               userDocRef,
@@ -250,7 +270,7 @@ export const setupAuthListener = (
         return;
       }
 
-      if (lastKnownAuthenticatedUid) {
+      if (globalLastKnownUid) {
         if (pendingLogoutTimeout) {
           clearTimeout(pendingLogoutTimeout);
         }
@@ -267,12 +287,12 @@ export const setupAuthListener = (
           }
 
           console.log("User is not authenticated after recovery window");
-          lastKnownAuthenticatedUid = null;
+          globalLastKnownUid = null;
           setUser(null);
           void clearSession();
           if (userDocUnsubscribe) userDocUnsubscribe();
           setLoading(false);
-        }, 8000);
+        }, 1500);
 
         return;
       }

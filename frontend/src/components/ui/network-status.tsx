@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WifiOff, Wifi, RefreshCw } from "lucide-react";
+import { WifiOff, Wifi, RefreshCw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { checkStorageHealth } from "@/lib/firebase/firebase";
 
-/**
- * Network status indicator component
- * Shows when app is offline and syncing when back online
- */
 export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
+  const [isStorageCorrupted, setIsStorageCorrupted] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     setIsOnline(navigator.onLine);
+    checkStorageHealth().then((isHealthy) => setIsStorageCorrupted(!isHealthy));
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -58,7 +57,7 @@ export default function NetworkStatus() {
     setIsExpanded(true);
     const timer = setTimeout(() => {
       setIsExpanded(false);
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [showIndicator, isOnline]);
@@ -67,25 +66,34 @@ export default function NetworkStatus() {
 
   const getStyles = () => {
     if (!isOnline) {
+      if (isStorageCorrupted) {
+        return {
+          bg: "bg-destructive text-destructive-foreground",
+          hover: "hover:bg-destructive/90",
+        };
+      }
       return {
-        bg: "bg-yellow-500",
+        bg: "bg-yellow-500 text-white",
         hover: "hover:bg-yellow-600",
       };
     }
     if (isSyncing) {
       return {
-        bg: "bg-green-500",
+        bg: "bg-green-500 text-white",
         hover: "hover:bg-green-600",
       };
     }
     return {
-      bg: "bg-green-500",
+      bg: "bg-green-500 text-white",
       hover: "hover:bg-green-600",
     };
   };
 
   const getIcon = () => {
     if (!isOnline) {
+      if (isStorageCorrupted) {
+        return <AlertTriangle className="h-4 w-4 shrink-0" />;
+      }
       return <WifiOff className="h-4 w-4 shrink-0" />;
     }
     if (isSyncing) {
@@ -96,6 +104,9 @@ export default function NetworkStatus() {
 
   const getMessage = () => {
     if (!isOnline) {
+      if (isStorageCorrupted) {
+        return "Storage error: Offline changes may be lost";
+      }
       return "Changes won't sync";
     }
     if (isSyncing) {
@@ -108,10 +119,10 @@ export default function NetworkStatus() {
 
   return (
     <motion.button
-      className={`fixed top-3 md:top-4 right-10 md:right-4 z-50 ${styles.bg} text-white rounded-full shadow-lg ${styles.hover} flex items-center gap-2 overflow-hidden transition-colors`}
+      className={`fixed top-3 md:top-4 right-10 md:right-4 z-50 ${styles.bg} rounded-full shadow-lg ${styles.hover} flex items-center gap-2 overflow-hidden transition-colors`}
       animate={{
-        paddingLeft: isExpanded ? "1rem" : "0.5rem",
-        paddingRight: isExpanded ? "1rem" : "0.5rem",
+        paddingLeft: isExpanded && !isSyncing ? "1rem" : "0.5rem",
+        paddingRight: isExpanded && !isSyncing ? "1rem" : "0.5rem",
         paddingTop: "0.5rem",
         paddingBottom: "0.5rem",
       }}
@@ -121,17 +132,17 @@ export default function NetworkStatus() {
     >
       {getIcon()}
       <AnimatePresence>
-        {isExpanded && (
+        {(isExpanded && !isSyncing) || (isStorageCorrupted && !isOnline) ? (
           <motion.span
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: "auto", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="text-xs whitespace-nowrap"
+            className="text-xs font-medium whitespace-nowrap"
           >
             {getMessage()}
           </motion.span>
-        )}
+        ) : null}
       </AnimatePresence>
       <span className="sr-only">{getMessage()}</span>
     </motion.button>

@@ -62,11 +62,39 @@ const createAuth = () => {
 
 export const auth = createAuth();
 
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }),
-});
+export const checkStorageHealth = (): Promise<boolean> => {
+  if (typeof window === "undefined") return Promise.resolve(true);
+  return new Promise((resolve) => {
+    try {
+      const req = window.indexedDB.open("health-check", 1);
+      req.onsuccess = () => {
+        req.result.close();
+        resolve(true);
+      };
+      req.onerror = () => resolve(false);
+    } catch (e) {
+      resolve(false);
+    }
+  });
+};
+
+const initDb = () => {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch (error) {
+    console.error(
+      "Failed to initialize Firestore with persistence, falling back to memory:",
+      error,
+    );
+    return initializeFirestore(app, {});
+  }
+};
+
+export const db = initDb();
 
 export const functions = getFunctions(app);
 
