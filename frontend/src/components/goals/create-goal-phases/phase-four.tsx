@@ -1,24 +1,24 @@
-import { useState } from "react";
-import { Check, PenLine, Trash2 } from "lucide-react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import { Check, CirclePlus, PenLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { GoalDraft, GoalDraftSetter } from "../create-goal-flow-types";
 import { CreateGoalPhaseHeader } from "./phase-header";
+import { Milestone } from "@/types/goal";
 
 interface CreateGoalPhaseFourProps {
-  draft: GoalDraft;
-  setDraft: GoalDraftSetter;
+  milestones: Milestone[];
+  setMilestones: Dispatch<SetStateAction<Milestone[]>>;
   totalWeight: number;
 }
 
 export const CreateGoalPhaseFour = ({
-  draft,
-  setDraft,
+  milestones,
+  setMilestones,
   totalWeight,
 }: CreateGoalPhaseFourProps) => {
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [pendingMilestone, setPendingMilestone] = useState<
-    Omit<GoalDraft["milestones"][number], "id">
+    Omit<Milestone, "id">
   >({ title: "", weight: "" });
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
 
@@ -36,16 +36,13 @@ export const CreateGoalPhaseFour = ({
       return;
     }
 
-    setDraft((prev) => ({
+    setMilestones((prev) => [
       ...prev,
-      milestones: [
-        ...prev.milestones,
-        {
-          id: `ms-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          ...pendingMilestone,
-        },
-      ],
-    }));
+      {
+        id: `ms-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        ...pendingMilestone,
+      },
+    ]);
 
     setIsAddingMilestone(false);
     setPendingMilestone({ title: "", weight: "" });
@@ -63,22 +60,15 @@ export const CreateGoalPhaseFour = ({
   };
 
   const removeMilestone = (id: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      milestones: prev.milestones.filter((milestone) => milestone.id !== id),
-    }));
+    setMilestones((prev) => prev.filter((milestone) => milestone.id !== id));
   };
 
-  const updateMilestone = (
-    id: string,
-    updates: Partial<GoalDraft["milestones"][number]>,
-  ) => {
-    setDraft((prev) => ({
-      ...prev,
-      milestones: prev.milestones.map((milestone) =>
+  const updateMilestone = (id: string, updates: Partial<Milestone>) => {
+    setMilestones((prev) =>
+      prev.map((milestone) =>
         milestone.id === id ? { ...milestone, ...updates } : milestone,
       ),
-    }));
+    );
   };
 
   const isBalanced = totalWeight === 100;
@@ -91,7 +81,7 @@ export const CreateGoalPhaseFour = ({
       />
 
       <div className="space-y-3">
-        {draft.milestones.map((milestone, index) => (
+        {milestones.map((milestone, index) => (
           <div
             key={milestone.id}
             className="space-y-3 rounded-lg border border-border/70 p-3"
@@ -124,7 +114,7 @@ export const CreateGoalPhaseFour = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeMilestone(milestone.id)}
-                  disabled={draft.milestones.length === 1}
+                  disabled={milestones.length === 1}
                   aria-label="Delete milestone"
                   className="text-destructive hover:text-destructive"
                 >
@@ -207,7 +197,13 @@ export const CreateGoalPhaseFour = ({
             </div>
           </div>
         ) : editingIds.length === 0 ? (
-          <Button type="button" variant="outline" onClick={addMilestone}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addMilestone}
+            className="w-full border border-dashed border-border h-10"
+          >
+            <CirclePlus />
             Add milestone
           </Button>
         ) : null}

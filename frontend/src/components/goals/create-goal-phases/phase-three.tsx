@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, PenLine, Trash2 } from "lucide-react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import { Check, CirclePlus, PenLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,17 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  GoalDraft,
-  GoalDraftSetter,
-  RecurrenceFrequency,
-  Weekday,
-} from "../create-goal-flow-types";
 import { CreateGoalPhaseHeader } from "./phase-header";
+import { NonNegotiable, RecurrenceFrequency, Weekday } from "@/types/goal";
 
 interface CreateGoalPhaseThreeProps {
-  draft: GoalDraft;
-  setDraft: GoalDraftSetter;
+  nonNegotiables: NonNegotiable[];
+  setNonNegotiables: Dispatch<SetStateAction<NonNegotiable[]>>;
 }
 
 const weekdays: Array<{ key: Weekday; label: string }> = [
@@ -40,32 +35,23 @@ const createNonNegotiable = () => ({
 });
 
 export const CreateGoalPhaseThree = ({
-  draft,
-  setDraft,
+  nonNegotiables,
+  setNonNegotiables,
 }: CreateGoalPhaseThreeProps) => {
   const [editingIds, setEditingIds] = useState<string[]>([]);
   const [pendingItem, setPendingItem] = useState<Omit<
-    GoalDraft["nonNegotiables"][number],
+    NonNegotiable,
     "id"
   > | null>(null);
 
-  const updateItem = (
-    id: string,
-    updates: Partial<GoalDraft["nonNegotiables"][number]>,
-  ) => {
-    setDraft((prev) => ({
-      ...prev,
-      nonNegotiables: prev.nonNegotiables.map((item) =>
-        item.id === id ? { ...item, ...updates } : item,
-      ),
-    }));
+  const updateItem = (id: string, updates: Partial<NonNegotiable>) => {
+    setNonNegotiables((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
+    );
   };
 
   const removeItem = (id: string) => {
-    setDraft((prev) => ({
-      ...prev,
-      nonNegotiables: prev.nonNegotiables.filter((item) => item.id !== id),
-    }));
+    setNonNegotiables((prev) => prev.filter((item) => item.id !== id));
   };
 
   const addItem = () => {
@@ -89,16 +75,13 @@ export const CreateGoalPhaseThree = ({
       return;
     }
 
-    setDraft((prev) => ({
+    setNonNegotiables((prev) => [
       ...prev,
-      nonNegotiables: [
-        ...prev.nonNegotiables,
-        {
-          ...createNonNegotiable(),
-          ...pendingItem,
-        },
-      ],
-    }));
+      {
+        ...createNonNegotiable(),
+        ...pendingItem,
+      },
+    ]);
 
     setPendingItem(null);
   };
@@ -109,7 +92,7 @@ export const CreateGoalPhaseThree = ({
     );
   };
 
-  const getFrequencyLabel = (item: GoalDraft["nonNegotiables"][number]) => {
+  const getFrequencyLabel = (item: NonNegotiable) => {
     if (item.frequency !== "custom") {
       return item.frequency[0].toUpperCase() + item.frequency.slice(1);
     }
@@ -127,9 +110,8 @@ export const CreateGoalPhaseThree = ({
   };
 
   const toggleCustomDay = (id: string, day: Weekday) => {
-    setDraft((prev) => ({
-      ...prev,
-      nonNegotiables: prev.nonNegotiables.map((item) => {
+    setNonNegotiables((prev) =>
+      prev.map((item) => {
         if (item.id !== id) {
           return item;
         }
@@ -142,7 +124,7 @@ export const CreateGoalPhaseThree = ({
             : [...item.customDays, day],
         };
       }),
-    }));
+    );
   };
 
   const togglePendingCustomDay = (day: Weekday) => {
@@ -169,7 +151,7 @@ export const CreateGoalPhaseThree = ({
       />
 
       <div className="space-y-3">
-        {draft.nonNegotiables.map((item, index) => (
+        {nonNegotiables.map((item, index) => (
           <div
             key={item.id}
             className="space-y-3 rounded-lg border border-border/70 p-3"
@@ -202,7 +184,7 @@ export const CreateGoalPhaseThree = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeItem(item.id)}
-                  disabled={draft.nonNegotiables.length === 1}
+                  disabled={nonNegotiables.length === 1}
                   aria-label="Delete non-negotiable"
                   className="text-destructive hover:text-destructive"
                 >
@@ -344,7 +326,13 @@ export const CreateGoalPhaseThree = ({
             </div>
           </div>
         ) : editingIds.length === 0 ? (
-          <Button type="button" variant="outline" onClick={addItem}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addItem}
+            className="w-full border border-dashed border-border h-10"
+          >
+            <CirclePlus />
             Add non-negotiable
           </Button>
         ) : null}

@@ -3,39 +3,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { GoalDraft } from "@/components/goals/create-goal-flow-types";
 import { CreateGoalPhaseOne } from "@/components/goals/create-goal-phases/phase-one";
 import { CreateGoalPhaseTwo } from "@/components/goals/create-goal-phases/phase-two";
 import { CreateGoalPhaseThree } from "@/components/goals/create-goal-phases/phase-three";
 import { CreateGoalPhaseFour } from "@/components/goals/create-goal-phases/phase-four";
+import { GoalData } from "@/types/goal";
 
 interface CreateGoalFlowProps {
   isOpen: boolean;
   onSubmit: () => void;
 }
 
-const createInitialDraft = (): GoalDraft => ({
-  title: "Run my first 10k",
-  durationValue: "12",
-  durationUnit: "weeks",
-  why: "I want to build discipline, improve my health, and prove I can finish hard things.",
-  nonNegotiables: [
-    {
-      id: "nn-1",
-      title: "Run training session",
-      frequency: "weekly",
-      customDays: [],
-    },
-  ],
-  milestones: [
-    { id: "ms-1", title: "Build consistency", weight: "25" },
-    { id: "ms-2", title: "Reach distance target", weight: "75" },
-  ],
-});
-
 const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
   const [phase, setPhase] = useState(1);
-  const [draft, setDraft] = useState<GoalDraft>(createInitialDraft);
+  const [goalData, setGoalData] = useState<GoalData>({
+    title: "",
+    dueDate: "",
+    why: "",
+    milestones: [],
+    nonNegotiables: [],
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,7 +30,6 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
     }
 
     setPhase(1);
-    setDraft(createInitialDraft());
   }, [isOpen]);
 
   const progressValue = useMemo(() => (phase / 4) * 100, [phase]);
@@ -53,14 +39,14 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
 
   const totalMilestoneWeight = useMemo(
     () =>
-      draft.milestones.reduce((total, milestone) => {
+      goalData?.milestones.reduce((total, milestone) => {
         const parsed = Number(milestone.weight);
         return Number.isFinite(parsed) ? total + parsed : total;
       }, 0),
-    [draft.milestones],
+    [goalData?.milestones],
   );
 
-  const hasInvalidMilestone = draft.milestones.some((milestone) => {
+  const hasInvalidMilestone = goalData?.milestones.some((milestone) => {
     const parsed = Number(milestone.weight);
     return (
       milestone.title.trim().length === 0 ||
@@ -70,7 +56,8 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
   });
 
   const canSubmit =
-    draft.milestones.length > 0 &&
+    goalData &&
+    goalData?.milestones.length > 0 &&
     totalMilestoneWeight === 100 &&
     !hasInvalidMilestone;
 
@@ -85,21 +72,50 @@ const CreateGoalFlow = ({ isOpen, onSubmit }: CreateGoalFlowProps) => {
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-5">
         {phase === 1 && (
-          <CreateGoalPhaseOne draft={draft} setDraft={setDraft} />
+          <CreateGoalPhaseOne
+            title={goalData.title}
+            setTitle={(title) => setGoalData((prev) => ({ ...prev, title }))}
+            dueDate={goalData.dueDate}
+            setDueDate={(date) =>
+              setGoalData((prev) => ({ ...prev, dueDate: date }))
+            }
+          />
         )}
 
         {phase === 2 && (
-          <CreateGoalPhaseTwo draft={draft} setDraft={setDraft} />
+          <CreateGoalPhaseTwo
+            why={goalData.why}
+            setWhy={(why) => setGoalData((prev) => ({ ...prev, why }))}
+          />
         )}
 
         {phase === 3 && (
-          <CreateGoalPhaseThree draft={draft} setDraft={setDraft} />
+          <CreateGoalPhaseThree
+            nonNegotiables={goalData.nonNegotiables}
+            setNonNegotiables={(updater) =>
+              setGoalData((prev) => ({
+                ...prev,
+                nonNegotiables:
+                  typeof updater === "function"
+                    ? updater(prev.nonNegotiables)
+                    : updater,
+              }))
+            }
+          />
         )}
 
         {phase === 4 && (
           <CreateGoalPhaseFour
-            draft={draft}
-            setDraft={setDraft}
+            milestones={goalData.milestones}
+            setMilestones={(updater) =>
+              setGoalData((prev) => ({
+                ...prev,
+                milestones:
+                  typeof updater === "function"
+                    ? updater(prev.milestones)
+                    : updater,
+              }))
+            }
             totalWeight={totalMilestoneWeight}
           />
         )}

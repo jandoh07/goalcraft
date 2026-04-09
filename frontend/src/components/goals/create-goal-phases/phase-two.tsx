@@ -1,16 +1,15 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { GoalDraft, GoalDraftSetter } from "../create-goal-flow-types";
 import { CreateGoalPhaseHeader } from "./phase-header";
 
 interface CreateGoalPhaseTwoProps {
-  draft: GoalDraft;
-  setDraft: GoalDraftSetter;
+  why: string;
+  setWhy: (why: string) => void;
 }
 
 export const CreateGoalPhaseTwo = ({
-  draft,
-  setDraft,
+  why,
+  setWhy,
 }: CreateGoalPhaseTwoProps) => {
   return (
     <div className="flex-1 space-y-5">
@@ -33,10 +32,8 @@ export const CreateGoalPhaseTwo = ({
         </Label>
         <Textarea
           id="goal-why"
-          value={draft.why}
-          onChange={(event) =>
-            setDraft((prev) => ({ ...prev, why: event.target.value }))
-          }
+          value={why}
+          onChange={(event) => setWhy(event.target.value)}
           placeholder="Write your reason, motivation, or deeper intent"
           className="min-h-30"
         />
