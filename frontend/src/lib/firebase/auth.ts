@@ -195,69 +195,71 @@ export const setupAuthListener = (
         refreshSessionIfNeeded(authUser);
         const userDocRef = doc(db, "users", authUser.uid);
 
-        userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const firestoreData = docSnapshot.data();
-            console.log("User document exists");
+        userDocUnsubscribe = onSnapshot(
+          userDocRef,
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              const firestoreData = docSnapshot.data();
+              console.log("User document exists");
 
-            const updatedUser = toAppUser(
-              authUser,
-              {
-                name: firestoreData.name || authUser.displayName || undefined,
-                subscription: firestoreData.subscription || "free",
-                createdAt: firestoreData.createdAt?.toDate(),
-                theme: firestoreData.theme || "system",
-                pushNotifications: firestoreData.pushNotifications ?? false,
-                customCategories: firestoreData.customCategories || [],
-                timezone:
-                  firestoreData.timezone ||
-                  Intl.DateTimeFormat().resolvedOptions().timeZone,
-                notificationTime: firestoreData.notificationTime,
-              },
-              fallbackTheme,
-            );
-
-            setUser(updatedUser);
-
-            if (firestoreData.theme) {
-              setTheme(firestoreData.theme);
-
-              const cookieTheme = getCookieTheme();
-              if (cookieTheme !== firestoreData.theme) {
-                void updateUserDataCookie({ theme: firestoreData.theme });
-              }
-            }
-            setLoading(false);
-          } else {
-            if (docSnapshot.metadata.fromCache) {
-              console.log(
-                "Ignoring cached missing user document, waiting for server",
+              const updatedUser = toAppUser(
+                authUser,
+                {
+                  name: firestoreData.name || authUser.displayName || undefined,
+                  subscription: firestoreData.subscription || "free",
+                  createdAt: firestoreData.createdAt?.toDate(),
+                  theme: firestoreData.theme || "system",
+                  pushNotifications: firestoreData.pushNotifications ?? false,
+                  customCategories: firestoreData.customCategories || [],
+                  timezone:
+                    firestoreData.timezone ||
+                    Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  notificationTime: firestoreData.notificationTime,
+                },
+                fallbackTheme,
               );
-              return;
+
+              setUser(updatedUser);
+
+              if (firestoreData.theme) {
+                setTheme(firestoreData.theme);
+
+                const cookieTheme = getCookieTheme();
+                if (cookieTheme !== firestoreData.theme) {
+                  void updateUserDataCookie({ theme: firestoreData.theme });
+                }
+              }
+              setLoading(false);
+            } else {
+              console.log(
+                "No user document found on server, creating default profile",
+              );
+
+              void setDoc(
+                userDocRef,
+                {
+                  name: authUser.displayName,
+                  email: authUser.email,
+                  createdAt: new Date(),
+                  theme: fallbackTheme,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                { merge: true },
+              ).catch((error) => {
+                console.error("Failed to create missing user document:", error);
+              });
+
+              setUser(toAppUser(authUser, {}, fallbackTheme));
+              setLoading(false);
             }
-
-            console.log(
-              "No user document found on server, creating default profile",
-            );
-
-            void setDoc(
-              userDocRef,
-              {
-                name: authUser.displayName,
-                email: authUser.email,
-                createdAt: new Date(),
-                theme: fallbackTheme,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              },
-              { merge: true },
-            ).catch((error) => {
-              console.error("Failed to create missing user document:", error);
-            });
-
+          },
+          (error) => {
+            console.error("Firestore user snapshot error:", error);
+            // Don't crash the app if there's a permission error, let the user in with a basic profile
             setUser(toAppUser(authUser, {}, fallbackTheme));
             setLoading(false);
-          }
-        });
+          },
+        );
       } catch (error) {
         console.error("Firestore user sync failed:", error);
         setUser(null);
@@ -292,7 +294,7 @@ export const setupAuthListener = (
           void clearSession();
           if (userDocUnsubscribe) userDocUnsubscribe();
           setLoading(false);
-        }, 1500);
+        }, 3000);
 
         return;
       }

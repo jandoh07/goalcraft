@@ -1,22 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WifiOff, Wifi, RefreshCw, AlertTriangle } from "lucide-react";
+import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkStorageHealth } from "@/lib/firebase/firebase";
 
 export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
-  const [isStorageCorrupted, setIsStorageCorrupted] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     setIsOnline(navigator.onLine);
-    checkStorageHealth().then((isHealthy) => setIsStorageCorrupted(!isHealthy));
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -66,12 +63,6 @@ export default function NetworkStatus() {
 
   const getStyles = () => {
     if (!isOnline) {
-      if (isStorageCorrupted) {
-        return {
-          bg: "bg-destructive text-destructive-foreground",
-          hover: "hover:bg-destructive/90",
-        };
-      }
       return {
         bg: "bg-yellow-500 text-white",
         hover: "hover:bg-yellow-600",
@@ -91,9 +82,6 @@ export default function NetworkStatus() {
 
   const getIcon = () => {
     if (!isOnline) {
-      if (isStorageCorrupted) {
-        return <AlertTriangle className="h-4 w-4 shrink-0" />;
-      }
       return <WifiOff className="h-4 w-4 shrink-0" />;
     }
     if (isSyncing) {
@@ -104,9 +92,6 @@ export default function NetworkStatus() {
 
   const getMessage = () => {
     if (!isOnline) {
-      if (isStorageCorrupted) {
-        return "Storage error: Offline changes may be lost";
-      }
       return "Changes won't sync";
     }
     if (isSyncing) {
@@ -132,7 +117,7 @@ export default function NetworkStatus() {
     >
       {getIcon()}
       <AnimatePresence>
-        {(isExpanded && !isSyncing) || (isStorageCorrupted && !isOnline) ? (
+        {isExpanded && !isSyncing ? (
           <motion.span
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: "auto", opacity: 1 }}
