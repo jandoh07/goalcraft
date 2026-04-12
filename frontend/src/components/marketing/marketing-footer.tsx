@@ -33,6 +33,7 @@ export function MarketingFooter() {
                 alt="GoalCraft Logo"
                 width={32}
                 height={32}
+                style={{ height: "auto" }}
                 className="h-8 w-8"
               />
               <span className="text-xl font-bold">GoalCraft</span>
