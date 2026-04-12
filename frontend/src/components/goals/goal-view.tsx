@@ -243,7 +243,7 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
   }
 
   return (
-    <div className="space-y-4 relative">
+    <div className="space-y-4 relative h-full">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-lg">{displayGoal.title}</p>
@@ -346,14 +346,20 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
       </Tabs>
       <div className="absolute left-0 bottom-0 w-full">
         <Separator />
-        <div className="flex justify-end items-center pt-2 space-x-2">
-          <Button variant={"outline"} size={"sm"} onClick={openEditMode}>
+        <div className="flex justify-between md:justify-end items-center pt-2 space-x-2">
+          <Button
+            variant={"outline"}
+            size={"sm"}
+            onClick={openEditMode}
+            className="w-25"
+          >
             Edit
           </Button>
           <Button
             variant={"destructive"}
             size={"sm"}
             onClick={() => setIsDeleteDialogOpen(true)}
+            className="w-25"
           >
             Delete
           </Button>

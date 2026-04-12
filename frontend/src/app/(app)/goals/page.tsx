@@ -6,6 +6,7 @@ import OpenGoalDialogButton from "@/components/goals/open-goal-dialog-button";
 import { GoalProvider } from "@/contexts/goal-context";
 import GoalCard from "@/components/goals/goal-card";
 import { useGetGoals } from "@/hooks/use-goals";
+import { Loader2 } from "lucide-react";
 
 const Goals = () => {
   const { data: goals, isLoading, error } = useGetGoals();
@@ -21,7 +22,9 @@ const Goals = () => {
 
           <div className="space-y-2">
             {isLoading && (
-              <p className="text-sm text-muted-foreground">Loading goals...</p>
+              <div className="flex-1 flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
             )}
 
             {error && (

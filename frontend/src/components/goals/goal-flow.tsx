@@ -310,7 +310,7 @@ const GoalFlow = ({
             variant="outline"
             onClick={onCancel}
             disabled={isSubmittingGoal}
-            className="w-30"
+            className="w-30 hidden md:inline-flex"
           >
             Cancel
           </Button>
