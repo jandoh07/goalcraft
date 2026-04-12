@@ -61,6 +61,7 @@ export const CreateGoalPhaseFour = ({
 
   const removeMilestone = (id: string) => {
     setMilestones((prev) => prev.filter((milestone) => milestone.id !== id));
+    setEditingIds((prev) => prev.filter((entry) => entry !== id));
   };
 
   const updateMilestone = (id: string, updates: Partial<Milestone>) => {
@@ -114,7 +115,6 @@ export const CreateGoalPhaseFour = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeMilestone(milestone.id)}
-                  disabled={milestones.length === 1}
                   aria-label="Delete milestone"
                   className="text-destructive hover:text-destructive"
                 >

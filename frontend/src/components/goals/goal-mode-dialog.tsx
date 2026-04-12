@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useGoal } from "@/contexts/goal-context";
 import {
@@ -20,44 +20,66 @@ import {
 } from "../ui/drawer";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
-import CreateGoalFlow from "./create-goal-flow";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { Goal } from "@/types/goal";
+import GoalFlow from "./goal-flow";
+import GoalView from "./goal-view";
 
-const GoalModeDialog = () => {
+interface GoalModeDialogProps {
+  goals: Goal[];
+}
+
+const GoalModeDialog = ({ goals }: GoalModeDialogProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { mode, setMode, dialogType, setDialogType } = useGoal();
   const isMobile = useIsMobile();
+  const isClosingRef = useRef(false);
+
+  const selectedGoalId = searchParams.get("goalId");
+  const returnMode = searchParams.get("returnMode");
+  const activeGoal = useMemo(
+    () => goals.find((goal) => goal.id === selectedGoalId) ?? null,
+    [goals, selectedGoalId],
+  );
 
   useEffect(() => {
     const rawMode = searchParams.get("mode");
     const rawType = searchParams.get("type");
+    const nextDialogType: "goal" | "objective" =
+      rawType === "goal" || rawType === "objective" ? rawType : "goal";
+    const nextMode: "create" | "view" | "edit" | null =
+      rawMode === "create" || rawMode === "view" || rawMode === "edit"
+        ? rawMode
+        : null;
 
-    if (rawType === "goal" || rawType === "objective") {
-      setDialogType(rawType);
-    } else {
-      setDialogType("goal");
-    }
-
-    if (rawMode === "create" || rawMode === "edit") {
-      setMode(rawMode);
+    if (isClosingRef.current && nextMode !== null) {
       return;
     }
 
-    setMode(null);
-  }, [searchParams, setDialogType, setMode]);
-
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      return;
+    if (nextMode === null) {
+      isClosingRef.current = false;
     }
+
+    if (dialogType !== nextDialogType) {
+      setDialogType(nextDialogType);
+    }
+
+    if (mode !== nextMode) {
+      setMode(nextMode);
+    }
+  }, [dialogType, mode, searchParams, setDialogType, setMode]);
+
+  const closeDialogOnly = () => {
+    isClosingRef.current = true;
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete("mode");
     params.delete("type");
     params.delete("goalId");
     params.delete("objectiveId");
+    params.delete("returnMode");
 
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, {
@@ -67,6 +89,31 @@ const GoalModeDialog = () => {
     setDialogType("goal");
   };
 
+  const handleCancelFromFlow = () => {
+    if (returnMode === "view" && selectedGoalId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("mode", "view");
+      params.set("type", "goal");
+      params.set("goalId", selectedGoalId);
+      params.delete("returnMode");
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      setMode("view");
+      setDialogType("goal");
+      return;
+    }
+
+    closeDialogOnly();
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      return;
+    }
+
+    closeDialogOnly();
+  };
+
   const dialogTitle =
     dialogType === "objective"
       ? mode === "edit"
@@ -74,31 +121,34 @@ const GoalModeDialog = () => {
         : "Create objective"
       : mode === "edit"
         ? "Edit goal"
-        : "Create goal";
+        : mode === "view"
+          ? "Goal details"
+          : "Create goal";
 
   const dialogDescription =
     dialogType === "objective"
       ? "Objective dialog mode is active from URL params."
       : "Goal dialog mode is active from URL params.";
 
-  const isCreateGoalFlow = dialogType === "goal" && mode === "create";
+  const isGoalFlow =
+    dialogType === "goal" && (mode === "create" || mode === "edit");
 
   const renderDialogBody = () => {
-    if (isCreateGoalFlow) {
+    if (isGoalFlow) {
       return (
-        <CreateGoalFlow
+        <GoalFlow
           isOpen={mode !== null}
-          closeDialog={() => handleOpenChange(false)}
+          closeDialog={closeDialogOnly}
+          onCancel={handleCancelFromFlow}
+          mode={mode!}
+          goalId={selectedGoalId}
+          activeGoal={activeGoal}
         />
       );
     }
 
-    if (dialogType === "goal" && mode === "edit") {
-      return (
-        <p className="text-sm text-muted-foreground">
-          Goal editing UI will go here.
-        </p>
-      );
+    if (dialogType === "goal" && mode === "view") {
+      return <GoalView goal={activeGoal} goalId={selectedGoalId} />;
     }
 
     if (dialogType === "objective") {
@@ -130,7 +180,7 @@ const GoalModeDialog = () => {
               <X className="size-5" />
             </Button>
           </DrawerClose>
-          {!isCreateGoalFlow && (
+          {isGoalFlow && (
             <DrawerHeader>
               <DrawerTitle className="pr-10">{dialogTitle}</DrawerTitle>
               <DrawerDescription>{dialogDescription}</DrawerDescription>
@@ -146,7 +196,7 @@ const GoalModeDialog = () => {
 
   return (
     <Dialog open={mode !== null} onOpenChange={handleOpenChange}>
-      <DialogContent className="min-w-3xl min-h-130 max-h-[90dvh] overflow-y-auto custom-scrollbar">
+      <DialogContent className="min-w-3xl min-h-130 max-h-[90dvh] overflow-y-auto custom-scrollbar focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
         <DialogHeader className="sr-only">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>

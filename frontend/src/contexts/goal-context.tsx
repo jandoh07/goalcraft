@@ -3,7 +3,7 @@
 import { Goal } from "@/types/goal";
 import React, { createContext, useContext, useState } from "react";
 
-export type GoalMode = "create" | "edit";
+export type GoalMode = "create" | "view" | "edit";
 export type GoalDialogType = "goal" | "objective";
 
 interface GoalContextType {

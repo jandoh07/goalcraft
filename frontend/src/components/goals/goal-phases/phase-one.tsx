@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateGoalPhaseHeader } from "./phase-header";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTH_LABELS = [
@@ -136,12 +136,15 @@ export const CreateGoalPhaseOne = ({
 }: CreateGoalPhaseOneProps) => {
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("weeks");
   const [durationValue, setDurationValue] = useState("");
+  const [isDurationDirty, setIsDurationDirty] = useState(false);
+  const isUpdatingDueDateFromDurationRef = useRef(false);
 
   useEffect(() => {
     const parsedValue = Number(durationValue);
 
     if (!durationValue || !Number.isInteger(parsedValue) || parsedValue <= 0) {
-      if (dueDate !== "") {
+      if (isDurationDirty && dueDate !== "") {
+        isUpdatingDueDateFromDurationRef.current = true;
         setDueDate("");
       }
       return;
@@ -152,12 +155,19 @@ export const CreateGoalPhaseOne = ({
     );
 
     if (dueDate !== nextDueDate) {
+      isUpdatingDueDateFromDurationRef.current = true;
       setDueDate(nextDueDate);
     }
-  }, [durationUnit, durationValue, dueDate, setDueDate]);
+  }, [durationUnit, durationValue, dueDate, setDueDate, isDurationDirty]);
 
   useEffect(() => {
+    if (isUpdatingDueDateFromDurationRef.current) {
+      isUpdatingDueDateFromDurationRef.current = false;
+      return;
+    }
+
     const nextDuration = getDurationFromDueDate(dueDate);
+    setIsDurationDirty(false);
 
     setDurationValue((prev) =>
       prev === nextDuration.value ? prev : nextDuration.value,
@@ -193,14 +203,18 @@ export const CreateGoalPhaseOne = ({
             id="goal-duration-value"
             inputMode="numeric"
             value={durationValue}
-            onChange={(event) =>
-              setDurationValue(event.target.value.replace(/[^0-9]/g, ""))
-            }
+            onChange={(event) => {
+              setIsDurationDirty(true);
+              setDurationValue(event.target.value.replace(/[^0-9]/g, ""));
+            }}
             placeholder="12"
           />
           <Select
             value={durationUnit}
-            onValueChange={(value) => setDurationUnit(value as DurationUnit)}
+            onValueChange={(value) => {
+              setIsDurationDirty(true);
+              setDurationUnit(value as DurationUnit);
+            }}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select unit" />

@@ -33,3 +33,9 @@ export interface GoalData {
   nonNegotiables: NonNegotiable[];
   milestones: Milestone[];
 }
+
+export interface UpdateGoalWithRelationsPayload {
+  goalId: string;
+  originalData: GoalData;
+  nextData: GoalData;
+}

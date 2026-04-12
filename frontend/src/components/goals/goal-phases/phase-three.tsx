@@ -53,6 +53,7 @@ export const CreateGoalPhaseThree = ({
 
   const removeItem = (id: string) => {
     setNonNegotiables((prev) => prev.filter((item) => item.id !== id));
+    setEditingIds((prev) => prev.filter((entry) => entry !== id));
   };
 
   const addItem = () => {
@@ -185,7 +186,6 @@ export const CreateGoalPhaseThree = ({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeItem(item.id)}
-                  disabled={nonNegotiables.length === 1}
                   aria-label="Delete non-negotiable"
                   className="text-destructive hover:text-destructive"
                 >

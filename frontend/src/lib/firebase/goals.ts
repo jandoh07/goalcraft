@@ -1,10 +1,21 @@
-import { Goal, GoalData, Milestone } from "@/types/goal";
+import {
+  Goal,
+  GoalData,
+  Milestone,
+  UpdateGoalWithRelationsPayload,
+} from "@/types/goal";
+import {
+  areSameMilestone,
+  areSameNonNegotiable,
+} from "@/lib/utils/goal-comparators";
 import {
   Timestamp,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -119,23 +130,185 @@ export const deleteGoal = async (userId: string, goalId: string) => {
   await batch.commit();
 };
 
-export const getGoals = async (userId: string): Promise<Goal[]> => {
-  const goalsSnapshot = await getDocs(
-    query(goalsCollectionRef(userId), orderBy("updatedAt", "desc")),
+const mapGoalDoc = (goalDoc: {
+  id: string;
+  data: () => Record<string, unknown>;
+}): Goal => {
+  const data = goalDoc.data();
+  return {
+    id: goalDoc.id,
+    title: (data.title as string) ?? "",
+    progress: (data.progress as number) ?? 0,
+    dueDate:
+      (data.dueDate as { toDate?: () => Date })?.toDate?.() ?? new Date(),
+    why: (data.why as string) ?? "",
+    createdAt:
+      (data.createdAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
+    updatedAt:
+      (data.updatedAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
+  };
+};
+
+export const getGoals = (
+  userId: string,
+  onGoalsChange: (goals: Goal[]) => void,
+  onError?: (error: Error) => void,
+) => {
+  const goalsQuery = query(
+    goalsCollectionRef(userId),
+    orderBy("updatedAt", "desc"),
   );
 
-  return goalsSnapshot.docs.map((goalDoc) => {
-    const data = goalDoc.data();
-    return {
-      id: goalDoc.id,
-      title: data.title,
-      progress: data.progress ?? 0,
-      dueDate: data.dueDate?.toDate?.() ?? new Date(),
-      why: data.why ?? "",
-      createdAt: data.createdAt?.toDate?.() ?? new Date(),
-      updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
-    } as Goal;
+  return onSnapshot(
+    goalsQuery,
+    (goalsSnapshot) => {
+      const goals = goalsSnapshot.docs.map(mapGoalDoc);
+      onGoalsChange(goals);
+    },
+    (error) => {
+      onError?.(error);
+    },
+  );
+};
+
+export const getGoal = async (
+  userId: string,
+  goalId: string,
+): Promise<Goal | null> => {
+  const goalSnapshot = await getDoc(goalDocRef(userId, goalId));
+  if (!goalSnapshot.exists()) {
+    return null;
+  }
+
+  return mapGoalDoc({
+    id: goalSnapshot.id,
+    data: () => goalSnapshot.data() as Record<string, unknown>,
   });
+};
+
+export const getGoalMilestones = async (
+  userId: string,
+  goalId: string,
+): Promise<Milestone[]> => {
+  const milestonesSnapshot = await getDocs(
+    milestonesCollectionRef(userId, goalId),
+  );
+
+  return milestonesSnapshot.docs.map((milestoneDoc) => {
+    const data = milestoneDoc.data();
+
+    return {
+      id: milestoneDoc.id,
+      title: (data.title as string) ?? "",
+      weight: String((data.weight as string | number) ?? ""),
+      status: ((data.status as "in-progress" | "completed") ??
+        "in-progress") as "in-progress" | "completed",
+    };
+  });
+};
+
+export const updateGoalWithRelations = async (
+  userId: string,
+  payload: UpdateGoalWithRelationsPayload,
+) => {
+  const { goalId, originalData, nextData } = payload;
+  const batch = writeBatch(db);
+  const now = Timestamp.now();
+
+  batch.update(goalDocRef(userId, goalId), {
+    title: nextData.title,
+    dueDate: Timestamp.fromDate(toDueDate(nextData.dueDate)),
+    why: nextData.why,
+    updatedAt: now,
+  });
+
+  const originalMilestonesById = new Map(
+    originalData.milestones.map((milestone) => [milestone.id, milestone]),
+  );
+  const nextMilestonesById = new Map(
+    nextData.milestones.map((milestone) => [milestone.id, milestone]),
+  );
+
+  originalMilestonesById.forEach((_, id) => {
+    if (!nextMilestonesById.has(id)) {
+      batch.delete(doc(db, "users", userId, "goals", goalId, "milestones", id));
+    }
+  });
+
+  nextMilestonesById.forEach((nextMilestone, id) => {
+    const milestoneRef = doc(
+      db,
+      "users",
+      userId,
+      "goals",
+      goalId,
+      "milestones",
+      id,
+    );
+    const originalMilestone = originalMilestonesById.get(id);
+
+    if (!originalMilestone) {
+      batch.set(milestoneRef, {
+        title: nextMilestone.title,
+        weight: nextMilestone.weight,
+        status: nextMilestone.status,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return;
+    }
+
+    if (!areSameMilestone(originalMilestone, nextMilestone)) {
+      batch.update(milestoneRef, {
+        title: nextMilestone.title,
+        weight: nextMilestone.weight,
+        status: nextMilestone.status,
+        updatedAt: now,
+      });
+    }
+  });
+
+  const originalNonNegotiablesById = new Map(
+    originalData.nonNegotiables.map((item) => [item.id, item]),
+  );
+  const nextNonNegotiablesById = new Map(
+    nextData.nonNegotiables.map((item) => [item.id, item]),
+  );
+
+  originalNonNegotiablesById.forEach((_, id) => {
+    if (!nextNonNegotiablesById.has(id)) {
+      batch.delete(doc(db, "users", userId, "nonNegotiables", id));
+    }
+  });
+
+  nextNonNegotiablesById.forEach((nextItem, id) => {
+    const nonNegotiableRef = doc(db, "users", userId, "nonNegotiables", id);
+    const originalItem = originalNonNegotiablesById.get(id);
+
+    if (!originalItem) {
+      batch.set(nonNegotiableRef, {
+        title: nextItem.title,
+        goalId,
+        frequency: nextItem.frequency,
+        customDays: nextItem.customDays,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return;
+    }
+
+    if (!areSameNonNegotiable(originalItem, nextItem)) {
+      batch.update(nonNegotiableRef, {
+        title: nextItem.title,
+        goalId,
+        frequency: nextItem.frequency,
+        customDays: nextItem.customDays,
+        updatedAt: now,
+      });
+    }
+  });
+
+  await batch.commit();
 };
 
 export const updateMilestone = async (
