@@ -11,8 +11,16 @@ import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { AppUser } from "@/types";
 import { USER_DATA_COOKIE_NAME } from "./cookies";
-import { createSession, updateUserDataCookie } from "./session";
+import { clearSession, createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";
+
+function isBrowserOffline(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return navigator.onLine === false;
+}
 
 function getCookieTheme(): string | null {
   const rawCookie = Cookies.get(USER_DATA_COOKIE_NAME);
@@ -43,17 +51,21 @@ function toAppUser(
   },
   fallbackTheme: string,
 ): AppUser {
-  const appUser = authUser as AppUser;
-
-  appUser.name = options.name ?? authUser.displayName ?? undefined;
-  appUser.subscription = options.subscription ?? "free";
-  appUser.createdAt = options.createdAt;
-  appUser.theme =
-    options.theme ?? (fallbackTheme as "dark" | "light" | "system");
-  appUser.pushNotifications = options.pushNotifications ?? false;
-  appUser.timezone =
-    options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  appUser.notificationTime = options.notificationTime;
+  const appUser = Object.assign(
+    Object.create(Object.getPrototypeOf(authUser)),
+    authUser,
+    {
+      name: options.name ?? authUser.displayName ?? undefined,
+      subscription: options.subscription ?? "free",
+      createdAt: options.createdAt,
+      theme: options.theme ?? (fallbackTheme as "dark" | "light" | "system"),
+      pushNotifications: options.pushNotifications ?? false,
+      customCategories: options.customCategories ?? [],
+      timezone:
+        options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+      notificationTime: options.notificationTime,
+    },
+  ) as AppUser;
 
   return appUser;
 }
@@ -118,13 +130,25 @@ export const firebaseLogout = async () => {
   return signOut(auth);
 };
 
+let globalLastKnownUid: string | null = null;
+
+export const resetGlobalAuthTracker = () => {
+  globalLastKnownUid = null;
+};
+
 export const setupAuthListener = (
   setUser: (user: AppUser | null) => void,
   setTheme: (theme: string) => void,
   setLoading: (loading: boolean) => void,
   fallbackTheme: string = "system",
+  initialServerUid?: string,
 ) => {
   let userDocUnsubscribe: (() => void) | undefined;
+  let pendingLogoutTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  if (initialServerUid && !globalLastKnownUid) {
+    globalLastKnownUid = initialServerUid;
+  }
 
   const refreshSessionIfNeeded = async (authUser: User) => {
     const idToken = await authUser.getIdToken();
@@ -160,62 +184,134 @@ export const setupAuthListener = (
 
   const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
     if (authUser) {
+      if (pendingLogoutTimeout) {
+        clearTimeout(pendingLogoutTimeout);
+        pendingLogoutTimeout = undefined;
+      }
+
+      globalLastKnownUid = authUser.uid;
+
       try {
         refreshSessionIfNeeded(authUser);
         const userDocRef = doc(db, "users", authUser.uid);
 
-        userDocUnsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const firestoreData = docSnapshot.data();
+        userDocUnsubscribe = onSnapshot(
+          userDocRef,
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              const firestoreData = docSnapshot.data();
+              console.log("User document exists");
 
-            const updatedUser = toAppUser(
-              authUser,
-              {
-                name: firestoreData.name || authUser.displayName || undefined,
-                subscription: firestoreData.subscription || "free",
-                createdAt: firestoreData.createdAt?.toDate(),
-                theme: firestoreData.theme || "system",
-                pushNotifications: firestoreData.pushNotifications ?? false,
-                customCategories: firestoreData.customCategories || [],
-                timezone:
-                  firestoreData.timezone ||
-                  Intl.DateTimeFormat().resolvedOptions().timeZone,
-                notificationTime: firestoreData.notificationTime,
-              },
-              fallbackTheme,
-            );
+              const updatedUser = toAppUser(
+                authUser,
+                {
+                  name: firestoreData.name || authUser.displayName || undefined,
+                  subscription: firestoreData.subscription || "free",
+                  createdAt: firestoreData.createdAt?.toDate(),
+                  theme: firestoreData.theme || "system",
+                  pushNotifications: firestoreData.pushNotifications ?? false,
+                  customCategories: firestoreData.customCategories || [],
+                  timezone:
+                    firestoreData.timezone ||
+                    Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  notificationTime: firestoreData.notificationTime,
+                },
+                fallbackTheme,
+              );
 
-            setUser(updatedUser);
+              setUser(updatedUser);
 
-            if (firestoreData.theme) {
-              setTheme(firestoreData.theme);
+              if (firestoreData.theme) {
+                setTheme(firestoreData.theme);
 
-              const cookieTheme = getCookieTheme();
-              if (cookieTheme !== firestoreData.theme) {
-                void updateUserDataCookie({ theme: firestoreData.theme });
+                const cookieTheme = getCookieTheme();
+                if (cookieTheme !== firestoreData.theme) {
+                  void updateUserDataCookie({ theme: firestoreData.theme });
+                }
               }
+              setLoading(false);
+            } else {
+              console.log(
+                "No user document found on server, creating default profile",
+              );
+
+              void setDoc(
+                userDocRef,
+                {
+                  name: authUser.displayName,
+                  email: authUser.email,
+                  createdAt: new Date(),
+                  theme: fallbackTheme,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+                { merge: true },
+              ).catch((error) => {
+                console.error("Failed to create missing user document:", error);
+              });
+
+              setUser(toAppUser(authUser, {}, fallbackTheme));
+              setLoading(false);
             }
-            setLoading(false);
-          } else {
-            console.log("No user document found");
+          },
+          (error) => {
+            console.error("Firestore user snapshot error:", error);
+            // Don't crash the app if there's a permission error, let the user in with a basic profile
             setUser(toAppUser(authUser, {}, fallbackTheme));
             setLoading(false);
-          }
-        });
+          },
+        );
       } catch (error) {
         console.error("Firestore user sync failed:", error);
         setUser(null);
         setLoading(false);
       }
     } else {
+      if (isBrowserOffline()) {
+        console.log("Auth state is null while offline, skipping logout flow");
+        setLoading(false);
+        return;
+      }
+
+      if (globalLastKnownUid) {
+        if (pendingLogoutTimeout) {
+          clearTimeout(pendingLogoutTimeout);
+        }
+
+        pendingLogoutTimeout = setTimeout(() => {
+          pendingLogoutTimeout = undefined;
+
+          if (isBrowserOffline()) {
+            return;
+          }
+
+          if (auth.currentUser) {
+            return;
+          }
+
+          console.log("User is not authenticated after recovery window");
+          globalLastKnownUid = null;
+          setUser(null);
+          void clearSession();
+          if (userDocUnsubscribe) userDocUnsubscribe();
+          setLoading(false);
+        }, 3000);
+
+        return;
+      }
+
       console.log("User is not authenticated");
       setUser(null);
+      void clearSession();
       if (userDocUnsubscribe) userDocUnsubscribe();
       setLoading(false);
     }
   });
 
   return () => {
+    if (pendingLogoutTimeout) {
+      clearTimeout(pendingLogoutTimeout);
+    }
+
     unsubscribe();
     if (userDocUnsubscribe) userDocUnsubscribe();
   };

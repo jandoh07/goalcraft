@@ -1,10 +1,11 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-} from "firebase/firestore";
+  browserLocalPersistence,
+  getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
+} from "firebase/auth";
+import { initializeFirestore } from "firebase/firestore";
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -41,13 +42,23 @@ if (typeof window !== "undefined") {
   }
 }
 
-export const auth = getAuth(app);
+const createAuth = () => {
+  if (typeof window === "undefined") {
+    return getAuth(app);
+  }
 
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }),
-});
+  try {
+    return initializeAuth(app, {
+      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+    });
+  } catch {
+    return getAuth(app);
+  }
+};
+
+export const auth = createAuth();
+
+export const db = initializeFirestore(app, {});
 
 export const functions = getFunctions(app);
 

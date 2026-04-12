@@ -10,14 +10,13 @@ interface AddButtonProps {
 
 const AddButton: React.FC<AddButtonProps> = ({ className, onClick }) => {
   return (
-    <div
-      className={cn("fixed right-5 bottom-23 md:bottom-5", className)}
-      onClick={onClick}
-    >
+    <div className={cn("fixed right-5 bottom-23 md:bottom-5", className)}>
       <Button
+        type="button"
+        onClick={onClick}
         variant={"default"}
         size={"icon-lg"}
-        className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg h-15 w-15"
+        className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg h-15 w-15 cursor-pointer"
       >
         <Plus className="size-8" />
       </Button>

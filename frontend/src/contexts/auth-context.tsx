@@ -10,6 +10,7 @@ import {
   signInWithGoogle as firebaseSignInWithGoogle,
   firebaseLogout,
   setupAuthListener,
+  resetGlobalAuthTracker,
 } from "@/lib/firebase/auth";
 import { createSession, clearSession } from "@/lib/firebase/session";
 
@@ -83,10 +84,12 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
       (authUser) => setUser(authUser),
       (newTheme) => setTheme(newTheme),
       (isLoading) => setLoading(isLoading),
+      theme || "system",
+      initialUser?.uid,
     );
 
     return () => cleanup();
-  }, [setTheme]);
+  }, [setTheme, theme, initialUser?.uid]);
 
   const signIn = async (email: string, password: string) => {
     const credential = await firebaseSignIn(email, password);
@@ -119,6 +122,8 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
   };
 
   const logout = async () => {
+    resetGlobalAuthTracker();
+    setUser(null);
     await clearSession();
     return firebaseLogout();
   };

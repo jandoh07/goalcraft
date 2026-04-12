@@ -4,10 +4,6 @@ import { useEffect, useState } from "react";
 import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/**
- * Network status indicator component
- * Shows when app is offline and syncing when back online
- */
 export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -58,7 +54,7 @@ export default function NetworkStatus() {
     setIsExpanded(true);
     const timer = setTimeout(() => {
       setIsExpanded(false);
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [showIndicator, isOnline]);
@@ -68,18 +64,18 @@ export default function NetworkStatus() {
   const getStyles = () => {
     if (!isOnline) {
       return {
-        bg: "bg-yellow-500",
+        bg: "bg-yellow-500 text-white",
         hover: "hover:bg-yellow-600",
       };
     }
     if (isSyncing) {
       return {
-        bg: "bg-green-500",
+        bg: "bg-green-500 text-white",
         hover: "hover:bg-green-600",
       };
     }
     return {
-      bg: "bg-green-500",
+      bg: "bg-green-500 text-white",
       hover: "hover:bg-green-600",
     };
   };
@@ -108,10 +104,10 @@ export default function NetworkStatus() {
 
   return (
     <motion.button
-      className={`fixed top-3 md:top-4 right-10 md:right-4 z-50 ${styles.bg} text-white rounded-full shadow-lg ${styles.hover} flex items-center gap-2 overflow-hidden transition-colors`}
+      className={`fixed top-3 md:top-4 right-10 md:right-4 z-50 ${styles.bg} rounded-full shadow-lg ${styles.hover} flex items-center gap-2 overflow-hidden transition-colors`}
       animate={{
-        paddingLeft: isExpanded ? "1rem" : "0.5rem",
-        paddingRight: isExpanded ? "1rem" : "0.5rem",
+        paddingLeft: isExpanded && !isSyncing ? "1rem" : "0.5rem",
+        paddingRight: isExpanded && !isSyncing ? "1rem" : "0.5rem",
         paddingTop: "0.5rem",
         paddingBottom: "0.5rem",
       }}
@@ -121,17 +117,17 @@ export default function NetworkStatus() {
     >
       {getIcon()}
       <AnimatePresence>
-        {isExpanded && (
+        {isExpanded && !isSyncing ? (
           <motion.span
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: "auto", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="text-xs whitespace-nowrap"
+            className="text-xs font-medium whitespace-nowrap"
           >
             {getMessage()}
           </motion.span>
-        )}
+        ) : null}
       </AnimatePresence>
       <span className="sr-only">{getMessage()}</span>
     </motion.button>

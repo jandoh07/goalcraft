@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE_NAME = "__session";
-const AUTH_ROUTES = ["/login", "/signup"];
 const PROTECTED_ROUTES = [
   "/goals",
   "/tasks",
@@ -39,9 +38,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const isProtectedRoute = matchesRoutes(pathname, PROTECTED_ROUTES);
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
-  if (!isProtectedRoute && !isAuthRoute) {
+  if (!isProtectedRoute) {
     return NextResponse.next();
   }
 
@@ -55,12 +53,6 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     return NextResponse.next();
-  }
-
-  if (isAuthRoute && hasSession) {
-    const redirectUrl = request.nextUrl.searchParams.get("redirect");
-    const destination = redirectUrl || "/goals";
-    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return NextResponse.next();
