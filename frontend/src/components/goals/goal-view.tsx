@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Goal, Milestone, NonNegotiable } from "@/types/goal";
 import { useAuth } from "@/contexts/auth-context";
+import { updateMilestone } from "@/lib/firebase/goals";
 import {
-  getGoal,
-  getGoalMilestones,
-  updateMilestone,
-} from "@/lib/firebase/goals";
-import { getGoalNonNegotiables } from "@/lib/firebase/non-negotiable";
+  getGoalDetailsCached,
+  invalidateGoalDetailsCache,
+} from "@/lib/firebase/goal-details-cache";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -62,6 +61,10 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
       onSuccess: (_, args) => {
         if (!args) {
           return;
+        }
+
+        if (user?.uid && goalId) {
+          invalidateGoalDetailsCache(user.uid, goalId);
         }
 
         setMilestones((prev) =>
@@ -121,6 +124,9 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
     }
 
     await deleteGoalMutation.mutate(goalId);
+    if (user?.uid) {
+      invalidateGoalDetailsCache(user.uid, goalId);
+    }
     setIsDeleteDialogOpen(false);
     closeGoalDialog();
   };
@@ -152,20 +158,24 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
     setIsLoading(true);
     setError(null);
 
-    Promise.all([
-      goal ? Promise.resolve(goal) : getGoal(user.uid, goalId),
-      getGoalMilestones(user.uid, goalId),
-      getGoalNonNegotiables(user.uid, goalId),
-    ])
-      .then(([fetchedGoal, fetchedMilestones, fetchedNonNegotiables]) => {
-        if (isCancelled) {
-          return;
-        }
+    getGoalDetailsCached(user.uid, goalId, {
+      warmGoal: goal,
+    })
+      .then(
+        ({
+          goal: nextGoal,
+          milestones: fetchedMilestones,
+          nonNegotiables: fetchedNonNegotiables,
+        }) => {
+          if (isCancelled) {
+            return;
+          }
 
-        setFetchedGoal(fetchedGoal);
-        setMilestones(fetchedMilestones);
-        setNonNegotiables(fetchedNonNegotiables);
-      })
+          setFetchedGoal(nextGoal);
+          setMilestones(fetchedMilestones);
+          setNonNegotiables(fetchedNonNegotiables);
+        },
+      )
       .catch(() => {
         if (!isCancelled) {
           setError("Failed to load goal details.");

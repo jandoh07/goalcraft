@@ -9,13 +9,11 @@ import { CreateGoalPhaseThree } from "@/components/goals/goal-phases/phase-three
 import { CreateGoalPhaseFour } from "@/components/goals/goal-phases/phase-four";
 import { Goal, GoalData } from "@/types/goal";
 import useMutation from "@/hooks/use-mutation";
+import { createGoal, updateGoalWithRelations } from "@/lib/firebase/goals";
 import {
-  createGoal,
-  getGoal,
-  getGoalMilestones,
-  updateGoalWithRelations,
-} from "@/lib/firebase/goals";
-import { getGoalNonNegotiables } from "@/lib/firebase/non-negotiable";
+  getGoalDetailsCached,
+  invalidateGoalDetailsCache,
+} from "@/lib/firebase/goal-details-cache";
 import { hasGoalDataChanged } from "@/lib/utils/goal-comparators";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -90,11 +88,13 @@ const GoalFlow = ({
     setIsHydratingGoalData(true);
 
     const fetchGoalData = async () => {
-      const [goal, milestones, nonNegotiables] = await Promise.all([
-        activeGoal ? Promise.resolve(activeGoal) : getGoal(user.uid, goalId),
-        getGoalMilestones(user.uid, goalId),
-        getGoalNonNegotiables(user.uid, goalId),
-      ]);
+      const { goal, milestones, nonNegotiables } = await getGoalDetailsCached(
+        user.uid,
+        goalId,
+        {
+          warmGoal: activeGoal,
+        },
+      );
 
       if (!goal || isCancelled) {
         return;
@@ -204,6 +204,9 @@ const GoalFlow = ({
     },
     {
       onSuccess: () => {
+        if (user?.uid && goalId) {
+          invalidateGoalDetailsCache(user.uid, goalId);
+        }
         closeDialog();
       },
       onError: "Failed to update goal.",
