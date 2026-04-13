@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { clearSession } from "@/lib/firebase/session";
 
@@ -40,15 +39,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isOnline, loading, authUser, pathname, router]);
 
-  if ((loading && !authUser) || (!authUser && !isOnline)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!loading && !authUser) {
+  if (!loading && !authUser && isOnline) {
     return null;
   }
 
