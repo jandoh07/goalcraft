@@ -167,7 +167,7 @@ export const setupAuthListener = (
     } else {
       console.log("User is not authenticated");
       setAuthUser(null);
-      void clearSession();
+      clearSession();
       setLoading(false);
     }
   });
