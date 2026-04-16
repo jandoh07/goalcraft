@@ -2,6 +2,7 @@ export interface Goal {
   id: string;
   title: string;
   progress: number;
+  status: "in-progress" | "completed";
   dueDate: Date;
   why: string;
   createdAt: Date;
@@ -15,8 +16,27 @@ export type NonNegotiable = {
   id: string;
   title: string;
   goalId: string;
+  previousInstanceId?: string;
+  status: "in-progress" | "completed";
+  completedAt?: Date | null;
+  showAfter?: Date;
   frequency: RecurrenceFrequency;
   customDays: Weekday[];
+};
+
+export type NonNegotiableTask = {
+  id: string;
+  userId: string;
+  title: string;
+  duration: number;
+  status: "in-progress" | "completed";
+  completedAt?: Date | null;
+};
+
+export type InProgressNonNegotiableWithTasks = {
+  goalId: string;
+  nonNegotiable: NonNegotiable & { nonegotiableId: string };
+  tasks: NonNegotiableTask[];
 };
 
 export type Milestone = {
