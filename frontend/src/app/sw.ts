@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import "../types/sw.d.ts";
 
-import { clientsClaim, skipWaiting } from "workbox-core";
+import { clientsClaim } from "workbox-core";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
@@ -20,7 +20,7 @@ importScripts(
 
 declare const self: ServiceWorkerGlobalScope;
 
-skipWaiting();
+self.skipWaiting();
 clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
