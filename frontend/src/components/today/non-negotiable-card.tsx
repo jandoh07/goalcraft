@@ -1,233 +1,228 @@
-import { useState } from "react";
-import { Card, CardContent } from "../ui/card";
-import { cn } from "@/lib/utils";
-import { Badge } from "../ui/badge";
 import {
   Check,
-  ChevronDown,
   ChevronRight,
-  Clock,
-  GripVertical,
-  Plus,
-  Trash2,
+  CirclePlus,
+  EllipsisVertical,
 } from "lucide-react";
-import { Progress } from "../ui/progress";
+import { useState } from "react";
+import type {
+  InProgressNonNegotiableWithTasks,
+  NonNegotiableTask as NonNegotiableTaskItem,
+} from "@/types/goal";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+import { SelectValue } from "@radix-ui/react-select";
+import useMutation from "@/hooks/use-mutation";
+import { updateNonNegotiable } from "@/lib/firebase/non-negotiable";
+import { useAuth } from "@/contexts/auth-context";
 
-interface NonNegotiableTask {
-  id: string;
-  title: string;
-  duration: number; // minutes
-  completed: boolean;
+interface NonNegotiableCardProps {
+  data: InProgressNonNegotiableWithTasks;
 }
 
-interface NonNegotiable {
-  id: string;
-  title: string;
-  totalDuration: number; // minutes
-  tasks: NonNegotiableTask[];
-}
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-export function NonNegotiableCard({
-  nonNegotiable,
-  onToggleTask,
-  onDeleteTask,
-  onAddTask,
-}: {
-  nonNegotiable: NonNegotiable;
-  onToggleTask: (nnId: string, taskId: string) => void;
-  onDeleteTask: (nnId: string, taskId: string) => void;
-  onAddTask: (nnId: string, title: string, duration: number) => void;
-}) {
-  const [expanded, setExpanded] = useState(true);
-
-  const completedTasks = nonNegotiable.tasks.filter((t) => t.completed).length;
-  const totalTasks = nonNegotiable.tasks.length;
-  const completedDuration = nonNegotiable.tasks
-    .filter((t) => t.completed)
-    .reduce((sum, t) => sum + t.duration, 0);
-  const actualTotalDuration = nonNegotiable.tasks.reduce(
-    (sum, t) => sum + t.duration,
-    0,
+export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
+  const [isExpanded, setIsExpanded] = useState(data.tasks.length > 0);
+  const { user } = useAuth();
+  const mutation = useMutation(
+    () =>
+      updateNonNegotiable(user!.uid, data.goalId, data.nonNegotiable.id, {
+        status:
+          data.nonNegotiable.status === "completed"
+            ? "in-progress"
+            : "completed",
+      }),
+    {
+      onError: "Error updating non-negotiable status",
+    },
   );
-  const progressPercent =
-    totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-  return (
-    <Card className={cn("py-0 gap-0 overflow-hidden border")}>
-      {/* Header */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 py-4 px-6 hover:bg-muted/30 transition-colors text-left"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">{nonNegotiable.title}</span>
-            <Badge variant="secondary" className="text-xs font-normal">
-              <Clock className="size-3 mr-1" />
-              {formatDuration(nonNegotiable.totalDuration)}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2 mt-1.5">
-            <Progress value={progressPercent} className="h-1.5 flex-1" />
-            <span className="text-xs text-muted-foreground shrink-0">
-              {completedTasks}/{totalTasks} tasks &middot;{" "}
-              {formatDuration(completedDuration)}/
-              {formatDuration(actualTotalDuration)}
-            </span>
-          </div>
-        </div>
-        {expanded ? (
-          <ChevronDown className="size-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronRight className="size-4 text-muted-foreground shrink-0" />
-        )}
-      </button>
+  const toggleExpanded = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setIsExpanded((prev) => !prev);
+  };
 
-      {/* Task List */}
-      {expanded && (
-        <CardContent className="pt-0 pb-3 px-4">
-          <div className="pl-2">
-            {nonNegotiable.tasks.map((task) => (
-              <NonNegotiableTaskItem
-                key={task.id}
-                task={task}
-                onToggle={(taskId) => onToggleTask(nonNegotiable.id, taskId)}
-                onDelete={(taskId) => onDeleteTask(nonNegotiable.id, taskId)}
-              />
-            ))}
-            <AddTaskInline
-              onAdd={(title, duration) =>
-                onAddTask(nonNegotiable.id, title, duration)
-              }
-            />
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
-}
+  const handleNonNegotiableClick = () => {
+    console.log("Non-negotiable clicked");
+  };
 
-function NonNegotiableTaskItem({
-  task,
-  onToggle,
-  onDelete,
-}: {
-  task: NonNegotiableTask;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
+  const toggleCompleted = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    mutation.mutate();
+  };
+
   return (
     <div
-      className={cn(
-        "group flex items-center gap-3 py-2 px-3 rounded-lg transition-colors hover:bg-muted/50",
-        task.completed && "opacity-60",
-      )}
+      className={`p-2 rounded-lg cursor-pointer overflow-hidden transition-colors ${
+        data.nonNegotiable.status === "completed"
+          ? "bg-sidebar/20"
+          : "bg-sidebar/30"
+      }`}
+      onClick={handleNonNegotiableClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) {
+          return;
+        }
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleNonNegotiableClick();
+        }
+      }}
     >
-      <GripVertical className="size-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab shrink-0" />
-      <button
-        onClick={() => onToggle(task.id)}
-        className={cn(
-          "shrink-0 size-5 rounded-full border-2 flex items-center justify-center transition-all",
-          task.completed
-            ? "bg-primary border-primary"
-            : "border-muted-foreground/30 hover:border-primary",
-        )}
-      >
-        {task.completed && <Check className="size-3 text-primary-foreground" />}
-      </button>
-      <span
-        className={cn(
-          "flex-1 text-sm",
-          task.completed && "line-through text-muted-foreground",
-        )}
-      >
-        {task.title}
-      </span>
-      <Badge variant="outline" className="text-xs font-normal shrink-0">
-        <Clock className="size-3 mr-1" />
-        {formatDuration(task.duration)}
-      </Badge>
-      <button
-        onClick={() => onDelete(task.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? "Collapse objective" : "Expand objective"}
+            className="mr-2 rounded-sm transition-colors hover:bg-sidebar/60 cursor-pointer"
+          >
+            <ChevronRight
+              size={20}
+              className={`transition-transform ${isExpanded ? "rotate-90" : "rotate-0"}`}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={toggleCompleted}
+            aria-pressed={data.nonNegotiable.status === "completed"}
+            aria-label={
+              data.nonNegotiable.status === "completed"
+                ? "Mark non-negotiable as in progress"
+                : "Mark non-negotiable as completed"
+            }
+            className={`mr-2 size-5.5 rounded-sm border flex items-center justify-center transition-colors ${
+              data.nonNegotiable.status === "completed"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border hover:bg-sidebar/60"
+            }`}
+            disabled={mutation.loading}
+          >
+            {data.nonNegotiable.status === "completed" ? (
+              <Check size={12} />
+            ) : null}
+          </button>
+          <p
+            className={`text-[0.95rem] font-semibold ${data.nonNegotiable.status === "completed" ? "line-through text-muted-foreground" : ""}`}
+          >
+            {data.nonNegotiable.title || "Untitled non-negotiable"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <EllipsisVertical
+            size={15}
+            className="cursor-pointer hover:text-primary hidden md:block"
+          />
+        </div>
+      </div>
+      {isExpanded && (
+        <div
+          className="pl-2 pt-3 space-y-3"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.stopPropagation();
+            }
+          }}
+        >
+          {data.tasks.length > 0 ? (
+            data.tasks.map((task) => (
+              <NonNegotiableTask key={task.id} task={task} />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No active tasks yet.
+            </p>
+          )}
+
+          <AddTaskInline />
+        </div>
+      )}
     </div>
   );
 }
 
-function AddTaskInline({
-  onAdd,
-}: {
-  onAdd: (title: string, duration: number) => void;
-}) {
+function NonNegotiableTask({ task }: { task: NonNegotiableTaskItem }) {
+  return (
+    <div className="flex items-center justify-between gap-2 bg-card rounded-md p-2 border border-border">
+      <div className="flex gap-2">
+        <button className="rounded-full size-6 border border-border flex items-center justify-center cursor-pointer hover:bg-primary/30">
+          <Check size={12} />
+        </button>
+        <p className="ml-2 text-sm">{task.title || "Untitled task"}</p>
+      </div>
+      <Badge variant={"outline"}>{task.duration} min</Badge>
+    </div>
+  );
+}
+
+function AddTaskInline() {
   const [isAdding, setIsAdding] = useState(false);
-  const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("15");
 
-  const handleSubmit = () => {
-    if (!title.trim()) return;
-    onAdd(title.trim(), parseInt(duration) || 15);
-    setTitle("");
-    setDuration("15");
-    setIsAdding(false);
-  };
-
-  if (!isAdding) {
+  if (isAdding) {
     return (
-      <button
-        onClick={() => setIsAdding(true)}
-        className="flex items-center gap-2 py-2 px-3 text-sm text-muted-foreground hover:text-foreground transition-colors w-full rounded-lg hover:bg-muted/50"
+      <div
+        className="rounded-md border border-border bg-card p-3 space-y-3"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.stopPropagation();
+          }
+        }}
       >
-        <Plus className="size-4" />
-        Add task
-      </button>
+        <Input placeholder="Task title" aria-label="Task title" autoFocus />
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Duration"
+            aria-label="Task duration"
+            type="number"
+          />
+          <Select defaultValue="min">
+            <SelectTrigger>
+              <SelectValue placeholder="Select duration unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="min">Minutes</SelectItem>
+              <SelectItem value="hr">Hours</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAdding(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="button" size="sm">
+            Add
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 py-1 px-3">
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Task name..."
-        className="flex-1 h-8 text-sm"
-        autoFocus
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleSubmit();
-          if (e.key === "Escape") setIsAdding(false);
-        }}
-      />
-      <Input
-        value={duration}
-        onChange={(e) => setDuration(e.target.value)}
-        type="number"
-        min={1}
-        placeholder="min"
-        className="w-16 h-8 text-sm"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleSubmit();
-          if (e.key === "Escape") setIsAdding(false);
-        }}
-      />
-      <span className="text-xs text-muted-foreground">min</span>
+    <div className="flex justify-end">
       <Button
-        size="sm"
-        variant="ghost"
-        className="h-8 px-2"
-        onClick={handleSubmit}
+        variant={"ghost"}
+        size={"sm"}
+        className=" border border-dashed md:border-solid border-border"
+        onClick={(event) => {
+          event.stopPropagation();
+          setIsAdding(true);
+        }}
       >
-        <Check className="size-4" />
+        <CirclePlus className="md:hidden" /> Add Task
       </Button>
     </div>
   );
