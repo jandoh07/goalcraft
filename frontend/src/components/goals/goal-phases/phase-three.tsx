@@ -31,6 +31,7 @@ const createNonNegotiable = () => ({
   id: `nn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   goalId: "",
   title: "",
+  status: "in-progress" as const,
   frequency: "daily" as const,
   customDays: [] as Weekday[],
 });
@@ -63,6 +64,7 @@ export const CreateGoalPhaseThree = ({
 
     setPendingItem({
       title: "",
+      status: "in-progress",
       frequency: "weekly",
       customDays: [],
     });
@@ -149,8 +151,24 @@ export const CreateGoalPhaseThree = ({
     <div className="flex-1 space-y-5">
       <CreateGoalPhaseHeader
         title="Your non-negotiables"
-        subheading="The recurring actions you commit to no matter what. Keep it simple - 2 to 4 is enough."
+        // subheading="The recurring actions you commit to no matter what. Keep it simple - 2 to 4 is enough."
+        subheading=""
       />
+
+      <blockquote className="border-l-2 border-primary bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground">
+        <p className="mb-2 font-medium text-primary">
+          What are non-negotiables and why do they matter?
+        </p>
+        <p>
+          Non-negotiables are recurring, <strong>time-based commitments</strong>{" "}
+          designed to make progress inevitable. By focusing on duration (e.g.,
+          &quot;1 hour of reading&quot;) rather than outcomes (e.g., &quot;Read
+          Chapter 1&quot;), you remove the guesswork and friction of varying
+          task difficulties. In this system, achieving your goal is a{" "}
+          <strong>side effect</strong> of your consistency, show up for the
+          time, and the results will follow.
+        </p>
+      </blockquote>
 
       <div className="space-y-3">
         {nonNegotiables.map((item, index) => (
@@ -204,25 +222,27 @@ export const CreateGoalPhaseThree = ({
                   placeholder="Title (e.g. 30 minutes focused work)"
                 />
 
-                <Select
-                  value={item.frequency}
-                  onValueChange={(value) =>
-                    updateItem(item.id, {
-                      frequency: value as RecurrenceFrequency,
-                      customDays: value === "custom" ? item.customDays : [],
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select recurrence" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Select
+                    value={item.frequency}
+                    onValueChange={(value) =>
+                      updateItem(item.id, {
+                        frequency: value as RecurrenceFrequency,
+                        customDays: value === "custom" ? item.customDays : [],
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select recurrence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {item.frequency === "custom" && (
                   <div className="space-y-2">
@@ -265,30 +285,32 @@ export const CreateGoalPhaseThree = ({
               placeholder="Title (e.g. 30 minutes focused work)"
             />
 
-            <Select
-              value={pendingItem.frequency}
-              onValueChange={(value) =>
-                setPendingItem((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        frequency: value as RecurrenceFrequency,
-                        customDays: value === "custom" ? prev.customDays : [],
-                      }
-                    : prev,
-                )
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select recurrence" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Select
+                value={pendingItem.frequency}
+                onValueChange={(value) =>
+                  setPendingItem((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          frequency: value as RecurrenceFrequency,
+                          customDays: value === "custom" ? prev.customDays : [],
+                        }
+                      : prev,
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select recurrence" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {pendingItem.frequency === "custom" && (
               <div className="space-y-2">

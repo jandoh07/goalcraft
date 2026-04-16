@@ -7,7 +7,12 @@ export const areSameNonNegotiable = (a: NonNegotiable, b: NonNegotiable) => {
   const aDays = [...a.customDays].sort().join(",");
   const bDays = [...b.customDays].sort().join(",");
 
-  return a.title === b.title && a.frequency === b.frequency && aDays === bDays;
+  return (
+    a.title === b.title &&
+    a.status === b.status &&
+    a.frequency === b.frequency &&
+    aDays === bDays
+  );
 };
 
 export const areSameMilestoneLists = (

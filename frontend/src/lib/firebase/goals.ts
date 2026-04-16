@@ -48,6 +48,7 @@ export const createGoal = async (userId: string, goalData: GoalData) => {
   batch.set(newGoalRef, {
     title: goalData.title,
     progress: 0,
+    status: "in-progress",
     dueDate: Timestamp.fromDate(toDueDate(goalData.dueDate)),
     why: goalData.why,
     createdAt: now,
@@ -84,6 +85,7 @@ export const createGoal = async (userId: string, goalData: GoalData) => {
     batch.set(nonNegotiableRef, {
       title: nonNegotiable.title,
       goalId: newGoalRef.id,
+      status: nonNegotiable.status,
       frequency: nonNegotiable.frequency,
       customDays: nonNegotiable.customDays,
       createdAt: now,
@@ -100,6 +102,7 @@ export const updateGoal = async (userId: string, goal: Goal) => {
   await updateDoc(goalRef, {
     title: goal.title,
     progress: goal.progress,
+    status: goal.status,
     dueDate: Timestamp.fromDate(goal.dueDate),
     why: goal.why,
     updatedAt: Timestamp.now(),
@@ -139,6 +142,8 @@ const mapGoalDoc = (goalDoc: {
     id: goalDoc.id,
     title: (data.title as string) ?? "",
     progress: (data.progress as number) ?? 0,
+    status: ((data.status as Goal["status"]) ??
+      "in-progress") as Goal["status"],
     dueDate:
       (data.dueDate as { toDate?: () => Date })?.toDate?.() ?? new Date(),
     why: (data.why as string) ?? "",
@@ -289,6 +294,7 @@ export const updateGoalWithRelations = async (
       batch.set(nonNegotiableRef, {
         title: nextItem.title,
         goalId,
+        status: nextItem.status,
         frequency: nextItem.frequency,
         customDays: nextItem.customDays,
         createdAt: now,
@@ -301,6 +307,7 @@ export const updateGoalWithRelations = async (
       batch.update(nonNegotiableRef, {
         title: nextItem.title,
         goalId,
+        status: nextItem.status,
         frequency: nextItem.frequency,
         customDays: nextItem.customDays,
         updatedAt: now,
