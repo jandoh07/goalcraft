@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { usePathname, useRouter } from "next/navigation";
-import { clearSession } from "@/lib/firebase/session";
+import { verifySession } from "@/lib/firebase/session";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { authUser, loading } = useAuth();
@@ -29,19 +29,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !authUser && isOnline) {
-      const redirectToLogin = async () => {
-        await clearSession();
-        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-      };
-
-      void redirectToLogin();
+    if (loading || authUser || !isOnline) {
+      return;
     }
-  }, [isOnline, loading, authUser, pathname, router]);
 
-  if (!loading && !authUser && isOnline) {
-    return null;
-  }
+    let cancelled = false;
+
+    const redirectIfSessionInvalid = async () => {
+      const { authenticated } = await verifySession();
+
+      if (!cancelled && !authenticated) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      }
+    };
+
+    void redirectIfSessionInvalid();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnline, loading, authUser, pathname, router]);
 
   return <>{children}</>;
 };

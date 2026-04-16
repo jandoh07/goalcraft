@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
-import { AuthProviderWithServerUser } from "@/components/providers/auth-provider-server";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 import { AppProgressProvider } from "@/components/providers/progress-provider";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -103,11 +103,11 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AuthProviderWithServerUser>
+            <AuthProvider>
               <ServiceWorkerProvider />
               {children}
               <Toaster position="top-right" />
-            </AuthProviderWithServerUser>
+            </AuthProvider>
           </ThemeProvider>
         </AppProgressProvider>
       </body>
