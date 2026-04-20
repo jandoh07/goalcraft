@@ -5,6 +5,8 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import type {
   InProgressNonNegotiableWithTasks,
   NonNegotiableTask as NonNegotiableTaskItem,
@@ -17,6 +19,12 @@ import { SelectValue } from "@radix-ui/react-select";
 import useMutation from "@/hooks/use-mutation";
 import { updateNonNegotiable } from "@/lib/firebase/non-negotiable";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 interface NonNegotiableCardProps {
   data: InProgressNonNegotiableWithTasks;
@@ -25,6 +33,18 @@ interface NonNegotiableCardProps {
 export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
   const [isExpanded, setIsExpanded] = useState(data.tasks.length > 0);
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const openNonNegotiableMode = (mode: "view" | "edit") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("mode", mode);
+    params.set("type", "non-negotiable");
+    params.set("nonNegotiableId", data.nonNegotiable.id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const mutation = useMutation(
     () =>
       updateNonNegotiable(user!.uid, data.goalId, data.nonNegotiable.id, {
@@ -44,7 +64,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
   };
 
   const handleNonNegotiableClick = () => {
-    console.log("Non-negotiable clicked");
+    openNonNegotiableMode("view");
   };
 
   const toggleCompleted = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -54,7 +74,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
 
   return (
     <div
-      className={`p-2 rounded-lg cursor-pointer overflow-hidden transition-colors ${
+      className={`px-2 py-3 rounded-lg cursor-pointer overflow-hidden transition-colors ${
         data.nonNegotiable.status === "completed"
           ? "bg-sidebar/20"
           : "bg-sidebar/30"
@@ -113,11 +133,56 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
             {data.nonNegotiable.title || "Untitled non-negotiable"}
           </p>
         </div>
-        <div className="flex items-center">
-          <EllipsisVertical
-            size={15}
-            className="cursor-pointer hover:text-primary hidden md:block"
-          />
+        <div className="hidden md:flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="cursor-pointer hover:text-primary"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+                aria-label="Non-negotiable options"
+              >
+                <EllipsisVertical size={15} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <DropdownMenuItem
+                onSelect={() => {
+                  openNonNegotiableMode("edit");
+                }}
+              >
+                Edit non-negotiable
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  openNonNegotiableMode("view");
+                }}
+              >
+                Delete non-negotiable
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  toast.info("Skip non-negotiable will be available soon.");
+                }}
+              >
+                Skip
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  toast.info("Pause non-negotiable will be available soon.");
+                }}
+              >
+                Pause
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {isExpanded && (

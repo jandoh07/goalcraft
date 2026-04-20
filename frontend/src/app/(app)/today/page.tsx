@@ -4,6 +4,7 @@ import MobileHeader from "@/components/layout/mobile/header";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { NonNegotiableCard } from "@/components/today/non-negotiable-card";
+import { NonNegotiableModeDialog } from "@/components/today/non-negotiable-mode-dialog";
 import { useGetInProgressNonNegotiablesWithTasks } from "@/hooks/use-today-non-negotiables";
 
 const TodayContent = () => {
@@ -37,6 +38,8 @@ const TodayContent = () => {
           </p>
         )}
       </div>
+
+      <NonNegotiableModeDialog items={data ?? []} />
     </div>
   );
 };
