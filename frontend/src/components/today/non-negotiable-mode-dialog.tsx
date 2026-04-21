@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { Pause, X } from "lucide-react";
 import type {
   InProgressNonNegotiableWithTasks,
   RecurrenceFrequency,
@@ -24,6 +24,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -41,6 +51,7 @@ import {
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "../ui/separator";
+import { cn } from "@/lib/utils";
 
 interface NonNegotiableModeDialogProps {
   items: InProgressNonNegotiableWithTasks[];
@@ -109,6 +120,7 @@ export function NonNegotiableModeDialog({
   const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState<RecurrenceFrequency>("weekly");
   const [customDays, setCustomDays] = useState<Weekday[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!selectedItem) {
@@ -197,19 +209,69 @@ export function NonNegotiableModeDialog({
     },
   );
 
+  const pauseMutation = useMutation(
+    async () => {
+      if (!user?.uid || !selectedItem) {
+        throw new Error("You must be signed in to update a non-negotiable.");
+      }
+
+      const nextStatus: "paused" | "in-progress" =
+        selectedItem.nonNegotiable.status === "paused"
+          ? "in-progress"
+          : "paused";
+
+      await updateNonNegotiable(
+        user.uid,
+        selectedItem.goalId,
+        selectedItem.nonNegotiable.id,
+        {
+          status: nextStatus,
+        },
+      );
+    },
+    {
+      onSuccess: () => {
+        closeDialogOnly();
+      },
+      onError: "Failed to update non-negotiable status.",
+    },
+  );
+
   const isOpen = mode !== null && selectedNonNegotiableId !== null;
-  const isBusy = updateMutation.loading || deleteMutation.loading;
+  const isBusy =
+    updateMutation.loading || deleteMutation.loading || pauseMutation.loading;
+
+  const normalizedCurrentTitle = title.trim();
+  const normalizedOriginalTitle =
+    selectedItem?.nonNegotiable.title.trim() ?? "";
+  const normalizedCurrentDays = sanitizeCustomDays(customDays);
+  const normalizedOriginalDays = sanitizeCustomDays(
+    selectedItem?.nonNegotiable.customDays ?? [],
+  );
+  const hasFrequencyChanged =
+    selectedItem !== null && frequency !== selectedItem.nonNegotiable.frequency;
+  const hasTitleChanged =
+    selectedItem !== null && normalizedCurrentTitle !== normalizedOriginalTitle;
+  const hasCustomDaysChanged =
+    selectedItem !== null &&
+    frequency === "custom" &&
+    (normalizedCurrentDays.length !== normalizedOriginalDays.length ||
+      normalizedCurrentDays.some(
+        (day, index) => day !== normalizedOriginalDays[index],
+      ));
+
+  const hasEditChanges =
+    hasTitleChanged || hasFrequencyChanged || hasCustomDaysChanged;
 
   const handleSave = async () => {
-    const nextTitle = title.trim();
-    if (!nextTitle) {
+    if (!normalizedCurrentTitle || !hasEditChanges) {
       return;
     }
 
     await updateMutation.mutate({
-      title: nextTitle,
+      title: normalizedCurrentTitle,
       frequency,
-      customDays: sanitizeCustomDays(customDays),
+      customDays: normalizedCurrentDays,
     });
   };
 
@@ -322,7 +384,11 @@ export function NonNegotiableModeDialog({
               <Button
                 type="button"
                 onClick={handleSave}
-                disabled={isBusy || title.trim().length === 0}
+                disabled={
+                  isBusy ||
+                  normalizedCurrentTitle.length === 0 ||
+                  !hasEditChanges
+                }
               >
                 {updateMutation.loading ? "Saving..." : "Save changes"}
               </Button>
@@ -336,21 +402,36 @@ export function NonNegotiableModeDialog({
       <div className="flex flex-col h-full relative">
         <div className="flex-1 pt-10 md:pt-0 space-y-4">
           <div className="space-y-2">
-            <p className="text-lg font-semibold">
+            <p
+              className={cn(
+                "text-lg font-semibold",
+                selectedItem.nonNegotiable.status === "completed" &&
+                  "line-through",
+              )}
+            >
               {selectedItem.nonNegotiable.title || "Untitled non-negotiable"}
             </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {selectedItem.nonNegotiable.status === "completed"
-                  ? "Completed"
-                  : "In progress"}
-              </Badge>
-              <Badge variant="outline">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="outline" className="rounded-lg">
                 {getFrequencyLabel(
                   selectedItem.nonNegotiable.frequency,
                   selectedItem.nonNegotiable.customDays,
                 )}
               </Badge>
+              {selectedItem.nonNegotiable.status !== "completed" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pauseMutation.mutate()}
+                  disabled={isBusy}
+                >
+                  {selectedItem.nonNegotiable.status === "paused"
+                    ? "Resume"
+                    : "Pause"}
+                  <Pause />
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -391,7 +472,7 @@ export function NonNegotiableModeDialog({
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => setIsDeleteDialogOpen(true)}
               disabled={isBusy}
               className="w-25"
             >
@@ -405,43 +486,111 @@ export function NonNegotiableModeDialog({
 
   if (isMobile) {
     return (
-      <Drawer
-        open={isOpen}
-        direction="right"
-        onOpenChange={(open) => !open && closeDialogOnly()}
-      >
-        <DrawerContent className="min-w-screen h-svh max-h-svh">
-          <DrawerClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Close dialog"
-              className="absolute right-3 top-2 z-10"
-            >
-              <X className="size-5" />
-            </Button>
-          </DrawerClose>
-          <DrawerHeader className="sr-only">
-            <DrawerTitle className="pr-10">{dialogTitle}</DrawerTitle>
-            <DrawerDescription>{dialogDescription}</DrawerDescription>
-          </DrawerHeader>
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-4 pb-4">
-            {renderBody()}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <>
+        <Drawer
+          open={isOpen}
+          direction="right"
+          onOpenChange={(open) => !open && closeDialogOnly()}
+        >
+          <DrawerContent className="min-w-screen h-svh max-h-svh">
+            <DrawerClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Close dialog"
+                className="absolute right-3 top-2 z-10"
+              >
+                <X className="size-5" />
+              </Button>
+            </DrawerClose>
+            <DrawerHeader className="sr-only">
+              <DrawerTitle className="pr-10">{dialogTitle}</DrawerTitle>
+              <DrawerDescription>{dialogDescription}</DrawerDescription>
+            </DrawerHeader>
+            <div className="custom-scrollbar flex-1 overflow-y-auto px-4 pb-4">
+              {renderBody()}
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={(open) => {
+            setIsDeleteDialogOpen(open);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this non-negotiable?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this non-negotiable and its linked
+                tasks.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteMutation.loading}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteMutation.loading}
+                onClick={async (event) => {
+                  event.preventDefault();
+                  await deleteMutation.mutate();
+                }}
+              >
+                {deleteMutation.loading ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialogOnly()}>
-      <DialogContent className="min-w-2xl min-h-100 max-h-[90dvh] overflow-y-auto custom-scrollbar">
-        <DialogHeader className="sr-only">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-        {renderBody()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialogOnly()}>
+        <DialogContent className="min-w-2xl min-h-100 max-h-[90dvh] overflow-y-auto custom-scrollbar">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
+          </DialogHeader>
+          {renderBody()}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this non-negotiable?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this non-negotiable and its linked
+              tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.loading}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.loading}
+              onClick={async (event) => {
+                event.preventDefault();
+                await deleteMutation.mutate();
+              }}
+            >
+              {deleteMutation.loading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -7,7 +7,6 @@ import { getNextNonNegotiableDate } from "@/lib/utils/non-negotiable-recurrence"
 import {
   Timestamp,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -22,6 +21,18 @@ import { writeBatch } from "firebase/firestore";
 
 const userNonNegotiablesCollectionRef = (userId: string) =>
   collection(db, "users", userId, "nonNegotiables");
+const nonNegotiableTasksCollectionRef = (
+  userId: string,
+  nonNegotiableId: string,
+) =>
+  collection(
+    db,
+    "users",
+    userId,
+    "nonNegotiables",
+    nonNegotiableId,
+    "tasks",
+  );
 
 export const subscribeTodayNonNegotiablesWithTasks = (
   userId: string,
@@ -62,7 +73,7 @@ export const subscribeTodayNonNegotiablesWithTasks = (
   const unsubscribeInProgressNN = onSnapshot(
     query(
       userNonNegotiablesCollectionRef(userId),
-      where("status", "==", "in-progress"),
+      where("status", "in", ["in-progress", "paused"]),
       where("showAfter", "<", Timestamp.fromDate(startOfTomorrow)),
     ),
     (snap) => {
@@ -225,6 +236,27 @@ export const updateNonNegotiable = async (
   await updateDoc(nonNegotiableRef, updatePayload);
 };
 
+export const createNonNegotiableTask = async (
+  userId: string,
+  goalId: string,
+  nonNegotiableId: string,
+  taskData: Pick<NonNegotiableTask, "title" | "duration">,
+) => {
+  const taskRef = doc(nonNegotiableTasksCollectionRef(userId, nonNegotiableId));
+  const now = Timestamp.now();
+
+  await setDoc(taskRef, {
+    userId,
+    goalId,
+    title: taskData.title,
+    duration: taskData.duration,
+    status: "in-progress",
+    completedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+};
+
 export const deleteNonNegotiable = async (
   userId: string,
   goalId: string,
@@ -237,8 +269,23 @@ export const deleteNonNegotiable = async (
     "nonNegotiables",
     nonNegotiableId,
   );
+
+  const tasksSnapshot = await getDocs(
+    nonNegotiableTasksCollectionRef(userId, nonNegotiableId),
+  );
+
+  const refsToDelete = [...tasksSnapshot.docs.map((taskDoc) => taskDoc.ref), nonNegotiableRef];
+
+  for (let start = 0; start < refsToDelete.length; start += 450) {
+    const batch = writeBatch(db);
+    const refsInChunk = refsToDelete.slice(start, start + 450);
+    refsInChunk.forEach((ref) => {
+      batch.delete(ref);
+    });
+    await batch.commit();
+  }
+
   void goalId;
-  await deleteDoc(nonNegotiableRef);
 };
 
 export const completeNonNegotiableAndSpawnNext = async (

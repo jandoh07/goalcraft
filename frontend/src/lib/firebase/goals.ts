@@ -24,6 +24,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteNonNegotiable } from "./non-negotiable";
 
 const goalsCollectionRef = (userId: string) =>
   collection(db, "users", userId, "goals");
@@ -125,9 +126,14 @@ export const deleteGoal = async (userId: string, goalId: string) => {
       where("goalId", "==", goalId),
     ),
   );
-  linkedNonNegotiables.forEach((nonNegotiableDoc) => {
-    batch.delete(nonNegotiableDoc.ref);
-  });
+
+  const linkedNonNegotiableIds = linkedNonNegotiables.docs.map(
+    (nonNegotiableDoc) => nonNegotiableDoc.id,
+  );
+
+  for (const nonNegotiableId of linkedNonNegotiableIds) {
+    await deleteNonNegotiable(userId, goalId, nonNegotiableId);
+  }
 
   batch.delete(goalDocRef(userId, goalId));
   await batch.commit();
@@ -279,10 +285,11 @@ export const updateGoalWithRelations = async (
   const nextNonNegotiablesById = new Map(
     nextData.nonNegotiables.map((item) => [item.id, item]),
   );
+  const nonNegotiableIdsToDelete: string[] = [];
 
   originalNonNegotiablesById.forEach((_, id) => {
     if (!nextNonNegotiablesById.has(id)) {
-      batch.delete(doc(db, "users", userId, "nonNegotiables", id));
+      nonNegotiableIdsToDelete.push(id);
     }
   });
 
@@ -316,6 +323,10 @@ export const updateGoalWithRelations = async (
   });
 
   await batch.commit();
+
+  for (const nonNegotiableId of nonNegotiableIdsToDelete) {
+    await deleteNonNegotiable(userId, goalId, nonNegotiableId);
+  }
 };
 
 export const updateMilestone = async (

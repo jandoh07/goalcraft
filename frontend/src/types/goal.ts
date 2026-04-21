@@ -17,7 +17,7 @@ export type NonNegotiable = {
   title: string;
   goalId: string;
   previousInstanceId?: string;
-  status: "in-progress" | "completed";
+  status: "in-progress" | "paused" | "completed";
   completedAt?: Date | null;
   showAfter?: Date;
   frequency: RecurrenceFrequency;
