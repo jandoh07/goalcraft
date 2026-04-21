@@ -39,8 +39,8 @@ const presets = {
 export type ConfirmDialogPresetType = keyof typeof presets;
 
 interface ConfirmationDialogProps {
-  onConfirm: () => void;
-  onCancel: () => void;
+  onConfirm: () => void | Promise<void>;
+  onCancel?: () => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   title?: string;
@@ -49,6 +49,7 @@ interface ConfirmationDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "destructive";
+  isLoading?: boolean;
 }
 
 const ConfirmationDialog = ({
@@ -62,6 +63,7 @@ const ConfirmationDialog = ({
   confirmText,
   cancelText,
   variant,
+  isLoading = false,
 }: ConfirmationDialogProps) => {
   const presetConfig = presets[preset];
   const finalTitle = title || presetConfig.title;
@@ -78,11 +80,12 @@ const ConfirmationDialog = ({
           <AlertDialogDescription>{finalDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
+          <AlertDialogCancel onClick={onCancel} disabled={isLoading}>
             {finalCancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
+            disabled={isLoading}
             className={
               finalVariant === "destructive"
                 ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"

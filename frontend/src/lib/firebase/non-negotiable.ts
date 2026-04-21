@@ -7,6 +7,7 @@ import { getNextNonNegotiableDate } from "@/lib/utils/non-negotiable-recurrence"
 import {
   Timestamp,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -25,14 +26,7 @@ const nonNegotiableTasksCollectionRef = (
   userId: string,
   nonNegotiableId: string,
 ) =>
-  collection(
-    db,
-    "users",
-    userId,
-    "nonNegotiables",
-    nonNegotiableId,
-    "tasks",
-  );
+  collection(db, "users", userId, "nonNegotiables", nonNegotiableId, "tasks");
 
 export const subscribeTodayNonNegotiablesWithTasks = (
   userId: string,
@@ -257,6 +251,61 @@ export const createNonNegotiableTask = async (
   });
 };
 
+export const updateNonNegotiableTask = async (
+  userId: string,
+  goalId: string,
+  nonNegotiableId: string,
+  taskId: string,
+  updates: Partial<Pick<NonNegotiableTask, "title" | "duration" | "status">>,
+) => {
+  const taskRef = doc(
+    db,
+    "users",
+    userId,
+    "nonNegotiables",
+    nonNegotiableId,
+    "tasks",
+    taskId,
+  );
+
+  const updatePayload: Record<string, unknown> & {
+    goalId: string;
+    updatedAt: Timestamp;
+  } = {
+    ...updates,
+    goalId,
+    updatedAt: Timestamp.now(),
+  };
+
+  if (updates.status === "completed") {
+    updatePayload.completedAt = Timestamp.now();
+  }
+
+  if (updates.status === "in-progress") {
+    updatePayload.completedAt = null;
+  }
+
+  await updateDoc(taskRef, updatePayload);
+};
+
+export const deleteNonNegotiableTask = async (
+  userId: string,
+  nonNegotiableId: string,
+  taskId: string,
+) => {
+  const taskRef = doc(
+    db,
+    "users",
+    userId,
+    "nonNegotiables",
+    nonNegotiableId,
+    "tasks",
+    taskId,
+  );
+
+  await deleteDoc(taskRef);
+};
+
 export const deleteNonNegotiable = async (
   userId: string,
   goalId: string,
@@ -274,7 +323,10 @@ export const deleteNonNegotiable = async (
     nonNegotiableTasksCollectionRef(userId, nonNegotiableId),
   );
 
-  const refsToDelete = [...tasksSnapshot.docs.map((taskDoc) => taskDoc.ref), nonNegotiableRef];
+  const refsToDelete = [
+    ...tasksSnapshot.docs.map((taskDoc) => taskDoc.ref),
+    nonNegotiableRef,
+  ];
 
   for (let start = 0; start < refsToDelete.length; start += 450) {
     const batch = writeBatch(db);
