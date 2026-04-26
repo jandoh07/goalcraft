@@ -21,16 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -42,6 +32,8 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
+import { describeFrequencyTags } from "@/lib/utils/non-negotiable-recurrence";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 
 interface NonNegotiableModeDialogProps {
   items: InProgressNonNegotiableWithTasks[];
@@ -88,7 +80,7 @@ export function NonNegotiableModeDialog({
   useEffect(() => {
     if (!selectedItem) {
       setTitle("");
-      // setFrequency(buildQuickFrequencyTags("weekly"));
+      setFrequency([]);
       return;
     }
 
@@ -200,8 +192,9 @@ export function NonNegotiableModeDialog({
   const normalizedCurrentTitle = title.trim();
   const normalizedOriginalTitle =
     selectedItem?.nonNegotiable.title.trim() ?? "";
-  const hasFrequencyChanged = selectedItem !== null;
-  // && !areSameFrequencyTags(frequency, selectedItem.nonNegotiable.frequency);
+  const hasFrequencyChanged =
+    selectedItem !== null &&
+    !areSameFrequencyTags(frequency, selectedItem.nonNegotiable.frequency);
   const hasTitleChanged =
     selectedItem !== null && normalizedCurrentTitle !== normalizedOriginalTitle;
 
@@ -212,10 +205,10 @@ export function NonNegotiableModeDialog({
       return;
     }
 
-    // await updateMutation.mutate({
-    //   title: normalizedCurrentTitle,
-    //   frequency,
-    // });
+    await updateMutation.mutate({
+      title: normalizedCurrentTitle,
+      frequency,
+    });
   };
 
   const dialogTitle =
@@ -308,7 +301,7 @@ export function NonNegotiableModeDialog({
             </p>
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="rounded-lg">
-                {/* {formatFrequencyTags(selectedItem.nonNegotiable.frequency)} */}
+                {describeFrequencyTags(selectedItem.nonNegotiable.frequency)}
               </Badge>
               {selectedItem.nonNegotiable.status !== "end" ? (
                 <Button
@@ -376,6 +369,20 @@ export function NonNegotiableModeDialog({
     );
   };
 
+  const deleteConfirmationDialog = (
+    <ConfirmationDialog
+      open={isDeleteDialogOpen}
+      onOpenChange={setIsDeleteDialogOpen}
+      onConfirm={deleteMutation.mutate}
+      isLoading={deleteMutation.loading}
+      title="Delete this non-negotiable?"
+      description="This will permanently delete this non-negotiable and its linked tasks."
+      confirmText={deleteMutation.loading ? "Deleting..." : "Delete"}
+      cancelText="Cancel"
+      variant="destructive"
+    />
+  );
+
   if (isMobile) {
     return (
       <>
@@ -405,37 +412,7 @@ export function NonNegotiableModeDialog({
           </DrawerContent>
         </Drawer>
 
-        <AlertDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={(open) => {
-            setIsDeleteDialogOpen(open);
-          }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete this non-negotiable?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete this non-negotiable and its linked
-                tasks.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteMutation.loading}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={deleteMutation.loading}
-                onClick={async (event) => {
-                  event.preventDefault();
-                  await deleteMutation.mutate();
-                }}
-              >
-                {deleteMutation.loading ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {deleteConfirmationDialog}
       </>
     );
   }
@@ -452,37 +429,7 @@ export function NonNegotiableModeDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={(open) => {
-          setIsDeleteDialogOpen(open);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this non-negotiable?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this non-negotiable and its linked
-              tasks.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.loading}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteMutation.loading}
-              onClick={async (event) => {
-                event.preventDefault();
-                await deleteMutation.mutate();
-              }}
-            >
-              {deleteMutation.loading ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deleteConfirmationDialog}
     </>
   );
 }

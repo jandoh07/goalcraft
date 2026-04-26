@@ -185,8 +185,6 @@ export const describeFrequencyTags = (tags: string[]) => {
   return "custom schedule";
 };
 
-export const formatFrequencyTags = describeFrequencyTags;
-
 export const getTodaySearchTags = (date = new Date()) => {
   const uDay = getLocalUniversalDay(date);
   const uWeek = getLocalUniversalWeek(date);

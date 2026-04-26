@@ -41,7 +41,8 @@ export type ConfirmDialogPresetType = keyof typeof presets;
 interface ConfirmationDialogProps {
   onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
-  isOpen: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onOpenChange: (isOpen: boolean) => void;
   title?: string;
   description?: string;
@@ -55,6 +56,7 @@ interface ConfirmationDialogProps {
 const ConfirmationDialog = ({
   onConfirm,
   onCancel,
+  open,
   isOpen,
   onOpenChange,
   title,
@@ -71,9 +73,15 @@ const ConfirmationDialog = ({
   const finalConfirmText = confirmText || presetConfig.confirmText;
   const finalCancelText = cancelText || presetConfig.cancelText || "Cancel";
   const finalVariant = variant || presetConfig.variant;
+  const resolvedOpen = open ?? isOpen ?? false;
+
+  const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    await onConfirm();
+  };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    <AlertDialog open={resolvedOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{finalTitle}</AlertDialogTitle>
@@ -84,7 +92,7 @@ const ConfirmationDialog = ({
             {finalCancelText}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isLoading}
             className={
               finalVariant === "destructive"
