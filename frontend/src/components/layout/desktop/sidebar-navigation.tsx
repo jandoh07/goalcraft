@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Goal, Sun, Inbox, BarChart3 } from "lucide-react";
+import { Goal, Sun, BarChart3, Brain } from "lucide-react";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 const sidebarItems = [
@@ -14,21 +14,21 @@ const sidebarItems = [
   },
   {
     id: 2,
-    label: "Inbox",
-    icon: Inbox,
-    href: "/inbox",
-  },
-  {
-    id: 3,
     label: "Goals",
     icon: Goal,
     href: "/goals",
   },
   {
-    id: 4,
+    id: 3,
     label: "Review",
     icon: BarChart3,
     href: "/review",
+  },
+  {
+    id: 4,
+    label: "Brain Dump",
+    icon: Brain,
+    href: "/brain-dump",
   },
 ];
 

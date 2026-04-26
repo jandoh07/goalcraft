@@ -1,4 +1,4 @@
-import { Goal, Sun, Inbox, BarChart3, User } from "lucide-react";
+import { Goal, Sun, BarChart3, User, Brain } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,21 +11,21 @@ const tabItems = [
   },
   {
     id: 2,
-    label: "Inbox",
-    icon: Inbox,
-    href: "/inbox",
-  },
-  {
-    id: 3,
     label: "Goals",
     icon: Goal,
     href: "/goals",
   },
   {
-    id: 4,
+    id: 3,
     label: "Review",
     icon: BarChart3,
     href: "/review",
+  },
+  {
+    id: 4,
+    label: "Brain Dump",
+    icon: Brain,
+    href: "/brain-dump",
   },
   {
     id: 5,
