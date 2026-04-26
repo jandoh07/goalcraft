@@ -2,38 +2,42 @@ import { type Dispatch, type SetStateAction, useState } from "react";
 import { Check, CirclePlus, PenLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NonNegotiableFrequencyPicker } from "@/components/non-negotiables/non-negotiable-frequency-picker";
 import { CreateGoalPhaseHeader } from "./phase-header";
-import { NonNegotiable, RecurrenceFrequency, Weekday } from "@/types/goal";
+import { NonNegotiable } from "@/types/goal";
 
 interface CreateGoalPhaseThreeProps {
   nonNegotiables: NonNegotiable[];
   setNonNegotiables: Dispatch<SetStateAction<NonNegotiable[]>>;
 }
 
-const weekdays: Array<{ key: Weekday; label: string }> = [
-  { key: "sun", label: "Su" },
-  { key: "mon", label: "Mo" },
-  { key: "tue", label: "Tu" },
-  { key: "wed", label: "We" },
-  { key: "thu", label: "Th" },
-  { key: "fri", label: "Fr" },
-  { key: "sat", label: "Sa" },
-];
+type PendingNonNegotiableDraft = Pick<
+  NonNegotiable,
+  "title" | "status" | "frequency" | "lastCompletedAt"
+>;
 
-const createNonNegotiable = () => ({
-  id: `nn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  goalId: "",
+const createNonNegotiable = (
+  draft: PendingNonNegotiableDraft,
+): NonNegotiable => {
+  const now = new Date();
+
+  return {
+    id: `nn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    goalId: "",
+    title: draft.title,
+    status: draft.status,
+    frequency: draft.frequency,
+    lastCompletedAt: draft.lastCompletedAt,
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
+const createEmptyDraft = (): PendingNonNegotiableDraft => ({
   title: "",
-  status: "in-progress" as const,
-  frequency: "daily" as const,
-  customDays: [] as Weekday[],
+  status: "in-progress",
+  frequency: [],
+  lastCompletedAt: null,
 });
 
 export const CreateGoalPhaseThree = ({
@@ -41,10 +45,8 @@ export const CreateGoalPhaseThree = ({
   setNonNegotiables,
 }: CreateGoalPhaseThreeProps) => {
   const [editingIds, setEditingIds] = useState<string[]>([]);
-  const [pendingItem, setPendingItem] = useState<Omit<
-    NonNegotiable,
-    "id" | "goalId"
-  > | null>(null);
+  const [pendingItem, setPendingItem] =
+    useState<PendingNonNegotiableDraft | null>(null);
 
   const updateItem = (id: string, updates: Partial<NonNegotiable>) => {
     setNonNegotiables((prev) =>
@@ -62,12 +64,7 @@ export const CreateGoalPhaseThree = ({
       return;
     }
 
-    setPendingItem({
-      title: "",
-      status: "in-progress",
-      frequency: "weekly",
-      customDays: [],
-    });
+    setPendingItem(createEmptyDraft());
   };
 
   const cancelPendingItem = () => {
@@ -79,13 +76,7 @@ export const CreateGoalPhaseThree = ({
       return;
     }
 
-    setNonNegotiables((prev) => [
-      ...prev,
-      {
-        ...createNonNegotiable(),
-        ...pendingItem,
-      },
-    ]);
+    setNonNegotiables((prev) => [...prev, createNonNegotiable(pendingItem)]);
 
     setPendingItem(null);
   };
@@ -94,57 +85,6 @@ export const CreateGoalPhaseThree = ({
     setEditingIds((prev) =>
       prev.includes(id) ? prev.filter((entry) => entry !== id) : [...prev, id],
     );
-  };
-
-  const getFrequencyLabel = (item: NonNegotiable) => {
-    if (item.frequency !== "custom") {
-      return item.frequency[0].toUpperCase() + item.frequency.slice(1);
-    }
-
-    if (item.customDays.length === 0) {
-      return "Custom";
-    }
-
-    const selectedLabels = weekdays
-      .filter((day) => item.customDays.includes(day.key))
-      .map((day) => day.label)
-      .join(", ");
-
-    return `Custom (${selectedLabels})`;
-  };
-
-  const toggleCustomDay = (id: string, day: Weekday) => {
-    setNonNegotiables((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) {
-          return item;
-        }
-
-        const exists = item.customDays.includes(day);
-        return {
-          ...item,
-          customDays: exists
-            ? item.customDays.filter((entry) => entry !== day)
-            : [...item.customDays, day],
-        };
-      }),
-    );
-  };
-
-  const togglePendingCustomDay = (day: Weekday) => {
-    setPendingItem((prev) => {
-      if (!prev) {
-        return prev;
-      }
-
-      const exists = prev.customDays.includes(day);
-      return {
-        ...prev,
-        customDays: exists
-          ? prev.customDays.filter((entry) => entry !== day)
-          : [...prev.customDays, day],
-      };
-    });
   };
 
   return (
@@ -182,7 +122,7 @@ export const CreateGoalPhaseThree = ({
                   {item.title.trim() || `Non-negotiable ${index + 1}`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {getFrequencyLabel(item)}
+                  {/* {formatFrequencyTags(item.frequency)} */}
                 </p>
               </div>
               <div className="flex items-center gap-1">
@@ -222,52 +162,10 @@ export const CreateGoalPhaseThree = ({
                   placeholder="Title (e.g. 30 minutes focused work)"
                 />
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Select
-                    value={item.frequency}
-                    onValueChange={(value) =>
-                      updateItem(item.id, {
-                        frequency: value as RecurrenceFrequency,
-                        customDays: value === "custom" ? item.customDays : [],
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select recurrence" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {item.frequency === "custom" && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">
-                      Pick weekdays
-                    </p>
-                    <div className="grid grid-cols-7 gap-2">
-                      {weekdays.map((day) => {
-                        const selected = item.customDays.includes(day.key);
-                        return (
-                          <Button
-                            key={day.key}
-                            type="button"
-                            variant={selected ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleCustomDay(item.id, day.key)}
-                            className="px-0"
-                          >
-                            {day.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <NonNegotiableFrequencyPicker
+                  value={item.frequency}
+                  onChange={(frequency) => updateItem(item.id, { frequency })}
+                />
               </div>
             )}
           </div>
@@ -285,55 +183,19 @@ export const CreateGoalPhaseThree = ({
               placeholder="Title (e.g. 30 minutes focused work)"
             />
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <Select
-                value={pendingItem.frequency}
-                onValueChange={(value) =>
-                  setPendingItem((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          frequency: value as RecurrenceFrequency,
-                          customDays: value === "custom" ? prev.customDays : [],
-                        }
-                      : prev,
-                  )
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select recurrence" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {pendingItem.frequency === "custom" && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Pick weekdays</p>
-                <div className="grid grid-cols-7 gap-2">
-                  {weekdays.map((day) => {
-                    const selected = pendingItem.customDays.includes(day.key);
-                    return (
-                      <Button
-                        key={day.key}
-                        type="button"
-                        variant={selected ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => togglePendingCustomDay(day.key)}
-                        className="px-0"
-                      >
-                        {day.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <NonNegotiableFrequencyPicker
+              value={pendingItem.frequency}
+              onChange={(frequency) =>
+                setPendingItem((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        frequency,
+                      }
+                    : prev,
+                )
+              }
+            />
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={cancelPendingItem}>

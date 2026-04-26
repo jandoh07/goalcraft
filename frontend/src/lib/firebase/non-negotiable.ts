@@ -3,7 +3,6 @@ import {
   NonNegotiable,
   NonNegotiableTask,
 } from "@/types/goal";
-import { getNextNonNegotiableDate } from "@/lib/utils/non-negotiable-recurrence";
 import {
   Timestamp,
   collection,
@@ -19,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { writeBatch } from "firebase/firestore";
+import { getTodaySearchTags } from "../utils/non-negotiable-recurrence";
 
 const userNonNegotiablesCollectionRef = (userId: string) =>
   collection(db, "users", userId, "nonNegotiables");
@@ -38,14 +38,12 @@ export const subscribeTodayNonNegotiablesWithTasks = (
   const startOfTomorrow = new Date(startOfToday);
   startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-  let latestInProgNNs: NonNegotiable[] = [];
-  let latestCompNNs: NonNegotiable[] = [];
+  let allNNs: NonNegotiable[] = [];
   let latestInProgTasks: (NonNegotiableTask & { nonNegotiableId: string })[] =
     [];
   let latestCompTasks: (NonNegotiableTask & { nonNegotiableId: string })[] = [];
 
   const emitUpdate = () => {
-    const allNNs = [...latestInProgNNs, ...latestCompNNs];
     const allTasks = [...latestInProgTasks, ...latestCompTasks];
 
     const combined = allNNs.map((nn) => ({
@@ -54,41 +52,21 @@ export const subscribeTodayNonNegotiablesWithTasks = (
         ...nn,
         nonegotiableId: nn.id,
       },
-      tasks: allTasks.filter(
-        (task) =>
-          task.nonNegotiableId === nn.id ||
-          task.nonNegotiableId === nn?.previousInstanceId,
-      ),
+      tasks: allTasks.filter((task) => task.nonNegotiableId === nn.id),
     }));
 
     onData(combined as InProgressNonNegotiableWithTasks[]);
   };
 
-  const unsubscribeInProgressNN = onSnapshot(
+  const frequencyTags = getTodaySearchTags();
+  const unsubscribeToNN = onSnapshot(
     query(
       userNonNegotiablesCollectionRef(userId),
-      where("status", "in", ["in-progress", "paused"]),
-      where("showAfter", "<", Timestamp.fromDate(startOfTomorrow)),
+      where("status", "!=", "end"),
+      where("frequency", "array-contains-any", frequencyTags),
     ),
     (snap) => {
-      latestInProgNNs = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as NonNegotiable[];
-      emitUpdate();
-    },
-    onError,
-  );
-
-  const unsubscribeCompletedNN = onSnapshot(
-    query(
-      userNonNegotiablesCollectionRef(userId),
-      where("status", "==", "completed"),
-      where("completedAt", ">=", Timestamp.fromDate(startOfToday)),
-      where("completedAt", "<", Timestamp.fromDate(startOfTomorrow)),
-    ),
-    (snap) => {
-      latestCompNNs = snap.docs.map((doc) => ({
+      allNNs = snap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as NonNegotiable[];
@@ -134,8 +112,7 @@ export const subscribeTodayNonNegotiablesWithTasks = (
   );
 
   return () => {
-    unsubscribeInProgressNN();
-    unsubscribeCompletedNN();
+    unsubscribeToNN();
     unsubscribeInProgTasks();
     unsubscribeCompTasks();
   };
@@ -163,9 +140,11 @@ export const getGoalNonNegotiables = async (
         "in-progress") as NonNegotiable["status"],
       frequency: ((data.frequency as NonNegotiable["frequency"]) ??
         "weekly") as NonNegotiable["frequency"],
-      customDays: Array.isArray(data.customDays)
-        ? (data.customDays as NonNegotiable["customDays"])
-        : [],
+      lastCompletedAt: data.lastCompletedAt
+        ? (data.lastCompletedAt as Timestamp).toDate()
+        : null,
+      createdAt: (data.createdAt as Timestamp).toDate(),
+      updatedAt: (data.updatedAt as Timestamp)?.toDate(),
     };
   });
 };
@@ -176,15 +155,14 @@ export const createNonNegotiable = async (
   nonNegotiableData: Omit<NonNegotiable, "id">,
 ) => {
   const nonNegotiableRef = doc(userNonNegotiablesCollectionRef(userId));
+  const now = Timestamp.now();
 
   await setDoc(nonNegotiableRef, {
     ...nonNegotiableData,
     goalId,
     status: nonNegotiableData.status,
-    completedAt:
-      nonNegotiableData.status === "completed" ? Timestamp.now() : null,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+    createdAt: now,
+    updatedAt: now,
   });
 };
 
@@ -202,7 +180,7 @@ export const updateNonNegotiable = async (
     nonNegotiableId,
   );
 
-  const { completedAt, ...restUpdates } = updates;
+  const { lastCompletedAt, ...restUpdates } = updates;
 
   const updatePayload: Record<string, unknown> & {
     goalId: string;
@@ -213,17 +191,9 @@ export const updateNonNegotiable = async (
     updatedAt: Timestamp.now(),
   };
 
-  if (updates.status === "completed") {
-    updatePayload.completedAt = Timestamp.now();
-  }
-
-  if (updates.status === "in-progress") {
-    updatePayload.completedAt = null;
-  }
-
-  if (updates.status === undefined && completedAt !== undefined) {
-    updatePayload.completedAt = completedAt
-      ? Timestamp.fromDate(completedAt)
+  if (lastCompletedAt) {
+    updatePayload.lastCompletedAt = lastCompletedAt
+      ? Timestamp.fromDate(lastCompletedAt)
       : null;
   }
 
@@ -338,45 +308,4 @@ export const deleteNonNegotiable = async (
   }
 
   void goalId;
-};
-
-export const completeNonNegotiableAndSpawnNext = async (
-  userId: string,
-  nonNegotiable: NonNegotiable,
-  nonNegotiableId: string,
-) => {
-  const nonNegotiableRef = doc(
-    db,
-    "users",
-    userId,
-    "nonNegotiables",
-    nonNegotiableId,
-  );
-
-  const batch = writeBatch(db);
-  const completedAt = new Date();
-  const completedAtTimestamp = Timestamp.fromDate(completedAt);
-
-  batch.update(nonNegotiableRef, {
-    status: "completed",
-    completedAt: completedAtTimestamp,
-    updatedAt: completedAtTimestamp,
-  });
-
-  const nextDate = getNextNonNegotiableDate(nonNegotiable, completedAt);
-
-  const newNonNegotiableRef = doc(userNonNegotiablesCollectionRef(userId));
-  batch.set(newNonNegotiableRef, {
-    title: nonNegotiable.title,
-    goalId: nonNegotiable.goalId,
-    status: "in-progress",
-    previousInstanceId: nonNegotiableId,
-    frequency: nonNegotiable.frequency,
-    customDays: nonNegotiable.customDays,
-    showAfter: Timestamp.fromDate(nextDate),
-    createdAt: completedAtTimestamp,
-    updatedAt: completedAtTimestamp,
-  });
-
-  await batch.commit();
 };

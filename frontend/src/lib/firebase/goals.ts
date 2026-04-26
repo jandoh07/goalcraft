@@ -88,7 +88,6 @@ export const createGoal = async (userId: string, goalData: GoalData) => {
       goalId: newGoalRef.id,
       status: nonNegotiable.status,
       frequency: nonNegotiable.frequency,
-      customDays: nonNegotiable.customDays,
       createdAt: now,
       updatedAt: now,
     });
@@ -303,7 +302,6 @@ export const updateGoalWithRelations = async (
         goalId,
         status: nextItem.status,
         frequency: nextItem.frequency,
-        customDays: nextItem.customDays,
         createdAt: now,
         updatedAt: now,
       });
@@ -316,7 +314,6 @@ export const updateGoalWithRelations = async (
         goalId,
         status: nextItem.status,
         frequency: nextItem.frequency,
-        customDays: nextItem.customDays,
         updatedAt: now,
       });
     }

@@ -39,18 +39,27 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const toggleCompleteMutation = useMutation(
-    () =>
-      updateNonNegotiable(user!.uid, data.goalId, data.nonNegotiable.id, {
-        status:
-          data.nonNegotiable.status === "completed"
-            ? "in-progress"
-            : "completed",
-      }),
-    {
-      onError: "Error updating non-negotiable status",
-    },
-  );
+  // const toggleCompleteMutation = useMutation(
+  //   () => {
+  //     if (data.nonNegotiable.status === "completed") {
+  //       return uncompleteNonNegotiableAndDeleteNext(
+  //         user!.uid,
+  //         data.goalId,
+  //         data.nonNegotiable.id,
+  //         data.nonNegotiable.nextInstanceId || null,
+  //       );
+  //     }
+
+  //     return completeNonNegotiableAndSpawnNext(
+  //       user!.uid,
+  //       data.nonNegotiable,
+  //       data.nonNegotiable.id,
+  //     );
+  //   },
+  //   {
+  //     onError: "Error updating non-negotiable status",
+  //   },
+  // );
 
   const pauseMutation = useMutation(
     () => {
@@ -97,7 +106,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
 
   const toggleCompleted = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    toggleCompleteMutation.mutate();
+    // toggleCompleteMutation.mutate();
   };
 
   const handleDeleteNonNegotiable = async () => {
@@ -107,7 +116,6 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
   return (
     <div
       className={`px-2 py-3 rounded-lg cursor-pointer overflow-hidden transition-colors ${
-        data.nonNegotiable.status === "completed" ||
         data.nonNegotiable.status === "paused"
           ? "bg-sidebar/20"
           : "bg-sidebar/30"
@@ -143,28 +151,31 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
           <button
             type="button"
             onClick={toggleCompleted}
-            aria-pressed={data.nonNegotiable.status === "completed"}
-            aria-label={
-              data.nonNegotiable.status === "completed"
-                ? "Mark non-negotiable as in progress"
-                : "Mark non-negotiable as completed"
-            }
+            // aria-pressed={data.nonNegotiable.status === "completed"}
+            // aria-label={
+            //   data.nonNegotiable.status === "completed"
+            //     ? "Mark non-negotiable as in progress"
+            //     : "Mark non-negotiable as completed"
+            // }
             className={`mr-2 size-5.5 rounded-sm border flex items-center justify-center transition-colors ${
-              data.nonNegotiable.status === "completed"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border hover:bg-sidebar/60"
+              // data.nonNegotiable.status === "completed"
+              //   ? "border-primary bg-primary text-primary-foreground"
+              //   : "border-border hover:bg-sidebar/60"
+              ""
             } ${data.nonNegotiable.status === "paused" ? "hidden" : ""}`}
-            disabled={toggleCompleteMutation.loading}
+            // disabled={toggleCompleteMutation.loading}
           >
-            {data.nonNegotiable.status === "completed" ? (
+            {/* {data.nonNegotiable.status === "completed" ? (
               <Check size={12} />
-            ) : null}
+            ) : null} */}
           </button>
           <Pause
             className={`size-4 mr-2 text-muted-foreground ${data.nonNegotiable.status === "paused" ? "block" : "hidden"}`}
           />
           <p
-            className={`text-[0.95rem] font-semibold ${data.nonNegotiable.status === "completed" ? "line-through text-muted-foreground" : ""} ${data.nonNegotiable.status === "paused" ? "text-muted-foreground" : ""}`}
+            className={`text-[0.95rem] font-semibold 
+              // data.nonNegotiable.status === "completed" ? "line-through text-muted-foreground" : ""} ${data.nonNegotiable.status === "paused" ? "text-muted-foreground" : ""}
+              `}
           >
             {data.nonNegotiable.title || "Untitled non-negotiable"}
           </p>
@@ -196,7 +207,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
               >
                 Edit
               </DropdownMenuItem>
-              {data.nonNegotiable.status !== "completed" ? (
+              {/* {data.nonNegotiable.status !== "completed" ? (
                 <DropdownMenuItem
                   onSelect={() => {
                     pauseMutation.mutate();
@@ -204,7 +215,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
                 >
                   {data.nonNegotiable.status === "paused" ? "Resume" : "Pause"}
                 </DropdownMenuItem>
-              ) : null}
+              ) : null} */}
               <DropdownMenuItem
                 variant="destructive"
                 onSelect={() => {

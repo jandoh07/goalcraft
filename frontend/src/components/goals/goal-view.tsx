@@ -206,17 +206,10 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
     });
   }, [displayGoal?.dueDate]);
 
-  const formatNonNegotiableFrequency = (item: NonNegotiable) => {
-    if (item.frequency !== "custom") {
-      return item.frequency[0].toUpperCase() + item.frequency.slice(1);
-    }
-
-    if (item.customDays.length === 0) {
-      return "Custom";
-    }
-
-    return `Custom (${item.customDays.map((day) => day.toUpperCase()).join(", ")})`;
-  };
+  // const formatNonNegotiableFrequency = (item: NonNegotiable) =>
+  //   formatFrequencyTags(item.frequency);
+  const formatNonNegotiableFrequency = (item: NonNegotiable) =>
+    "TODO: implement frequency formatting";
 
   const completedMilestones = milestones.filter(
     (milestone) => milestone.status === "completed",
@@ -366,6 +359,7 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
         </div>
       </div>
 
+      {/* TODO: Replace with confirmation dialog component */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}

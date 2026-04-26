@@ -3,17 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pause, X } from "lucide-react";
-import type {
-  InProgressNonNegotiableWithTasks,
-  RecurrenceFrequency,
-  Weekday,
-} from "@/types/goal";
+import type { InProgressNonNegotiableWithTasks } from "@/types/goal";
 import { useAuth } from "@/contexts/auth-context";
 import useMutation from "@/hooks/use-mutation";
 import {
   deleteNonNegotiable,
   updateNonNegotiable,
 } from "@/lib/firebase/non-negotiable";
+import { NonNegotiableFrequencyPicker } from "@/components/non-negotiables/non-negotiable-frequency-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,13 +39,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
@@ -57,40 +47,14 @@ interface NonNegotiableModeDialogProps {
   items: InProgressNonNegotiableWithTasks[];
 }
 
-const weekdays: Array<{ key: Weekday; label: string }> = [
-  { key: "sun", label: "Su" },
-  { key: "mon", label: "Mo" },
-  { key: "tue", label: "Tu" },
-  { key: "wed", label: "We" },
-  { key: "thu", label: "Th" },
-  { key: "fri", label: "Fr" },
-  { key: "sat", label: "Sa" },
-];
-
-const getFrequencyLabel = (
-  frequency: RecurrenceFrequency,
-  customDays: Weekday[],
-) => {
-  if (frequency !== "custom") {
-    return frequency[0].toUpperCase() + frequency.slice(1);
+const areSameFrequencyTags = (a: string[], b: string[]) => {
+  if (a.length !== b.length) {
+    return false;
   }
 
-  if (customDays.length === 0) {
-    return "Custom";
-  }
-
-  const selectedLabels = weekdays
-    .filter((day) => customDays.includes(day.key))
-    .map((day) => day.label)
-    .join(", ");
-
-  return `Custom (${selectedLabels})`;
+  const bSet = new Set(b);
+  return a.every((entry) => bSet.has(entry));
 };
-
-const sanitizeCustomDays = (days: Weekday[]) =>
-  weekdays
-    .map((day) => day.key)
-    .filter((day): day is Weekday => days.includes(day));
 
 export function NonNegotiableModeDialog({
   items,
@@ -118,21 +82,18 @@ export function NonNegotiableModeDialog({
   );
 
   const [title, setTitle] = useState("");
-  const [frequency, setFrequency] = useState<RecurrenceFrequency>("weekly");
-  const [customDays, setCustomDays] = useState<Weekday[]>([]);
+  const [frequency, setFrequency] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!selectedItem) {
       setTitle("");
-      setFrequency("weekly");
-      setCustomDays([]);
+      // setFrequency(buildQuickFrequencyTags("weekly"));
       return;
     }
 
     setTitle(selectedItem.nonNegotiable.title || "");
     setFrequency(selectedItem.nonNegotiable.frequency);
-    setCustomDays(sanitizeCustomDays(selectedItem.nonNegotiable.customDays));
   }, [selectedItem]);
 
   const closeDialogOnly = () => {
@@ -161,11 +122,7 @@ export function NonNegotiableModeDialog({
   };
 
   const updateMutation = useMutation(
-    async (payload: {
-      title: string;
-      frequency: RecurrenceFrequency;
-      customDays: Weekday[];
-    }) => {
+    async (payload: { title: string; frequency: string[] }) => {
       if (!user?.uid || !selectedItem) {
         throw new Error("You must be signed in to update a non-negotiable.");
       }
@@ -177,7 +134,6 @@ export function NonNegotiableModeDialog({
         {
           title: payload.title,
           frequency: payload.frequency,
-          customDays: payload.frequency === "custom" ? payload.customDays : [],
         },
       );
     },
@@ -244,43 +200,22 @@ export function NonNegotiableModeDialog({
   const normalizedCurrentTitle = title.trim();
   const normalizedOriginalTitle =
     selectedItem?.nonNegotiable.title.trim() ?? "";
-  const normalizedCurrentDays = sanitizeCustomDays(customDays);
-  const normalizedOriginalDays = sanitizeCustomDays(
-    selectedItem?.nonNegotiable.customDays ?? [],
-  );
-  const hasFrequencyChanged =
-    selectedItem !== null && frequency !== selectedItem.nonNegotiable.frequency;
+  const hasFrequencyChanged = selectedItem !== null;
+  // && !areSameFrequencyTags(frequency, selectedItem.nonNegotiable.frequency);
   const hasTitleChanged =
     selectedItem !== null && normalizedCurrentTitle !== normalizedOriginalTitle;
-  const hasCustomDaysChanged =
-    selectedItem !== null &&
-    frequency === "custom" &&
-    (normalizedCurrentDays.length !== normalizedOriginalDays.length ||
-      normalizedCurrentDays.some(
-        (day, index) => day !== normalizedOriginalDays[index],
-      ));
 
-  const hasEditChanges =
-    hasTitleChanged || hasFrequencyChanged || hasCustomDaysChanged;
+  const hasEditChanges = hasTitleChanged || hasFrequencyChanged;
 
   const handleSave = async () => {
     if (!normalizedCurrentTitle || !hasEditChanges) {
       return;
     }
 
-    await updateMutation.mutate({
-      title: normalizedCurrentTitle,
-      frequency,
-      customDays: normalizedCurrentDays,
-    });
-  };
-
-  const toggleCustomDay = (day: Weekday) => {
-    setCustomDays((prev) =>
-      prev.includes(day)
-        ? prev.filter((entry) => entry !== day)
-        : [...prev, day],
-    );
+    // await updateMutation.mutate({
+    //   title: normalizedCurrentTitle,
+    //   frequency,
+    // });
   };
 
   const dialogTitle =
@@ -323,51 +258,11 @@ export function NonNegotiableModeDialog({
 
             <div className="space-y-2">
               <p className="text-sm font-medium">Frequency</p>
-              <Select
+              <NonNegotiableFrequencyPicker
                 value={frequency}
-                onValueChange={(value) => {
-                  const nextFrequency = value as RecurrenceFrequency;
-                  setFrequency(nextFrequency);
-                  if (nextFrequency !== "custom") {
-                    setCustomDays([]);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={setFrequency}
+              />
             </div>
-
-            {frequency === "custom" && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Custom days</p>
-                <div className="grid grid-cols-7 gap-2">
-                  {weekdays.map((day) => {
-                    const selected = customDays.includes(day.key);
-
-                    return (
-                      <Button
-                        key={day.key}
-                        type="button"
-                        variant={selected ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => toggleCustomDay(day.key)}
-                        className="px-0"
-                      >
-                        {day.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="absolute right-0 bottom-0 bg-background w-full">
@@ -394,6 +289,7 @@ export function NonNegotiableModeDialog({
               </Button>
             </div>
           </div>
+          <div className="w-full h-16"></div>
         </div>
       );
     }
@@ -405,20 +301,16 @@ export function NonNegotiableModeDialog({
             <p
               className={cn(
                 "text-lg font-semibold",
-                selectedItem.nonNegotiable.status === "completed" &&
-                  "line-through",
+                selectedItem.nonNegotiable.status === "end" && "line-through",
               )}
             >
               {selectedItem.nonNegotiable.title || "Untitled non-negotiable"}
             </p>
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="rounded-lg">
-                {getFrequencyLabel(
-                  selectedItem.nonNegotiable.frequency,
-                  selectedItem.nonNegotiable.customDays,
-                )}
+                {/* {formatFrequencyTags(selectedItem.nonNegotiable.frequency)} */}
               </Badge>
-              {selectedItem.nonNegotiable.status !== "completed" ? (
+              {selectedItem.nonNegotiable.status !== "end" ? (
                 <Button
                   type="button"
                   variant="outline"

@@ -9,19 +9,17 @@ export interface Goal {
   updatedAt: Date;
 }
 
-export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "custom";
 export type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
 export type NonNegotiable = {
   id: string;
   title: string;
   goalId: string;
-  previousInstanceId?: string;
-  status: "in-progress" | "paused" | "completed";
-  completedAt?: Date | null;
-  showAfter?: Date;
-  frequency: RecurrenceFrequency;
-  customDays: Weekday[];
+  status: "in-progress" | "paused" | "end";
+  lastCompletedAt?: Date | null;
+  frequency: string[];
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type NonNegotiableTask = {
