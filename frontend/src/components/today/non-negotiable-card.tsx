@@ -18,6 +18,7 @@ import { NonNegotiableTask } from "./non-negotiable-task";
 import { AddTaskInline } from "./add-task-inline";
 import useMutation from "@/hooks/use-mutation";
 import ConfirmationDialog from "../ui/confirmation-dialog";
+import { getLocalUniversalDay } from "@/lib/utils/non-negotiable-recurrence";
 
 interface NonNegotiableCardProps {
   data: InProgressNonNegotiableWithTasks;
@@ -30,6 +31,10 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isCompletedToday =
+    !!data.nonNegotiable.lastCompletedAt &&
+    getLocalUniversalDay(data.nonNegotiable.lastCompletedAt) ===
+      getLocalUniversalDay();
 
   const openNonNegotiableMode = (mode: "view" | "edit") => {
     const params = new URLSearchParams(searchParams.toString());
@@ -39,27 +44,15 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  // const toggleCompleteMutation = useMutation(
-  //   () => {
-  //     if (data.nonNegotiable.status === "completed") {
-  //       return uncompleteNonNegotiableAndDeleteNext(
-  //         user!.uid,
-  //         data.goalId,
-  //         data.nonNegotiable.id,
-  //         data.nonNegotiable.nextInstanceId || null,
-  //       );
-  //     }
-
-  //     return completeNonNegotiableAndSpawnNext(
-  //       user!.uid,
-  //       data.nonNegotiable,
-  //       data.nonNegotiable.id,
-  //     );
-  //   },
-  //   {
-  //     onError: "Error updating non-negotiable status",
-  //   },
-  // );
+  const toggleCompleteMutation = useMutation(
+    () =>
+      updateNonNegotiable(user!.uid, data.goalId, data.nonNegotiable.id, {
+        lastCompletedAt: isCompletedToday ? null : new Date(),
+      }),
+    {
+      onError: "Failed to update non-negotiable completion",
+    },
+  );
 
   const pauseMutation = useMutation(
     () => {
@@ -106,7 +99,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
 
   const toggleCompleted = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    // toggleCompleteMutation.mutate();
+    void toggleCompleteMutation.mutate();
   };
 
   const handleDeleteNonNegotiable = async () => {
@@ -151,31 +144,28 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
           <button
             type="button"
             onClick={toggleCompleted}
-            // aria-pressed={data.nonNegotiable.status === "completed"}
-            // aria-label={
-            //   data.nonNegotiable.status === "completed"
-            //     ? "Mark non-negotiable as in progress"
-            //     : "Mark non-negotiable as completed"
-            // }
+            aria-pressed={isCompletedToday}
+            aria-label={
+              isCompletedToday
+                ? "Mark non-negotiable as incomplete"
+                : "Mark non-negotiable as completed"
+            }
             className={`mr-2 size-5.5 rounded-sm border flex items-center justify-center transition-colors ${
-              // data.nonNegotiable.status === "completed"
-              //   ? "border-primary bg-primary text-primary-foreground"
-              //   : "border-border hover:bg-sidebar/60"
-              ""
+              isCompletedToday
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border hover:bg-sidebar/60"
             } ${data.nonNegotiable.status === "paused" ? "hidden" : ""}`}
-            // disabled={toggleCompleteMutation.loading}
+            disabled={toggleCompleteMutation.loading}
           >
-            {/* {data.nonNegotiable.status === "completed" ? (
-              <Check size={12} />
-            ) : null} */}
+            {isCompletedToday ? <Check size={12} /> : null}
           </button>
           <Pause
             className={`size-4 mr-2 text-muted-foreground ${data.nonNegotiable.status === "paused" ? "block" : "hidden"}`}
           />
           <p
-            className={`text-[0.95rem] font-semibold 
-              // data.nonNegotiable.status === "completed" ? "line-through text-muted-foreground" : ""} ${data.nonNegotiable.status === "paused" ? "text-muted-foreground" : ""}
-              `}
+            className={`text-[0.95rem] font-semibold ${
+              isCompletedToday ? "line-through text-muted-foreground" : ""
+            } ${data.nonNegotiable.status === "paused" ? "text-muted-foreground" : ""}`}
           >
             {data.nonNegotiable.title || "Untitled non-negotiable"}
           </p>
@@ -207,15 +197,13 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
               >
                 Edit
               </DropdownMenuItem>
-              {/* {data.nonNegotiable.status !== "completed" ? (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    pauseMutation.mutate();
-                  }}
-                >
-                  {data.nonNegotiable.status === "paused" ? "Resume" : "Pause"}
-                </DropdownMenuItem>
-              ) : null} */}
+              <DropdownMenuItem
+                onSelect={() => {
+                  void pauseMutation.mutate();
+                }}
+              >
+                {data.nonNegotiable.status === "paused" ? "Resume" : "Pause"}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
                 onSelect={() => {

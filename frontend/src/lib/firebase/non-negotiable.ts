@@ -191,7 +191,7 @@ export const updateNonNegotiable = async (
     updatedAt: Timestamp.now(),
   };
 
-  if (lastCompletedAt) {
+  if ("lastCompletedAt" in updates) {
     updatePayload.lastCompletedAt = lastCompletedAt
       ? Timestamp.fromDate(lastCompletedAt)
       : null;
