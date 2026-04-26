@@ -1,5 +1,5 @@
 import { Check, ChevronRight, EllipsisVertical, Pause } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import type { InProgressNonNegotiableWithTasks } from "@/types/goal";
@@ -35,6 +35,12 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
     !!data.nonNegotiable.lastCompletedAt &&
     getLocalUniversalDay(data.nonNegotiable.lastCompletedAt) ===
       getLocalUniversalDay();
+
+  useEffect(() => {
+    if (data.tasks.length > 0) {
+      setIsExpanded(true);
+    }
+  }, [data.tasks.length]);
 
   const openNonNegotiableMode = (mode: "view" | "edit") => {
     const params = new URLSearchParams(searchParams.toString());
