@@ -24,7 +24,7 @@ import { useUpdateUserPreferences } from "@/hooks/use-user";
 import { getMessaging, getToken } from "firebase/messaging";
 import app from "@/lib/firebase/firebase";
 import { toast } from "sonner";
-import { FcmToken } from "@/types";
+import { FcmToken } from "@/types/user";
 import { Separator } from "../ui/separator";
 import useQuery from "@/hooks/use-query";
 import {

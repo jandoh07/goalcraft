@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
-import { AppUser } from "@/types";
+import { AppUser } from "@/types/user";
 import { USER_DATA_COOKIE_NAME } from "./cookies";
 import { clearSession, createSession, updateUserDataCookie } from "./session";
 import Cookies from "js-cookie";

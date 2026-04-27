@@ -1,10 +1,9 @@
-import { BrainDumpTask } from "@/types/goal";
+import { BrainDumpTask } from "@/types/brain-dump";
 import {
   Timestamp,
   collection,
   deleteDoc,
   doc,
-  getDocs,
   onSnapshot,
   orderBy,
   query,

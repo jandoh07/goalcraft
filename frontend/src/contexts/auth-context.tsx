@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, UserCredential } from "firebase/auth";
 import { useTheme } from "next-themes";
-import { AppUser } from "@/types";
+import { AppUser } from "@/types/user";
 import {
   signIn as firebaseSignIn,
   signUp as firebaseSignUp,

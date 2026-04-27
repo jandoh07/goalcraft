@@ -14,14 +14,14 @@ import {
   limit,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Notification } from "@/types";
+import { Notification } from "@/types/notifications";
 
 const userNotificationsQuery = (userId: string) => {
   const q = query(
     collection(db, "notifications"),
     where("userId", "==", userId),
     orderBy("createdAt", "desc"),
-    limit(30)
+    limit(30),
   );
 
   return q;
@@ -50,7 +50,7 @@ export const getUserNotifications = async (userId: string) => {
     if (error instanceof Error && error.message.includes("index")) {
       console.error("You need to create a composite index in Firestore.");
       console.error(
-        "The error message should contain a link to create the index."
+        "The error message should contain a link to create the index.",
       );
     }
     throw error;
@@ -59,7 +59,7 @@ export const getUserNotifications = async (userId: string) => {
 
 export const subscribeToUserNotifications = (
   userId: string,
-  callback: (notifications: Notification[]) => void
+  callback: (notifications: Notification[]) => void,
 ) => {
   const q = userNotificationsQuery(userId);
 
@@ -80,7 +80,7 @@ export const subscribeToUserNotifications = (
     },
     (error) => {
       console.error("Error subscribing to notifications:", error);
-    }
+    },
   );
 };
 
@@ -111,7 +111,7 @@ export const markAllNotificationsAsRead = async (userId: string) => {
   const q = query(
     collection(db, "notifications"),
     where("userId", "==", userId),
-    where("isRead", "==", false)
+    where("isRead", "==", false),
   );
 
   const querySnapshot = await getDocs(q);
