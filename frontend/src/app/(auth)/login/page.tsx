@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { AuthLayout, LoginForm } from "@/components/auth";
+import { LoginForm } from "@/components/auth/login-form";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { createSession } from "@/lib/firebase/session";
 

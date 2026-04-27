@@ -3,7 +3,8 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { AuthLayout, SignUpForm } from "@/components/auth";
+import { SignUpForm } from "@/components/auth/signup-form";
+import { AuthLayout } from "@/components/auth/auth-layout";
 
 const SignUpContent = () => {
   const searchParams = useSearchParams();
