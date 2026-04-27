@@ -5,10 +5,10 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
   query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -42,21 +42,70 @@ export const getBrainDumpTasks = (
   onTasksChange: (tasks: BrainDumpTask[]) => void,
   onError?: (error: Error) => void,
 ) => {
-  const tasksQuery = query(
+  const pendingTasksQuery = query(
     brainDumpTasksCollectionRef(userId),
-    orderBy("updatedAt", "desc"),
+    where("status", "==", "pending"),
   );
 
-  return onSnapshot(
-    tasksQuery,
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+  const completedTodayTasksQuery = query(
+    brainDumpTasksCollectionRef(userId),
+    where("completedAt", ">", Timestamp.fromDate(startOfToday)),
+    where("completedAt", "<", Timestamp.fromDate(startOfTomorrow)),
+  );
+
+  let pendingTasks: BrainDumpTask[] = [];
+  let completedTodayTasks: BrainDumpTask[] = [];
+
+  const emitCombinedTasks = () => {
+    const uniqueTasks = new Map<string, BrainDumpTask>();
+
+    for (const task of pendingTasks) {
+      uniqueTasks.set(task.id, task);
+    }
+
+    for (const task of completedTodayTasks) {
+      uniqueTasks.set(task.id, task);
+    }
+
+    const sortedTasks = Array.from(uniqueTasks.values()).sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    );
+
+    onTasksChange(sortedTasks);
+  };
+
+  const unsubscribePendingTasks = onSnapshot(
+    pendingTasksQuery,
     (tasksSnapshot) => {
-      const tasks = tasksSnapshot.docs.map(mapBrainDumpTaskDoc);
-      onTasksChange(tasks);
+      pendingTasks = tasksSnapshot.docs.map(mapBrainDumpTaskDoc);
+      emitCombinedTasks();
     },
     (error) => {
       onError?.(error);
     },
   );
+
+  const unsubscribeCompletedTodayTasks = onSnapshot(
+    completedTodayTasksQuery,
+    (tasksSnapshot) => {
+      completedTodayTasks = tasksSnapshot.docs.map(mapBrainDumpTaskDoc);
+      emitCombinedTasks();
+    },
+    (error) => {
+      onError?.(error);
+    },
+  );
+
+  return () => {
+    unsubscribePendingTasks();
+    unsubscribeCompletedTodayTasks();
+  };
 };
 
 export const createBrainDumpTask = async (userId: string, title: string) => {
@@ -85,7 +134,6 @@ export const updateBrainDumpTask = async (
     updatedAt: Timestamp.now(),
   };
 
-  // Handle completedAt: if we're setting status to completed, set completedAt to now if not provided
   if (updates.status === "completed" && !updates.completedAt) {
     updateData.completedAt = Timestamp.now();
   } else if (updates.status === "pending") {
