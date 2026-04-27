@@ -18,22 +18,40 @@ const brainDumpTasksCollectionRef = (userId: string) =>
 const brainDumpTaskDocRef = (userId: string, taskId: string) =>
   doc(db, "users", userId, "brainDumpTasks", taskId);
 
+const toDateOrNull = (value: unknown): Date | null => {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate?: unknown }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  return null;
+};
+
 const mapBrainDumpTaskDoc = (taskDoc: {
   id: string;
   data: () => Record<string, unknown>;
 }): BrainDumpTask => {
   const data = taskDoc.data();
+  const createdAt =
+    toDateOrNull(data.createdAt) ?? toDateOrNull(data.updatedAt) ?? new Date(0);
+  const updatedAt = toDateOrNull(data.updatedAt) ?? createdAt;
+
   return {
     id: taskDoc.id,
     title: (data.title as string) ?? "",
     status: ((data.status as BrainDumpTask["status"]) ??
       "pending") as BrainDumpTask["status"],
-    completedAt:
-      (data.completedAt as { toDate?: () => Date })?.toDate?.() ?? null,
-    createdAt:
-      (data.createdAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
-    updatedAt:
-      (data.updatedAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
+    completedAt: toDateOrNull(data.completedAt),
+    createdAt,
+    updatedAt,
   };
 };
 
@@ -42,6 +60,15 @@ export const getBrainDumpTasks = (
   onTasksChange: (tasks: BrainDumpTask[]) => void,
   onError?: (error: Error) => void,
 ) => {
+  const getTime = (date: Date | null | undefined): number => {
+    if (!(date instanceof Date)) {
+      return 0;
+    }
+
+    const time = date.getTime();
+    return Number.isFinite(time) ? time : 0;
+  };
+
   const pendingTasksQuery = query(
     brainDumpTasksCollectionRef(userId),
     where("status", "==", "pending"),
@@ -74,7 +101,10 @@ export const getBrainDumpTasks = (
     }
 
     const sortedTasks = Array.from(uniqueTasks.values()).sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      (a, b) =>
+        getTime(a.createdAt) - getTime(b.createdAt) ||
+        getTime(a.updatedAt) - getTime(b.updatedAt) ||
+        a.id.localeCompare(b.id),
     );
 
     onTasksChange(sortedTasks);
