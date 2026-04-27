@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { EllipsisVertical } from "lucide-react";
+import { Check, X } from "lucide-react";
 import {
   deleteBrainDumpTask,
   updateBrainDumpTask,
@@ -36,10 +30,10 @@ export const BrainDumpTaskCard = ({
 }: BrainDumpTaskCardProps) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { user } = useAuth();
+  const isCompleted = task.status === "completed";
 
   const handleComplete = async () => {
     if (!user?.uid) return;
-    const isCompleted = task.status === "completed";
 
     await updateBrainDumpTask(user.uid, task.id, {
       status: isCompleted ? "pending" : "completed",
@@ -66,52 +60,48 @@ export const BrainDumpTaskCard = ({
           }
         }}
       >
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isCompleted}
+          aria-label={
+            isCompleted ? "Mark task as incomplete" : "Mark task as complete"
+          }
+          className={`flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-sm border transition-colors ${
+            isCompleted
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-transparent"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            void handleComplete();
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          {isCompleted && <Check size={12} strokeWidth={3} />}
+        </button>
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-medium wrap-break-word ${
-              task.status === "completed"
-                ? "line-through text-muted-foreground"
-                : ""
+              isCompleted ? "line-through text-muted-foreground" : ""
             }`}
           >
             {task.title}
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="cursor-pointer hover:text-primary shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              aria-label="Task options"
-            >
-              <EllipsisVertical size={16} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <DropdownMenuItem onSelect={handleComplete}>
-              {task.status === "completed"
-                ? "Mark as incomplete"
-                : "Mark complete"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onClick(task)}>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => setIsDeleteDialogOpen(true)}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <button
+          type="button"
+          className="cursor-pointer hover:text-destructive shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsDeleteDialogOpen(true);
+          }}
+          aria-label="Delete task"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       <AlertDialog
