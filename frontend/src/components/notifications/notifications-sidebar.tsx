@@ -15,7 +15,7 @@ import {
   useMarkAllNotificationsAsRead,
 } from "@/hooks/use-notifications";
 import { formatDistanceToNow } from "date-fns";
-import { Notification as NotificationType } from "@/types";
+import { Notification as NotificationType } from "@/types/notifications";
 
 const NotificationSidebar = () => {
   const sidebarRef = useRef<HTMLDivElement>(null);

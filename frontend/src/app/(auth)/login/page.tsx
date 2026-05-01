@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { AuthLayout, LoginForm } from "@/components/auth";
+import { LoginForm } from "@/components/auth/login-form";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { createSession } from "@/lib/firebase/session";
 
@@ -24,17 +25,17 @@ function getSafeRedirectPath(path: string | null): string {
 const LoginContent = () => {
   const searchParams = useSearchParams();
   const redirectTo = getSafeRedirectPath(searchParams.get("redirect"));
-  const { loading, user } = useAuth();
+  const { loading, authUser } = useAuth();
   const [sessionRecoveryFailed, setSessionRecoveryFailed] = useState(false);
   const hasAttemptedSessionRecovery = useRef(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (loading || !user || hasAttemptedSessionRecovery.current) {
+    if (loading || !authUser || hasAttemptedSessionRecovery.current) {
       return;
     }
 
-    const authenticatedUser = user;
+    const authenticatedUser = authUser;
     hasAttemptedSessionRecovery.current = true;
 
     const createSessionCookie = async () => {
@@ -58,9 +59,9 @@ const LoginContent = () => {
     };
 
     void createSessionCookie();
-  }, [loading, user, redirectTo, router]);
+  }, [loading, authUser, redirectTo, router]);
 
-  if (loading || (user && !sessionRecoveryFailed)) {
+  if (loading || (authUser && !sessionRecoveryFailed)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

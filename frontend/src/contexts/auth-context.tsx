@@ -1,17 +1,18 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { IdTokenResult, UserCredential } from "firebase/auth";
+import { User, UserCredential } from "firebase/auth";
 import { useTheme } from "next-themes";
-import { AppUser } from "@/types";
+import { AppUser } from "@/types/user";
 import {
   signIn as firebaseSignIn,
   signUp as firebaseSignUp,
   signInWithGoogle as firebaseSignInWithGoogle,
   firebaseLogout,
   setupAuthListener,
-  resetGlobalAuthTracker,
+  subscribeToUserDocument,
 } from "@/lib/firebase/auth";
+import { auth } from "@/lib/firebase/firebase";
 import { createSession, clearSession } from "@/lib/firebase/session";
 
 export interface InitialUser {
@@ -25,6 +26,7 @@ export interface InitialUser {
 
 interface AuthContextType {
   user: AppUser | null;
+  authUser: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
@@ -44,52 +46,49 @@ export const useAuth = () => {
 
 interface AuthProviderProps {
   children: React.ReactNode;
-  initialUser?: InitialUser | null;
 }
 
-export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
-  const [user, setUser] = useState<AppUser | null>(() => {
-    if (initialUser) {
-      return {
-        uid: initialUser.uid,
-        email: initialUser.email ?? null,
-        displayName: initialUser.name ?? null,
-        name: initialUser.name,
-        subscription: initialUser.subscription ?? "free",
-        theme: initialUser.theme ?? "system",
-        emailVerified: false,
-        isAnonymous: false,
-        metadata: {},
-        providerData: [],
-        refreshToken: "",
-        tenantId: null,
-        delete: async () => {},
-        getIdToken: async () => "",
-        getIdTokenResult: async () => ({}) as IdTokenResult,
-        reload: async () => {},
-        toJSON: () => ({}),
-        phoneNumber: null,
-        photoURL: null,
-        providerId: "",
-      } as AppUser;
-    }
-    return null;
-  });
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const authUid = authUser?.uid ?? null;
 
   const [loading, setLoading] = useState(true);
   const { theme, setTheme } = useTheme();
 
+  const themeRef = React.useRef(theme || "system");
   useEffect(() => {
-    const cleanup = setupAuthListener(
-      (authUser) => setUser(authUser),
-      (newTheme) => setTheme(newTheme),
+    themeRef.current = theme || "system";
+  }, [theme]);
+
+  useEffect(() => {
+    const unsubscribe = setupAuthListener(
+      (authUser) => setAuthUser(authUser),
       (isLoading) => setLoading(isLoading),
-      theme || "system",
-      initialUser?.uid,
     );
 
-    return () => cleanup();
-  }, [setTheme, theme, initialUser?.uid]);
+    return () => {
+      console.log("Unsubscribing from auth listener");
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentAuthUser = auth.currentUser;
+    if (!authUid || !currentAuthUser || currentAuthUser.uid !== authUid) {
+      setUser(null);
+      return;
+    }
+
+    const unsubscribe = subscribeToUserDocument(
+      currentAuthUser,
+      setUser,
+      setTheme,
+      themeRef.current,
+    );
+
+    return unsubscribe;
+  }, [authUid, setTheme]);
 
   const signIn = async (email: string, password: string) => {
     const credential = await firebaseSignIn(email, password);
@@ -122,14 +121,15 @@ export const AuthProvider = ({ children, initialUser }: AuthProviderProps) => {
   };
 
   const logout = async () => {
-    resetGlobalAuthTracker();
     setUser(null);
+    setAuthUser(null);
     await clearSession();
     return firebaseLogout();
   };
 
   const value = {
     user,
+    authUser,
     loading,
     signIn,
     signUp,

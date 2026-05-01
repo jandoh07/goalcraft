@@ -10,7 +10,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { FcmToken } from "@/types";
+import { FcmToken } from "@/types/user";
 
 export const updateUserPreferences = async (
   userId: string,

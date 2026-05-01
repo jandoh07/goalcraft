@@ -24,6 +24,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteNonNegotiable } from "./non-negotiable";
 
 const goalsCollectionRef = (userId: string) =>
   collection(db, "users", userId, "goals");
@@ -48,6 +49,7 @@ export const createGoal = async (userId: string, goalData: GoalData) => {
   batch.set(newGoalRef, {
     title: goalData.title,
     progress: 0,
+    status: "in-progress",
     dueDate: Timestamp.fromDate(toDueDate(goalData.dueDate)),
     why: goalData.why,
     createdAt: now,
@@ -84,8 +86,8 @@ export const createGoal = async (userId: string, goalData: GoalData) => {
     batch.set(nonNegotiableRef, {
       title: nonNegotiable.title,
       goalId: newGoalRef.id,
+      status: nonNegotiable.status,
       frequency: nonNegotiable.frequency,
-      customDays: nonNegotiable.customDays,
       createdAt: now,
       updatedAt: now,
     });
@@ -100,6 +102,7 @@ export const updateGoal = async (userId: string, goal: Goal) => {
   await updateDoc(goalRef, {
     title: goal.title,
     progress: goal.progress,
+    status: goal.status,
     dueDate: Timestamp.fromDate(goal.dueDate),
     why: goal.why,
     updatedAt: Timestamp.now(),
@@ -122,9 +125,14 @@ export const deleteGoal = async (userId: string, goalId: string) => {
       where("goalId", "==", goalId),
     ),
   );
-  linkedNonNegotiables.forEach((nonNegotiableDoc) => {
-    batch.delete(nonNegotiableDoc.ref);
-  });
+
+  const linkedNonNegotiableIds = linkedNonNegotiables.docs.map(
+    (nonNegotiableDoc) => nonNegotiableDoc.id,
+  );
+
+  for (const nonNegotiableId of linkedNonNegotiableIds) {
+    await deleteNonNegotiable(userId, goalId, nonNegotiableId);
+  }
 
   batch.delete(goalDocRef(userId, goalId));
   await batch.commit();
@@ -139,6 +147,8 @@ const mapGoalDoc = (goalDoc: {
     id: goalDoc.id,
     title: (data.title as string) ?? "",
     progress: (data.progress as number) ?? 0,
+    status: ((data.status as Goal["status"]) ??
+      "in-progress") as Goal["status"],
     dueDate:
       (data.dueDate as { toDate?: () => Date })?.toDate?.() ?? new Date(),
     why: (data.why as string) ?? "",
@@ -274,10 +284,11 @@ export const updateGoalWithRelations = async (
   const nextNonNegotiablesById = new Map(
     nextData.nonNegotiables.map((item) => [item.id, item]),
   );
+  const nonNegotiableIdsToDelete: string[] = [];
 
   originalNonNegotiablesById.forEach((_, id) => {
     if (!nextNonNegotiablesById.has(id)) {
-      batch.delete(doc(db, "users", userId, "nonNegotiables", id));
+      nonNegotiableIdsToDelete.push(id);
     }
   });
 
@@ -289,8 +300,8 @@ export const updateGoalWithRelations = async (
       batch.set(nonNegotiableRef, {
         title: nextItem.title,
         goalId,
+        status: nextItem.status,
         frequency: nextItem.frequency,
-        customDays: nextItem.customDays,
         createdAt: now,
         updatedAt: now,
       });
@@ -301,14 +312,18 @@ export const updateGoalWithRelations = async (
       batch.update(nonNegotiableRef, {
         title: nextItem.title,
         goalId,
+        status: nextItem.status,
         frequency: nextItem.frequency,
-        customDays: nextItem.customDays,
         updatedAt: now,
       });
     }
   });
 
   await batch.commit();
+
+  for (const nonNegotiableId of nonNegotiableIdsToDelete) {
+    await deleteNonNegotiable(userId, goalId, nonNegotiableId);
+  }
 };
 
 export const updateMilestone = async (

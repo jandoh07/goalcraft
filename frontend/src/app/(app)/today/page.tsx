@@ -4,8 +4,12 @@ import MobileHeader from "@/components/layout/mobile/header";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { NonNegotiableCard } from "@/components/today/non-negotiable-card";
+import { NonNegotiableModeDialog } from "@/components/today/non-negotiable-mode-dialog";
+import { useGetInProgressNonNegotiablesWithTasks } from "@/hooks/use-today-non-negotiables";
 
 const TodayContent = () => {
+  const { data, isLoading, error } = useGetInProgressNonNegotiablesWithTasks();
+
   return (
     <div className="max-w-7xl h-full mx-auto p-3 relative flex flex-col">
       <div className="md:flex items-center justify-between mb-3">
@@ -15,32 +19,27 @@ const TodayContent = () => {
         </div>
       </div>
 
-      <div className="flex-1 mb-13 md:mb-5 overflow-auto">
-        <NonNegotiableCard
-          nonNegotiable={{
-            id: "1",
-            title: "Non-negotiable title 1",
-            totalDuration: 60,
-            tasks: [
-              {
-                id: "1",
-                title: "Non-negotiable task 1",
-                duration: 30,
-                completed: false,
-              },
-              {
-                id: "2",
-                title: "Non-negotiable task 2",
-                duration: 30,
-                completed: true,
-              },
-            ],
-          }}
-          onToggleTask={() => {}}
-          onDeleteTask={() => {}}
-          onAddTask={() => {}}
-        />
+      <div className="flex-1 mb-13 md:mb-5 overflow-auto space-y-3">
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <p className="text-sm text-destructive">
+            Failed to load your non-negotiables.
+          </p>
+        ) : data && data.length > 0 ? (
+          data.map((item) => (
+            <NonNegotiableCard key={item.nonNegotiable.id} data={item} />
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No in-progress non-negotiables found.
+          </p>
+        )}
       </div>
+
+      <NonNegotiableModeDialog items={data ?? []} />
     </div>
   );
 };

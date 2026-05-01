@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearSession } from "@/lib/firebase/session";
+import { verifySession } from "@/lib/firebase/session";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { authUser, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isOnline, setIsOnline] = useState(true);
@@ -30,27 +29,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user && isOnline) {
-      const redirectToLogin = async () => {
-        await clearSession();
-        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-      };
-
-      void redirectToLogin();
+    if (loading || authUser || !isOnline) {
+      return;
     }
-  }, [isOnline, loading, user, pathname, router]);
 
-  if ((loading && !user) || (!user && !isOnline)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+    let cancelled = false;
 
-  if (!loading && !user) {
-    return null;
-  }
+    const redirectIfSessionInvalid = async () => {
+      const { authenticated } = await verifySession();
+
+      if (!cancelled && !authenticated) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      }
+    };
+
+    void redirectIfSessionInvalid();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnline, loading, authUser, pathname, router]);
 
   return <>{children}</>;
 };

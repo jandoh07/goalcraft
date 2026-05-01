@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Activity, ChevronRight, EllipsisVertical } from "lucide-react";
 // import GoalCard from "../goals/goal-card";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import GoalCard from "../goals/goal-card";
 
 const ObjectiveCard = () => {
   const router = useRouter();
@@ -92,8 +93,16 @@ const ObjectiveCard = () => {
           className="pl-2 pt-2 space-y-3"
           onClick={(event) => event.stopPropagation()}
         >
-          {/* <GoalCard goalId="goal-1" title="Run 10km without stopping" />
-          <GoalCard goalId="goal-2" title="Read 12 books this year" /> */}
+          <GoalCard
+            goalId="goal-1"
+            title="Run 10km without stopping"
+            progress={15}
+          />
+          <GoalCard
+            goalId="goal-2"
+            title="Read 12 books this year"
+            progress={30}
+          />
         </div>
       )}
     </div>

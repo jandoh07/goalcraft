@@ -5,7 +5,12 @@ import {
   indexedDBLocalPersistence,
   initializeAuth,
 } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  clearIndexedDbPersistence,
+} from "firebase/firestore";
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -58,7 +63,40 @@ const createAuth = () => {
 
 export const auth = createAuth();
 
-export const db = initializeFirestore(app, {});
+const initializeDb = () => {
+  try {
+    return initializeFirestore(app, {
+      ...(typeof window !== "undefined" && {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      }),
+    });
+  } catch (error) {
+    console.error(
+      "Firestore persistence failed to initialize, falling back to network-only:",
+      error,
+    );
+
+    const fallbackDb = initializeFirestore(app, {});
+
+    if (typeof window !== "undefined") {
+      void clearIndexedDbPersistence(fallbackDb)
+        .then(() =>
+          console.log(
+            "Successfully cleared corrupted IndexedDB persistence. Please refresh the page.",
+          ),
+        )
+        .catch((err) =>
+          console.error("Failed to clear corrupted IndexedDB:", err),
+        );
+    }
+
+    return fallbackDb;
+  }
+};
+
+export const db = initializeDb();
 
 export const functions = getFunctions(app);
 

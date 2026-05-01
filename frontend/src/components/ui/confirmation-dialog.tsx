@@ -39,9 +39,10 @@ const presets = {
 export type ConfirmDialogPresetType = keyof typeof presets;
 
 interface ConfirmationDialogProps {
-  onConfirm: () => void;
-  onCancel: () => void;
-  isOpen: boolean;
+  onConfirm: () => void | Promise<void>;
+  onCancel?: () => void;
+  open?: boolean;
+  isOpen?: boolean;
   onOpenChange: (isOpen: boolean) => void;
   title?: string;
   description?: string;
@@ -49,11 +50,13 @@ interface ConfirmationDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "destructive";
+  isLoading?: boolean;
 }
 
 const ConfirmationDialog = ({
   onConfirm,
   onCancel,
+  open,
   isOpen,
   onOpenChange,
   title,
@@ -62,6 +65,7 @@ const ConfirmationDialog = ({
   confirmText,
   cancelText,
   variant,
+  isLoading = false,
 }: ConfirmationDialogProps) => {
   const presetConfig = presets[preset];
   const finalTitle = title || presetConfig.title;
@@ -69,20 +73,27 @@ const ConfirmationDialog = ({
   const finalConfirmText = confirmText || presetConfig.confirmText;
   const finalCancelText = cancelText || presetConfig.cancelText || "Cancel";
   const finalVariant = variant || presetConfig.variant;
+  const resolvedOpen = open ?? isOpen ?? false;
+
+  const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    await onConfirm();
+  };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    <AlertDialog open={resolvedOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{finalTitle}</AlertDialogTitle>
           <AlertDialogDescription>{finalDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
+          <AlertDialogCancel onClick={onCancel} disabled={isLoading}>
             {finalCancelText}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
+            disabled={isLoading}
             className={
               finalVariant === "destructive"
                 ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"

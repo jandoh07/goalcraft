@@ -27,6 +27,8 @@ const DesktopLayout = ({ children }: { children: React.ReactNode }) => {
                 alt="Logo"
                 width={130}
                 height={60}
+                loading="eager"
+                style={{ height: "auto" }}
                 className="dark:invert dark:brightness-0 dark:contrast-200"
               />
             </SidebarHeader>

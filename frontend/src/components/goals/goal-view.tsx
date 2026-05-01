@@ -16,16 +16,8 @@ import { Button } from "../ui/button";
 import { Circle, CircleCheck, Loader2 } from "lucide-react";
 import useMutation from "@/hooks/use-mutation";
 import { useDeleteGoal } from "@/hooks/use-goals";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import ConfirmationDialog from "@/components/ui/confirmation-dialog";
+import { describeFrequencyTags } from "@/lib/utils/non-negotiable-recurrence";
 
 interface GoalViewProps {
   goal: Goal | null;
@@ -206,17 +198,8 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
     });
   }, [displayGoal?.dueDate]);
 
-  const formatNonNegotiableFrequency = (item: NonNegotiable) => {
-    if (item.frequency !== "custom") {
-      return item.frequency[0].toUpperCase() + item.frequency.slice(1);
-    }
-
-    if (item.customDays.length === 0) {
-      return "Custom";
-    }
-
-    return `Custom (${item.customDays.map((day) => day.toUpperCase()).join(", ")})`;
-  };
+  const formatNonNegotiableFrequency = (item: NonNegotiable) =>
+    describeFrequencyTags(item.frequency);
 
   const completedMilestones = milestones.filter(
     (milestone) => milestone.status === "completed",
@@ -243,7 +226,7 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
   }
 
   return (
-    <div className="space-y-4 relative">
+    <div className="space-y-4 relative h-full">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-lg">{displayGoal.title}</p>
@@ -346,49 +329,37 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
       </Tabs>
       <div className="absolute left-0 bottom-0 w-full">
         <Separator />
-        <div className="flex justify-end items-center pt-2 space-x-2">
-          <Button variant={"outline"} size={"sm"} onClick={openEditMode}>
+        <div className="flex justify-between md:justify-end items-center pt-2 space-x-2">
+          <Button
+            variant={"outline"}
+            size={"sm"}
+            onClick={openEditMode}
+            className="w-25"
+          >
             Edit
           </Button>
           <Button
             variant={"destructive"}
             size={"sm"}
             onClick={() => setIsDeleteDialogOpen(true)}
+            className="w-25"
           >
             Delete
           </Button>
         </div>
       </div>
 
-      <AlertDialog
+      <ConfirmationDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this goal?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the goal and its linked milestones
-              and non-negotiables.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteGoalMutation.loading}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteGoalMutation.loading}
-              onClick={async (event) => {
-                event.preventDefault();
-                await handleDeleteGoal();
-              }}
-            >
-              {deleteGoalMutation.loading ? "Deleting..." : "Delete goal"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={handleDeleteGoal}
+        isLoading={deleteGoalMutation.loading}
+        title="Delete this goal?"
+        description="This will permanently delete the goal and its linked milestones and non-negotiables."
+        confirmText={deleteGoalMutation.loading ? "Deleting..." : "Delete goal"}
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 };

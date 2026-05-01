@@ -4,10 +4,16 @@ export const areSameMilestone = (a: Milestone, b: Milestone) =>
   a.title === b.title && a.weight === b.weight && a.status === b.status;
 
 export const areSameNonNegotiable = (a: NonNegotiable, b: NonNegotiable) => {
-  const aDays = [...a.customDays].sort().join(",");
-  const bDays = [...b.customDays].sort().join(",");
+  const areSameFrequency = () =>
+    a.frequency.length === b.frequency.length &&
+    [...a.frequency].sort().every((v, i) => v === [...b.frequency].sort()[i]);
 
-  return a.title === b.title && a.frequency === b.frequency && aDays === bDays;
+  return (
+    a.title === b.title &&
+    a.status === b.status &&
+    areSameFrequency() &&
+    a.lastCompletedAt === b.lastCompletedAt
+  );
 };
 
 export const areSameMilestoneLists = (

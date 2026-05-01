@@ -39,7 +39,9 @@ export function MarketingNavbar() {
             alt="GoalCraft Logo"
             width={100}
             height={100}
-            objectFit="contain"
+            loading="eager"
+            style={{ height: "auto" }}
+            className="object-contain"
             // className="h-8 w-8"
           />
           {/* <span className="text-xl font-bold">GoalCraft</span> */}

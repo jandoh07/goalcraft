@@ -2,7 +2,7 @@
 // import { useNotifications } from "@/hooks/use-notifications";
 import React, { createContext, useContext, useState } from "react";
 import { useAuth } from "./auth-context";
-import { Notification as NotificationType } from "@/types";
+import { Notification as NotificationType } from "@/types/notifications";
 
 interface NotificationContextType {
   isNotificationOpen: boolean;
