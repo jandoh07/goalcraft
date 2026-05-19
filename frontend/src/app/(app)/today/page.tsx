@@ -33,9 +33,13 @@ const TodayContent = () => {
             <NonNegotiableCard key={item.nonNegotiable.id} data={item} />
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No in-progress non-negotiables found.
-          </p>
+          <div className="max-w-3xl h-120 mx-auto flex items-center justify-center">
+            <p className="text-muted-foreground text-center">
+              No in-progress non-negotiables found. You can can create
+              non-negotiables when creating goals, which will then show up here
+              depending on their recurrence.
+            </p>
+          </div>
         )}
       </div>
 

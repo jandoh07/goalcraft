@@ -71,7 +71,8 @@ const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
         <CardHeader className="px-3 flex items-center justify-between">
           <p className="text-[0.95rem] font-semibold">{title}</p>
           <div className="hidden md:flex items-center">
-            <button
+            {/* TODO: add functionality for goal activity */}
+            {/* <button
               type="button"
               className="cursor-pointer hover:text-primary"
               onClick={(event) => {
@@ -81,7 +82,7 @@ const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
             >
               <Activity size={15} />
             </button>
-            <p className="opacity-10 pl-1 -mt-1 cursor-default">|</p>
+            <p className="opacity-10 pl-1 -mt-1 cursor-default">|</p> */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

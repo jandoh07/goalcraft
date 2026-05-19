@@ -141,6 +141,7 @@ const Review = () => {
         <MobileHeader title="Review" />
       </div>
 
+      <p>Generated with AI will manually edit this later to suit needs</p>
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="relative overflow-hidden border-border/60 bg-card/90 shadow-lg shadow-primary/5 backdrop-blur">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-cyan-500 to-emerald-500" />
