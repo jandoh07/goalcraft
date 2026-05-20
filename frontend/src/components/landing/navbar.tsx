@@ -2,37 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MarketingThemeToggle } from "./marketing-theme-toggle";
+import { ThemeToggle } from "./theme-toggle";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Blog" },
-];
-
-export function MarketingNavbar() {
+export function Navbar() {
   const { user, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-  const isActiveLink = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-    return pathname.startsWith(href);
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        {/* Logo */}
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/">
           <Image
             src="/logo.png"
@@ -42,35 +25,11 @@ export function MarketingNavbar() {
             loading="eager"
             style={{ height: "auto" }}
             className="object-contain"
-            // className="h-8 w-8"
           />
-          {/* <span className="text-xl font-bold">GoalCraft</span> */}
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden items-center space-x-8 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "relative text-sm font-medium transition-colors hover:text-foreground",
-                isActiveLink(link.href)
-                  ? "text-foreground"
-                  : "text-muted-foreground",
-              )}
-            >
-              {link.label}
-              {isActiveLink(link.href) && (
-                <span className="absolute -bottom-5.25 left-0 right-0 h-0.5 bg-primary" />
-              )}
-            </Link>
-          ))}
-        </div>
-
-        {/* Desktop Auth Buttons & Theme Toggle */}
         <div className="hidden items-center space-x-4 md:flex">
-          <MarketingThemeToggle />
+          <ThemeToggle />
           {loading ? (
             <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
           ) : user ? (
@@ -83,7 +42,7 @@ export function MarketingNavbar() {
                 <Link href="/login">Log in</Link>
               </Button>
               <Button asChild>
-                <Link href="/signup">Get Started</Link>
+                <Link href="/signup">Try the app</Link>
               </Button>
             </>
           )}
@@ -91,7 +50,7 @@ export function MarketingNavbar() {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 md:hidden">
-          <MarketingThemeToggle />
+          <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
@@ -113,21 +72,6 @@ export function MarketingNavbar() {
         )}
       >
         <div className="space-y-4 px-4 pb-6 pt-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "block text-sm font-medium transition-colors hover:text-foreground",
-                isActiveLink(link.href)
-                  ? "text-foreground"
-                  : "text-muted-foreground",
-              )}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
           <div className="flex flex-col space-y-2 pt-4">
             {loading ? (
               <div className="h-9 w-full animate-pulse rounded-md bg-muted" />

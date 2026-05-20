@@ -19,7 +19,6 @@ import {
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Sparkles,
   Settings,
   Palette,
   Sun,
@@ -70,9 +69,6 @@ export function UserNav() {
             <span className="truncate font-medium">
               {user?.name || user?.email}
             </span>
-            <span className="opacity-50 truncate text-xs">
-              {user?.subscription === "premium" ? "Premium Plan" : "Free Plan"}
-            </span>
           </div>
           <IconDotsVertical className="ml-auto size-4" />
         </SidebarMenuButton>
@@ -84,15 +80,6 @@ export function UserNav() {
         sideOffset={4}
       >
         <DropdownMenuItem disabled>{user?.email}</DropdownMenuItem>
-        {user?.subscription !== "premium" && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Sparkles />
-              Upgrade to Pro
-            </DropdownMenuItem>
-          </>
-        )}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/settings" className="cursor-pointer">
@@ -144,28 +131,6 @@ export function UserNav() {
               Learn More
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/about"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-between items-center w-45 cursor-pointer"
-                >
-                  About GoalCraft
-                  <ExternalLink />
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/blog"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-between items-center w-45 cursor-pointer"
-                >
-                  Blog
-                  <ExternalLink />
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
                   href="/privacy"

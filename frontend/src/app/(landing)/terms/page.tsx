@@ -79,16 +79,6 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="mb-4 text-2xl font-semibold">Payment Terms</h2>
-            <p className="text-muted-foreground">
-              Paid subscriptions are billed in advance on a monthly basis.
-              Prices are subject to change with 30 days notice. Refunds are
-              available within 30 days of purchase if you are unsatisfied with
-              the service.
-            </p>
-          </section>
-
-          <section>
             <h2 className="mb-4 text-2xl font-semibold">Termination</h2>
             <p className="text-muted-foreground">
               You may terminate your account at any time. We may suspend or

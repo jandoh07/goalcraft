@@ -21,8 +21,7 @@ const isStaging = process.env.NEXT_PUBLIC_ENVIRONMENT === "staging";
 const APP_NAME = "GoalCraft";
 const APP_DEFAULT_TITLE = "GoalCraft — Set and Achieve Your Goals";
 const APP_TITLE_TEMPLATE = "%s | GoalCraft";
-const APP_DESCRIPTION =
-  "An AI-powered PWA for goal setting, task tracking, and productivity.";
+const APP_DESCRIPTION = "Be more consistent on working towards your goals.";
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
@@ -35,7 +34,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: APP_DEFAULT_TITLE,
+    title: APP_NAME,
     // startUpImage: [],
   },
   formatDetection: {

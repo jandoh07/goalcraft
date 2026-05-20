@@ -14,7 +14,7 @@ import {
 
 type ThemeValue = "light" | "dark" | "system";
 
-export function MarketingThemeToggle() {
+export function ThemeToggle() {
   const { setTheme } = useTheme();
   const { user } = useAuth();
   const { mutate: updatePreferences } = useUpdateUserPreferences();

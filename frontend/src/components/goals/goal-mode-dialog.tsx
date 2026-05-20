@@ -180,12 +180,10 @@ const GoalModeDialog = ({ goals }: GoalModeDialogProps) => {
               <X className="size-5" />
             </Button>
           </DrawerClose>
-          {isGoalFlow && (
-            <DrawerHeader>
-              <DrawerTitle className="pr-10">{dialogTitle}</DrawerTitle>
-              <DrawerDescription>{dialogDescription}</DrawerDescription>
-            </DrawerHeader>
-          )}
+          <DrawerHeader className="sr-only">
+            <DrawerTitle className="pr-10">{dialogTitle}</DrawerTitle>
+            <DrawerDescription>{dialogDescription}</DrawerDescription>
+          </DrawerHeader>
           <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-4">
             {renderDialogBody()}
           </div>
