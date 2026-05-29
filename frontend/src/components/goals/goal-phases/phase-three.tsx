@@ -163,6 +163,7 @@ export const CreateGoalPhaseThree = ({
                 />
 
                 <NonNegotiableFrequencyPicker
+                  key={item.id}
                   value={item.frequency}
                   onChange={(frequency) => updateItem(item.id, { frequency })}
                 />
@@ -184,6 +185,7 @@ export const CreateGoalPhaseThree = ({
             />
 
             <NonNegotiableFrequencyPicker
+              key={"pending-non-negotiable"}
               value={pendingItem.frequency}
               onChange={(frequency) =>
                 setPendingItem((prev) =>

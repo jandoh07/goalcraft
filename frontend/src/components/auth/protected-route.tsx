@@ -9,12 +9,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { authUser, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(
+    typeof window !== "undefined" ? navigator.onLine : true,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    setIsOnline(navigator.onLine);
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);

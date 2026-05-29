@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Goal, Milestone, NonNegotiable } from "@/types/goal";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,7 +32,7 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
   const [fetchedGoal, setFetchedGoal] = useState<Goal | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [nonNegotiables, setNonNegotiables] = useState<NonNegotiable[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingMilestoneIds, setPendingMilestoneIds] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -139,16 +139,9 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
   };
 
   useEffect(() => {
-    if (!goalId || !user?.uid) {
-      setFetchedGoal(null);
-      setMilestones([]);
-      setNonNegotiables([]);
-      return;
-    }
+    if (!goalId || !user?.uid) return;
 
     let isCancelled = false;
-    setIsLoading(true);
-    setError(null);
 
     getGoalDetailsCached(user.uid, goalId, {
       warmGoal: goal,
@@ -186,17 +179,13 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
 
   const displayGoal = goal ?? fetchedGoal;
 
-  const dueDateText = useMemo(() => {
-    if (!displayGoal?.dueDate) {
-      return "No due date";
-    }
-
-    return displayGoal.dueDate.toLocaleDateString("en-us", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }, [displayGoal?.dueDate]);
+  const dueDateText = displayGoal?.dueDate
+    ? displayGoal.dueDate.toLocaleDateString("en-us", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "No due date";
 
   const formatNonNegotiableFrequency = (item: NonNegotiable) =>
     describeFrequencyTags(item.frequency);
