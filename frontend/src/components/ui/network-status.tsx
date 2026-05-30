@@ -5,7 +5,9 @@ import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function NetworkStatus() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(
+    typeof window !== "undefined" ? navigator.onLine : true,
+  );
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
@@ -13,20 +15,16 @@ export default function NetworkStatus() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setIsOnline(navigator.onLine);
-
     const handleOnline = () => {
       setIsOnline(true);
       setIsSyncing(true);
       setShowIndicator(true);
       setIsExpanded(true);
 
-      // Stop syncing after 2 seconds
       setTimeout(() => {
         setIsSyncing(false);
       }, 2000);
 
-      // Hide indicator after 4 seconds total
       setTimeout(() => {
         setShowIndicator(false);
       }, 4000);
@@ -51,7 +49,6 @@ export default function NetworkStatus() {
   useEffect(() => {
     if (!showIndicator) return;
 
-    setIsExpanded(true);
     const timer = setTimeout(() => {
       setIsExpanded(false);
     }, 5000);

@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import generateFrequencyTags, {
+  days,
   describeFrequencyTags,
-  Frequency,
+  parseInitialState,
   QuickFrequency,
 } from "@/lib/utils/non-negotiable-recurrence";
 import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Separator } from "../ui/separator";
 import { CalendarDays, Minus, Plus } from "lucide-react";
 import { Calendar } from "../ui/calendar";
@@ -25,10 +26,6 @@ const frequencyOptions = [
   { value: "custom", label: "Custom" },
 ];
 
-const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-const weekdayDays = ["mon", "tue", "wed", "thu", "fri"] as const;
-const weekendDays = ["sat", "sun"] as const;
-
 const areSameTags = (a: string[], b: string[]) => {
   if (a.length !== b.length) {
     return false;
@@ -42,16 +39,7 @@ export function NonNegotiableFrequencyPicker({
   value,
   onChange,
 }: NonNegotiableFrequencyPickerProps) {
-  const [active, setActive] = useState<string | null>(null);
-  const [interval, setInterval] = useState(1);
-  const [customFrequency, setCustomFrequency] = useState<Exclude<
-    Frequency,
-    QuickFrequency
-  > | null>(null);
-  const [selectedDays, setSelectedDays] = useState<(typeof days)[number][]>([]);
-  const [selectedMonthDayNumbers, setSelectedMonthDayNumbers] = useState<
-    number[]
-  >([]);
+  const [state, setState] = useState(() => parseInitialState(value));
 
   const selectedMonthDates = useMemo(() => {
     const today = new Date();
@@ -59,10 +47,10 @@ export function NonNegotiableFrequencyPicker({
     const month = today.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    return selectedMonthDayNumbers
+    return state.selectedMonthDayNumbers
       .filter((day) => day >= 1 && day <= daysInMonth)
       .map((day) => new Date(year, month, day));
-  }, [selectedMonthDayNumbers]);
+  }, [state.selectedMonthDayNumbers]);
 
   const frequencyInterpretation = useMemo(
     () => describeFrequencyTags(value),
@@ -75,179 +63,54 @@ export function NonNegotiableFrequencyPicker({
       ? "Repeat every"
       : `Repeat every ${frequencyInterpretation}`;
 
-  const emitFrequencyChange = useCallback(
-    (nextFrequency: string[]) => {
-      if (areSameTags(nextFrequency, value)) {
-        return;
-      }
+  const updateCustomState = (updates: Partial<typeof state>) => {
+    const next = { ...state, ...updates };
+    setState(next);
 
-      onChange(nextFrequency);
-    },
-    [onChange, value],
-  );
+    if (next.active !== "custom" || !next.customFrequency) return;
 
-  useEffect(() => {
-    const uniqueTags = [...new Set(value)];
-    const tagSet = new Set(uniqueTags);
-
-    const isDaily =
-      tagSet.size === days.length && days.every((day) => tagSet.has(day));
-    if (isDaily) {
-      setActive("daily");
-      setCustomFrequency(null);
-      return;
-    }
-
-    const isWeekdays =
-      tagSet.size === weekdayDays.length &&
-      weekdayDays.every((day) => tagSet.has(day));
-    if (isWeekdays) {
-      setActive("weekdays");
-      setCustomFrequency(null);
-      return;
-    }
-
-    const isWeekends =
-      tagSet.size === weekendDays.length &&
-      weekendDays.every((day) => tagSet.has(day));
-    if (isWeekends) {
-      setActive("weekends");
-      setCustomFrequency(null);
-      return;
-    }
-
-    if (
-      uniqueTags.length === 1 &&
-      days.includes(uniqueTags[0] as (typeof days)[number])
+    let newTags: string[] = [];
+    if (next.customFrequency === "Xdays") {
+      newTags = generateFrequencyTags("Xdays", next.interval);
+    } else if (
+      next.customFrequency === "Xweeks" &&
+      next.selectedDays.length > 0
     ) {
-      setActive("weekly");
-      setCustomFrequency(null);
-      return;
-    }
-
-    if (uniqueTags.length === 1 && /^\d+M$/.test(uniqueTags[0])) {
-      setActive("monthly");
-      setCustomFrequency(null);
-      return;
-    }
-
-    const xDaysMatches = uniqueTags
-      .map((tag) => tag.match(/^(\d+)D_\d+$/))
-      .filter((match): match is RegExpMatchArray => !!match);
-
-    if (xDaysMatches.length > 0 && xDaysMatches.length === uniqueTags.length) {
-      setActive("custom");
-      setCustomFrequency("Xdays");
-      setInterval(Number(xDaysMatches[0][1]));
-      setSelectedDays([]);
-      setSelectedMonthDayNumbers([]);
-      return;
-    }
-
-    const xWeeksMatches = uniqueTags
-      .map((tag) => tag.match(/^(sun|mon|tue|wed|thu|fri|sat)_(\d+)W_\d+$/))
-      .filter((match): match is RegExpMatchArray => !!match);
-
-    if (
-      xWeeksMatches.length > 0 &&
-      xWeeksMatches.length === uniqueTags.length
+      newTags = generateFrequencyTags(
+        "Xweeks",
+        next.selectedDays,
+        next.interval,
+      );
+    } else if (
+      next.customFrequency === "Xmonths" &&
+      next.selectedMonthDayNumbers.length > 0
     ) {
-      setActive("custom");
-      setCustomFrequency("Xweeks");
-      setInterval(Number(xWeeksMatches[0][2]));
-      setSelectedDays(
-        [
-          ...new Set(
-            xWeeksMatches.map((match) => match[1] as (typeof days)[number]),
-          ),
-        ].sort((a, b) => days.indexOf(a) - days.indexOf(b)),
+      newTags = generateFrequencyTags(
+        "Xmonths",
+        next.selectedMonthDayNumbers,
+        next.interval,
       );
-      setSelectedMonthDayNumbers([]);
-      return;
     }
 
-    const xMonthsMatches = uniqueTags
-      .map((tag) => tag.match(/^(\d+)M_\d+_(\d+)$/))
-      .filter((match): match is RegExpMatchArray => !!match);
-    const isXMonths =
-      uniqueTags.length > 0 &&
-      uniqueTags.every(
-        (tag) => tag === "last_day" || /^(\d+)M_\d+_(\d+)$/.test(tag),
-      );
-
-    if (isXMonths) {
-      setActive("custom");
-      setCustomFrequency("Xmonths");
-      setInterval(Number(xMonthsMatches[0]?.[1] ?? 1));
-      setSelectedDays([]);
-      setSelectedMonthDayNumbers(
-        [...new Set(xMonthsMatches.map((match) => Number(match[2])))].sort(
-          (a, b) => a - b,
-        ),
-      );
-      return;
+    if (!areSameTags(newTags, value)) {
+      onChange(newTags);
     }
-
-    setActive(null);
-    setCustomFrequency(null);
-    setSelectedDays([]);
-    setSelectedMonthDayNumbers([]);
-    setInterval(1);
-  }, [value]);
-
-  useEffect(() => {
-    if (active !== "custom" || !customFrequency) {
-      return;
-    }
-
-    if (customFrequency === "Xdays") {
-      emitFrequencyChange(generateFrequencyTags("Xdays", interval));
-      return;
-    }
-
-    if (customFrequency === "Xweeks") {
-      if (selectedDays.length === 0) {
-        emitFrequencyChange([]);
-        return;
-      }
-
-      emitFrequencyChange(
-        generateFrequencyTags("Xweeks", selectedDays, interval),
-      );
-      return;
-    }
-
-    if (selectedMonthDayNumbers.length === 0) {
-      emitFrequencyChange([]);
-      return;
-    }
-
-    emitFrequencyChange(
-      generateFrequencyTags("Xmonths", selectedMonthDayNumbers, interval),
-    );
-  }, [
-    active,
-    customFrequency,
-    emitFrequencyChange,
-    interval,
-    selectedDays,
-    selectedMonthDayNumbers,
-  ]);
+  };
 
   const handleFrequencyClick = (
     event: React.MouseEvent<HTMLButtonElement>,
-    value: string,
+    val: string,
   ) => {
     event.preventDefault();
 
-    if (value === "custom") {
-      setActive(value);
-      setCustomFrequency(customFrequency || "Xdays");
+    if (val === "custom") {
+      const nextCustomFreq = state.customFrequency || "Xdays";
+      updateCustomState({ active: val, customFrequency: nextCustomFreq });
       return;
     }
 
-    setActive(value);
-    onChange(generateFrequencyTags(value as QuickFrequency));
+    setState({ ...state, active: val });
+    onChange(generateFrequencyTags(val as QuickFrequency));
   };
 
   return (
@@ -261,14 +124,14 @@ export function NonNegotiableFrequencyPicker({
             size={"sm"}
             className={cn("rounded-2xl", {
               "bg-primary dark:bg-primary text-primary-foreground hover:bg-primary/70 dark:hover:bg-primary/70":
-                option.value === active,
+                option.value === state.active,
             })}
             onClick={(event) => handleFrequencyClick(event, option.value)}
           >
             {option.label}
           </Button>
         ))}
-        {active === "custom" && (
+        {state.active === "custom" && (
           <div className="py-2">
             <Separator />
             <p className="text-sm text-muted-foreground my-2">
@@ -278,25 +141,31 @@ export function NonNegotiableFrequencyPicker({
               <Button
                 variant={"outline"}
                 size={"sm"}
-                onClick={() => setInterval((prev) => Math.max(1, prev - 1))}
+                onClick={() =>
+                  updateCustomState({
+                    interval: Math.max(1, state.interval - 1),
+                  })
+                }
               >
                 <Minus />
               </Button>
-              <p className="px-2">{interval}</p>
+              <p className="px-2">{state.interval}</p>
               <Button
                 variant={"outline"}
                 size={"sm"}
-                onClick={() => setInterval((prev) => prev + 1)}
+                onClick={() =>
+                  updateCustomState({ interval: state.interval + 1 })
+                }
               >
                 <Plus />
               </Button>
               <Button
                 variant={"outline"}
                 size={"sm"}
-                onClick={() => setCustomFrequency("Xdays")}
+                onClick={() => updateCustomState({ customFrequency: "Xdays" })}
                 className={cn({
                   "bg-primary dark:bg-primary text-primary-foreground hover:bg-primary/70 dark:hover:bg-primary/70":
-                    customFrequency === "Xdays",
+                    state.customFrequency === "Xdays",
                 })}
               >
                 Days
@@ -304,10 +173,10 @@ export function NonNegotiableFrequencyPicker({
               <Button
                 variant={"outline"}
                 size={"sm"}
-                onClick={() => setCustomFrequency("Xweeks")}
+                onClick={() => updateCustomState({ customFrequency: "Xweeks" })}
                 className={cn({
                   "bg-primary dark:bg-primary text-primary-foreground hover:bg-primary/70 dark:hover:bg-primary/70":
-                    customFrequency === "Xweeks",
+                    state.customFrequency === "Xweeks",
                 })}
               >
                 Weeks
@@ -315,15 +184,17 @@ export function NonNegotiableFrequencyPicker({
               <Button
                 variant={"outline"}
                 size={"sm"}
-                onClick={() => setCustomFrequency("Xmonths")}
+                onClick={() =>
+                  updateCustomState({ customFrequency: "Xmonths" })
+                }
                 className={cn({
                   "bg-primary dark:bg-primary text-primary-foreground hover:bg-primary/70 dark:hover:bg-primary/70":
-                    customFrequency === "Xmonths",
+                    state.customFrequency === "Xmonths",
                 })}
               >
                 Months
               </Button>
-              {customFrequency === "Xmonths" && (
+              {state.customFrequency === "Xmonths" && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size={"sm"} type="button">
@@ -341,7 +212,9 @@ export function NonNegotiableFrequencyPicker({
                           ),
                         ].sort((a, b) => a - b);
 
-                        setSelectedMonthDayNumbers(monthDays);
+                        updateCustomState({
+                          selectedMonthDayNumbers: monthDays,
+                        });
                       }}
                       classNames={{
                         today: "rounded-md",
@@ -353,7 +226,7 @@ export function NonNegotiableFrequencyPicker({
             </div>
           </div>
         )}
-        {active === "custom" && customFrequency === "Xweeks" && (
+        {state.active === "custom" && state.customFrequency === "Xweeks" && (
           <div className="">
             <p className="text-sm text-muted-foreground my-2">On days</p>
             <div className="flex flex-wrap gap-2">
@@ -364,13 +237,19 @@ export function NonNegotiableFrequencyPicker({
                   size={"sm"}
                   className={cn("", {
                     "bg-primary dark:bg-primary text-primary-foreground hover:bg-primary/70 dark:hover:bg-primary/70":
-                      selectedDays.includes(day),
+                      state.selectedDays.includes(day),
                   })}
                   onClick={() => {
-                    if (selectedDays.includes(day)) {
-                      setSelectedDays(selectedDays.filter((d) => d !== day));
+                    if (state.selectedDays.includes(day)) {
+                      updateCustomState({
+                        selectedDays: state.selectedDays.filter(
+                          (d) => d !== day,
+                        ),
+                      });
                     } else {
-                      setSelectedDays([...selectedDays, day]);
+                      updateCustomState({
+                        selectedDays: [...state.selectedDays, day],
+                      });
                     }
                   }}
                 >

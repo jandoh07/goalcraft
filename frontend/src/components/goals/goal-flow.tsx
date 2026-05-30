@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CreateGoalPhaseOne } from "@/components/goals/goal-phases/phase-one";
@@ -55,73 +55,36 @@ const GoalFlow = ({
         }
       : EMPTY_GOAL_DATA,
   );
-  const [isHydratingGoalData, setIsHydratingGoalData] = useState(false);
-  const editHydrationKeyRef = useRef<string | null>(null);
-  const originalGoalDataRef = useRef<GoalData | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      editHydrationKeyRef.current = null;
-      setIsHydratingGoalData(false);
-      return;
-    }
-
-    setPhase(1);
-
-    if (mode === "create") {
-      originalGoalDataRef.current = null;
-      setGoalData(EMPTY_GOAL_DATA);
-    }
-  }, [isOpen, mode]);
+  const [originalGoalData, setOriginalGoalData] = useState<GoalData | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isOpen || mode !== "edit" || !goalId || !user?.uid) {
       return;
     }
 
-    const hydrationKey = `${user.uid}:${goalId}`;
-    if (editHydrationKeyRef.current === hydrationKey) {
-      return;
-    }
+    getGoalDetailsCached(user.uid, goalId, {
+      warmGoal: activeGoal,
+    })
+      .then(({ goal, milestones, nonNegotiables }) => {
+        if (!goal) return;
 
-    let isCancelled = false;
-    setIsHydratingGoalData(true);
+        const nextGoalData = {
+          title: goal.title,
+          dueDate: goal.dueDate.toISOString().split("T")[0],
+          why: goal.why,
+          milestones,
+          nonNegotiables,
+        };
 
-    const fetchGoalData = async () => {
-      const { goal, milestones, nonNegotiables } = await getGoalDetailsCached(
-        user.uid,
-        goalId,
-        {
-          warmGoal: activeGoal,
-        },
-      );
-
-      if (!goal || isCancelled) {
-        return;
-      }
-
-      const nextGoalData = {
-        title: goal.title,
-        dueDate: goal.dueDate.toISOString().split("T")[0],
-        why: goal.why,
-        milestones,
-        nonNegotiables,
-      };
-
-      editHydrationKeyRef.current = hydrationKey;
-      originalGoalDataRef.current = nextGoalData;
-      setGoalData(nextGoalData);
-    };
-
-    fetchGoalData().finally(() => {
-      if (!isCancelled) {
-        setIsHydratingGoalData(false);
-      }
-    });
-
-    return () => {
-      isCancelled = true;
-    };
+        setGoalData(nextGoalData);
+        setOriginalGoalData(nextGoalData);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [activeGoal, isOpen, mode, goalId, user?.uid]);
 
   const handleSetTitle = useCallback(
@@ -191,14 +154,9 @@ const GoalFlow = ({
         throw new Error("You must be logged in to update a goal.");
       }
 
-      const originalData = originalGoalDataRef.current;
-      if (!originalData) {
-        throw new Error("Goal data is still loading. Please try again.");
-      }
-
       await updateGoalWithRelations(user.uid, {
         goalId,
-        originalData,
+        originalData: originalGoalData!,
         nextData: payload,
       });
     },
@@ -215,16 +173,11 @@ const GoalFlow = ({
 
   const isSubmittingGoal = isCreatingGoal || isUpdatingGoal;
   const hasEditChanges =
-    mode !== "edit" || !originalGoalDataRef.current
+    mode !== "edit" || !originalGoalData
       ? false
-      : hasGoalDataChanged(originalGoalDataRef.current, goalData);
+      : hasGoalDataChanged(originalGoalData, goalData);
   const isSubmitDisabled =
-    !canSubmit ||
-    isHydratingGoalData ||
-    isSubmittingGoal ||
-    (mode === "edit" && !hasEditChanges);
-  const isPhaseThreeOrFourHydrating =
-    isHydratingGoalData && mode === "edit" && phase >= 3;
+    !canSubmit || isSubmittingGoal || (mode === "edit" && !hasEditChanges);
 
   const handleSubmit = async () => {
     if (isSubmitDisabled) {
@@ -249,7 +202,7 @@ const GoalFlow = ({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-5">
-        {isPhaseThreeOrFourHydrating ? (
+        {isLoading ? (
           <p className="text-sm text-muted-foreground">
             Loading goal details...
           </p>
@@ -271,7 +224,7 @@ const GoalFlow = ({
           />
         )}
 
-        {!isPhaseThreeOrFourHydrating && phase === 3 && (
+        {phase === 3 && (
           <CreateGoalPhaseThree
             nonNegotiables={goalData.nonNegotiables}
             setNonNegotiables={(updater) =>
@@ -286,7 +239,7 @@ const GoalFlow = ({
           />
         )}
 
-        {!isPhaseThreeOrFourHydrating && phase === 4 && (
+        {phase === 4 && (
           <CreateGoalPhaseFour
             milestones={goalData.milestones}
             setMilestones={(updater) =>

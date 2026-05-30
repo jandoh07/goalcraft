@@ -1,10 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import {
-  browserLocalPersistence,
-  getAuth,
-  indexedDBLocalPersistence,
-  initializeAuth,
-} from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -47,21 +42,7 @@ if (typeof window !== "undefined") {
   }
 }
 
-const createAuth = () => {
-  if (typeof window === "undefined") {
-    return getAuth(app);
-  }
-
-  try {
-    return initializeAuth(app, {
-      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-    });
-  } catch {
-    return getAuth(app);
-  }
-};
-
-export const auth = createAuth();
+export const auth = getAuth(app);
 
 const initializeDb = () => {
   try {

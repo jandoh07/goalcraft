@@ -137,6 +137,7 @@ const GoalModeDialog = ({ goals }: GoalModeDialogProps) => {
     if (isGoalFlow) {
       return (
         <GoalFlow
+          key={selectedGoalId || "new"}
           isOpen={mode !== null}
           closeDialog={closeDialogOnly}
           onCancel={handleCancelFromFlow}
@@ -148,7 +149,13 @@ const GoalModeDialog = ({ goals }: GoalModeDialogProps) => {
     }
 
     if (dialogType === "goal" && mode === "view") {
-      return <GoalView goal={activeGoal} goalId={selectedGoalId} />;
+      return (
+        <GoalView
+          key={selectedGoalId}
+          goal={activeGoal}
+          goalId={selectedGoalId}
+        />
+      );
     }
 
     if (dialogType === "objective") {

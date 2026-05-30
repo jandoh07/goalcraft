@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Pause, X } from "lucide-react";
 import type { InProgressNonNegotiableWithTasks } from "@/types/goal";
@@ -73,20 +73,11 @@ export function NonNegotiableModeDialog({
     [items, selectedNonNegotiableId],
   );
 
-  const [title, setTitle] = useState("");
-  const [frequency, setFrequency] = useState<string[]>([]);
+  const [title, setTitle] = useState(selectedItem?.nonNegotiable.title || "");
+  const [frequency, setFrequency] = useState<string[]>(
+    selectedItem?.nonNegotiable.frequency || [],
+  );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (!selectedItem) {
-      setTitle("");
-      setFrequency([]);
-      return;
-    }
-
-    setTitle(selectedItem.nonNegotiable.title || "");
-    setFrequency(selectedItem.nonNegotiable.frequency);
-  }, [selectedItem]);
 
   const closeDialogOnly = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -252,6 +243,7 @@ export function NonNegotiableModeDialog({
             <div className="space-y-2">
               <p className="text-sm font-medium">Frequency</p>
               <NonNegotiableFrequencyPicker
+                key={selectedNonNegotiableId}
                 value={frequency}
                 onChange={setFrequency}
               />

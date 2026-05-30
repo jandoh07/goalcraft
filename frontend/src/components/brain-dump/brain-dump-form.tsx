@@ -19,16 +19,10 @@ export const BrainDumpForm = ({
   activeTask,
   setActiveTask,
 }: BrainDumpFormProps) => {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(activeTask?.title ?? "");
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [autoFocus, setAutoFocus] = useState(!isMobile);
-
-  useEffect(() => {
-    if (activeTask) {
-      setTitle(activeTask.title);
-    }
-  }, [activeTask]);
 
   useEffect(() => {
     if (!isMobile) return;

@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { GoogleButton } from "./google-button";
 import { AuthDivider } from "./auth-divider";
 import { FirebaseError } from "firebase/app";
+import { useRouter } from "next/navigation";
 
 interface LoginFormProps {
   redirectTo: string;
@@ -40,6 +41,7 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const router = useRouter();
 
   const { signIn, signInWithGoogle } = useAuth();
 
@@ -52,7 +54,8 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
 
     try {
       await signIn(email, password);
-      window.location.replace(redirectTo);
+      router.refresh();
+      router.replace(redirectTo);
     } catch (err) {
       if (err instanceof FirebaseError) {
         setError(getErrorMessage(err));
@@ -69,7 +72,8 @@ export const LoginForm = ({ redirectTo }: LoginFormProps) => {
 
     try {
       await signInWithGoogle();
-      window.location.replace(redirectTo);
+      router.refresh();
+      router.replace(redirectTo);
     } catch (err) {
       if (err instanceof FirebaseError) {
         if (err.code === "auth/popup-closed-by-user") {

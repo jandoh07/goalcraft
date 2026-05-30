@@ -14,6 +14,14 @@ export type Frequency =
 type Day = Weekday;
 export type QuickFrequency = Exclude<Frequency, "Xdays" | "Xweeks" | "Xmonths">;
 
+export interface FrequencyPickerState {
+  active: string | null;
+  customFrequency: "Xdays" | "Xweeks" | "Xmonths" | null;
+  interval: number;
+  selectedDays: Weekday[];
+  selectedMonthDayNumbers: number[];
+}
+
 export const getLocalUniversalDay = (date = new Date()) => {
   const localTimeMs = date.getTime() - date.getTimezoneOffset() * 60000;
   return Math.floor(localTimeMs / MS_PER_DAY);
@@ -52,6 +60,10 @@ const DAY_LABELS: Record<Weekday, string> = {
   fri: "Friday",
   sat: "Saturday",
 };
+
+export const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+const weekdayDays = ["mon", "tue", "wed", "thu", "fri"] as const;
+const weekendDays = ["sat", "sun"] as const;
 
 const joinWithAnd = (items: string[]) => {
   if (items.length === 0) return "";
@@ -214,6 +226,127 @@ export const getTodaySearchTags = (date = new Date()) => {
 
   return tags;
 };
+
+export function parseInitialState(tags: string[]): FrequencyPickerState {
+  const uniqueTags = [...new Set(tags)];
+  const tagSet = new Set(uniqueTags);
+
+  const isDaily =
+    tagSet.size === days.length && days.every((d) => tagSet.has(d));
+  if (isDaily)
+    return {
+      active: "daily",
+      customFrequency: null,
+      interval: 1,
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+
+  const isWeekdays =
+    tagSet.size === weekdayDays.length &&
+    weekdayDays.every((d) => tagSet.has(d));
+  if (isWeekdays)
+    return {
+      active: "weekdays",
+      customFrequency: null,
+      interval: 1,
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+
+  const isWeekends =
+    tagSet.size === weekendDays.length &&
+    weekendDays.every((d) => tagSet.has(d));
+  if (isWeekends)
+    return {
+      active: "weekends",
+      customFrequency: null,
+      interval: 1,
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+
+  if (
+    uniqueTags.length === 1 &&
+    days.includes(uniqueTags[0] as (typeof days)[number])
+  ) {
+    return {
+      active: "weekly",
+      customFrequency: null,
+      interval: 1,
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+  }
+
+  if (uniqueTags.length === 1 && /^\d+M$/.test(uniqueTags[0])) {
+    return {
+      active: "monthly",
+      customFrequency: null,
+      interval: 1,
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+  }
+
+  const xDaysMatches = uniqueTags
+    .map((tag) => tag.match(/^(\d+)D_\d+$/))
+    .filter((m): m is RegExpMatchArray => !!m);
+  if (xDaysMatches.length > 0 && xDaysMatches.length === uniqueTags.length) {
+    return {
+      active: "custom",
+      customFrequency: "Xdays" as const,
+      interval: Number(xDaysMatches[0][1]),
+      selectedDays: [],
+      selectedMonthDayNumbers: [],
+    };
+  }
+
+  const xWeeksMatches = uniqueTags
+    .map((tag) => tag.match(/^(sun|mon|tue|wed|thu|fri|sat)_(\d+)W_\d+$/))
+    .filter((m): m is RegExpMatchArray => !!m);
+  if (xWeeksMatches.length > 0 && xWeeksMatches.length === uniqueTags.length) {
+    return {
+      active: "custom",
+      customFrequency: "Xweeks" as const,
+      interval: Number(xWeeksMatches[0][2]),
+      selectedDays: [
+        ...new Set(
+          xWeeksMatches.map((match) => match[1] as (typeof days)[number]),
+        ),
+      ].sort((a, b) => days.indexOf(a) - days.indexOf(b)),
+      selectedMonthDayNumbers: [],
+    };
+  }
+
+  const xMonthsMatches = uniqueTags
+    .map((tag) => tag.match(/^(\d+)M_\d+_(\d+)$/))
+    .filter((m): m is RegExpMatchArray => !!m);
+  const isXMonths =
+    uniqueTags.length > 0 &&
+    uniqueTags.every(
+      (tag) => tag === "last_day" || /^(\d+)M_\d+_(\d+)$/.test(tag),
+    );
+  if (isXMonths) {
+    return {
+      active: "custom",
+      customFrequency: "Xmonths" as const,
+      interval: Number(xMonthsMatches[0]?.[1] ?? 1),
+      selectedDays: [],
+      selectedMonthDayNumbers: [
+        ...new Set(xMonthsMatches.map((m) => Number(m[2]))),
+      ].sort((a, b) => a - b),
+    };
+  }
+
+  return {
+    active: null,
+    customFrequency: null,
+    interval: 1,
+    selectedDays: [],
+    selectedMonthDayNumbers: [],
+  };
+}
 
 function generateFrequencyTags(frequency: QuickFrequency): string[];
 function generateFrequencyTags(frequency: "Xdays", interval: number): string[];

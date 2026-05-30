@@ -1,3 +1,4 @@
+import { MoveRight } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -57,7 +58,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="pt-24 pb-20">
+      <section className="md:pt-24 pt-18 pb-15">
         <p className="text-lg font-semibold tracking-widest uppercase mb-3">
           A personal tool I built for myself
         </p>
@@ -68,32 +69,36 @@ export default function HomePage() {
           usually led to losing momentum, procrastinating, or eventually giving
           up altogether.
         </p>
-        <p className="font-semibold text-muted-foreground leading-relaxed mb-10">
+        <p className="font-semibold text-muted-foreground leading-relaxed mb-10 md:mb-0">
           This app is my attempt to solve that problem.
         </p>
-        <div className="md:hidden flex items-center gap-4">
+        <div className="md:hidden grid grid-cols-2 gap-4">
           <Link
             href="/signup"
-            className="bg-foreground text-background px-6 py-3 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="bg-primary text-primary-foreground text-center px-6 py-3 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
             Try the app
           </Link>
           <Link
-            href="/signin"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            href="/login"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors py-3 text-center border border-border rounded-lg flex items-center justify-center gap-2"
           >
-            Sign in →
+            Sign in
+            <MoveRight size={14} />
           </Link>
         </div>
       </section>
       <section className="mx-auto px-6 py-20 border-t border-border">
-        <h2 className="text-lg font-semibold tracking-widest uppercase mb-16">
+        <h2 className="text-lg font-semibold tracking-widest uppercase mb-10">
           How it works
         </h2>
 
         <div className="flex flex-col gap-16">
           {steps.map((step) => (
-            <div key={step.number} className="grid grid-cols-[80px_1fr] gap-8">
+            <div
+              key={step.number}
+              className="grid grid-cols-[40px_1fr] md:grid-cols-[80px_1fr] gap-8"
+            >
               <span className="text-4xl font-semibold text-muted-foreground/30 tabular-nums pt-1">
                 {step.number}
               </span>

@@ -68,7 +68,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     );
 
     return () => {
-      console.log("Unsubscribing from auth listener");
       unsubscribe();
     };
   }, []);
@@ -76,7 +75,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const currentAuthUser = auth.currentUser;
     if (!authUid || !currentAuthUser || currentAuthUser.uid !== authUid) {
-      setUser(null);
       return;
     }
 

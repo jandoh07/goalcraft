@@ -126,6 +126,7 @@ const BrainDump = () => {
               <DialogDescription>Add a task to brain dump</DialogDescription>
             </DialogHeader>
             <BrainDumpForm
+              key={activeTask?.id ?? "new"}
               closeDialog={closeTaskForm}
               activeTask={activeTask}
               setActiveTask={setActiveTask}
@@ -151,6 +152,7 @@ const BrainDump = () => {
               <DrawerDescription>Add a task to brain dump</DrawerDescription>
             </DrawerHeader>
             <BrainDumpForm
+              key={activeTask?.id ?? "new"}
               closeDialog={closeTaskForm}
               activeTask={activeTask}
               setActiveTask={setActiveTask}
