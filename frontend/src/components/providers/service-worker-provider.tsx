@@ -5,6 +5,7 @@ import { SW_VERSION } from "./sw-version";
 import { Workbox } from "workbox-window";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
+import { deferredPrompt, setDeferredPrompt } from "@/hooks/use-install-pwa";
 
 export function ServiceWorkerProvider() {
   const pathname = usePathname();
@@ -40,13 +41,11 @@ export function ServiceWorkerProvider() {
       wb.register().catch(console.error);
     }
 
-    let deferredPrompt: BeforeInstallPromptEvent | null = null;
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      deferredPrompt = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-      if (isAppRoute && !localStorage.getItem("pwa-prompt-dismissed")) {
+      if (isAppRoute && !localStorage.getItem("pwa-prompt-shown")) {
         toast("Install GoalCraft", {
           description: "Install our web app for a better experience.",
           action: {
@@ -59,21 +58,21 @@ export function ServiceWorkerProvider() {
                 if (outcome === "accepted") {
                   console.log("User accepted the install prompt");
                 }
-                deferredPrompt = null;
+                setDeferredPrompt(null);
               }
             },
           },
           cancel: {
             label: "Dismiss",
             onClick: () => {
-              localStorage.setItem("pwa-prompt-dismissed", "true");
+              localStorage.setItem("pwa-prompt-shown", "true");
             },
           },
           position: "top-center",
           duration: 15000,
         });
 
-        localStorage.setItem("pwa-prompt-dismissed", "true");
+        localStorage.setItem("pwa-prompt-shown", "true");
       }
     };
 
@@ -90,7 +89,7 @@ export function ServiceWorkerProvider() {
     if (
       isIos &&
       !isStandalone &&
-      !localStorage.getItem("ios-pwa-prompt-dismissed") &&
+      !localStorage.getItem("ios-pwa-prompt-shown") &&
       isAppRoute
     ) {
       toast("Install GoalCraft web app on your iPhone", {
@@ -99,13 +98,13 @@ export function ServiceWorkerProvider() {
         cancel: {
           label: "Dismiss",
           onClick: () => {
-            localStorage.setItem("ios-pwa-prompt-dismissed", "true");
+            localStorage.setItem("ios-pwa-prompt-shown", "true");
           },
         },
         duration: 15000,
       });
 
-      localStorage.setItem("ios-pwa-prompt-dismissed", "true");
+      localStorage.setItem("ios-pwa-prompt-shown", "true");
     }
 
     return () => {

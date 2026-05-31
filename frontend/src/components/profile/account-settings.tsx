@@ -1,14 +1,5 @@
 import { useState } from "react";
 import { ChevronRight, Lock, LogOut, User } from "lucide-react";
-import { Button } from "../ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import { Separator } from "../ui/separator";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import EditProfileDialog from "./edit-profile-dialog";
@@ -31,72 +22,46 @@ const AccountSettings = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
-          <CardDescription>Manage your account information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-between h-auto py-3 px-4 hover:bg-accent"
-            onClick={() => setEditProfileOpen(true)}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-left min-w-0">
-                <div className="font-medium">Edit Profile</div>
-                <div className="text-sm text-muted-foreground truncate">
-                  Update your name and avatar
-                </div>
-              </div>
+      <div className="space-y-2">
+        <div
+          className="w-full flex justify-between items-center bg-card p-2 rounded-lg cursor-pointer hover:bg-card/50"
+          onClick={() => setEditProfileOpen(true)}
+        >
+          <div className="flex items-center">
+            <div className="size-10 flex items-center justify-center shrink-0">
+              <User className="size-4 text-foreground" />
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-2" />
-          </Button>
+            <div className="font-medium text-sm">Edit Profile</div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-2" />
+        </div>
 
-          <Button
-            variant="ghost"
-            className="w-full justify-between h-auto py-3 px-4 hover:bg-accent"
-            onClick={() => setChangePasswordOpen(true)}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Lock className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-left min-w-0">
-                <div className="font-medium">Change Password</div>
-                <div className="text-sm text-muted-foreground truncate">
-                  Update your account password
-                </div>
-              </div>
+        <div
+          className="w-full flex justify-between items-center bg-card p-2 rounded-lg cursor-pointer hover:bg-card/50"
+          onClick={() => setChangePasswordOpen(true)}
+        >
+          <div className="flex items-center">
+            <div className="size-10 flex items-center justify-center shrink-0">
+              <Lock className="size-4 text-foreground" />
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-2" />
-          </Button>
+            <div className="font-medium text-sm">Change Password</div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-2" />
+        </div>
 
-          <Separator className="my-2" />
-
-          <Button
-            variant="ghost"
-            className="w-full justify-between h-auto py-3 px-4 hover:bg-destructive/10 text-destructive hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-                <LogOut className="h-4 w-4" />
-              </div>
-              <div className="text-left min-w-0">
-                <div className="font-medium">Sign Out</div>
-                <div className="text-sm opacity-80 truncate">
-                  Sign out of your account
-                </div>
-              </div>
+        <div
+          className="w-full flex justify-between items-center bg-card p-2 rounded-lg cursor-pointer hover:bg-card/50"
+          onClick={handleSignOut}
+        >
+          <div className="flex items-center">
+            <div className="size-10 flex items-center justify-center shrink-0">
+              <LogOut className="size-4 text-destructive" />
             </div>
-            <ChevronRight className="h-5 w-5 shrink-0 ml-2" />
-          </Button>
-        </CardContent>
-      </Card>
+            <div className="font-medium text-sm text-destructive">Sign Out</div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-2" />
+        </div>
+      </div>
 
       <EditProfileDialog
         open={editProfileOpen}

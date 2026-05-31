@@ -51,7 +51,6 @@ const ChangePasswordDialog = ({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Check if user signed in with Google (no password provider)
   const isGoogleUser = user?.providerData?.some(
     (provider) => provider.providerId === "google.com",
   );
@@ -78,14 +77,12 @@ const ChangePasswordDialog = ({
 
     setIsSubmitting(true);
     try {
-      // Re-authenticate user with current password
       const credential = EmailAuthProvider.credential(
         user.email,
         data.currentPassword,
       );
       await reauthenticateWithCredential(auth.currentUser, credential);
 
-      // Update password
       await updatePassword(auth.currentUser, data.newPassword);
 
       toast.success("Password updated successfully");
@@ -124,7 +121,6 @@ const ChangePasswordDialog = ({
     onOpenChange(isOpen);
   };
 
-  // Show message for Google-only users
   if (isGoogleUser && !hasPasswordProvider) {
     return (
       <ResponsiveDialog
