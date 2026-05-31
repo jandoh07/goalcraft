@@ -24,7 +24,7 @@ export function Navbar() {
             height={100}
             loading="eager"
             style={{ height: "auto" }}
-            className="object-contain"
+            className="object-contain dark:invert dark:brightness-0 dark:contrast-200"
           />
         </Link>
 
