@@ -58,7 +58,7 @@ const GoalFlow = ({
   const [originalGoalData, setOriginalGoalData] = useState<GoalData | null>(
     null,
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(mode === "edit");
 
   useEffect(() => {
     if (!isOpen || mode !== "edit" || !goalId || !user?.uid) {

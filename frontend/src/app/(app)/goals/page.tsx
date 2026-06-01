@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import MobileHeader from "@/components/layout/mobile/header";
 import GoalModeDialog from "@/components/goals/goal-mode-dialog";
 import OpenGoalDialogButton from "@/components/goals/open-goal-dialog-button";
@@ -17,11 +17,12 @@ const GoalsFallback = () => (
 
 const Goals = () => {
   const { data: goals, isLoading, error } = useGetGoals();
+  const [activeGoalId, setActiveGoalId] = useState<string>("new-goal");
 
   return (
     <Suspense fallback={<GoalsFallback />}>
       <GoalProvider>
-        <div>
+        <div className="mt-2 md:mt-0">
           <div className="max-w-7xl h-full mx-auto p-2 md:p-3 relative flex flex-col">
             <div>
               <p className="hidden md:block text-lg font-semibold mb-5">
@@ -58,12 +59,13 @@ const Goals = () => {
                     title={goal.title}
                     dueDate={goal.dueDate}
                     progress={goal.progress}
+                    setActiveGoalId={setActiveGoalId}
                   />
                 ))}
             </div>
           </div>
-          <OpenGoalDialogButton />
-          <GoalModeDialog goals={goals ?? []} />
+          <OpenGoalDialogButton setActiveGoalId={setActiveGoalId} />
+          <GoalModeDialog goals={goals ?? []} key={activeGoalId} />
         </div>
       </GoalProvider>
     </Suspense>
