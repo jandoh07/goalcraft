@@ -3,7 +3,13 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AddButton from "@/components/ui/add-button";
 
-const OpenGoalDialogButton = () => {
+interface OpenGoalDialogButtonProps {
+  setActiveGoalId: (id: string) => void;
+}
+
+const OpenGoalDialogButton = ({
+  setActiveGoalId,
+}: OpenGoalDialogButtonProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -16,6 +22,7 @@ const OpenGoalDialogButton = () => {
     params.delete("objectiveId");
 
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    setActiveGoalId("new-goal");
   };
 
   return <AddButton onClick={handleOpenCreateGoal} />;

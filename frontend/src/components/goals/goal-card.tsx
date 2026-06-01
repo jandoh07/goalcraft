@@ -28,14 +28,22 @@ interface GoalCardProps {
   title: string;
   dueDate?: Date;
   progress: number;
+  setActiveGoalId?: (id: string) => void;
 }
 
-const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
+const GoalCard = ({
+  goalId,
+  title,
+  dueDate,
+  progress,
+  setActiveGoalId,
+}: GoalCardProps) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const deleteGoalMutation = useDeleteGoal();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isOverdue = dueDate ? new Date() > dueDate : false;
 
   const openGoalMode = (mode: "view" | "edit") => {
     const params = new URLSearchParams(searchParams.toString());
@@ -43,6 +51,7 @@ const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
     params.set("type", "goal");
     params.set("goalId", goalId);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    setActiveGoalId?.(goalId);
   };
 
   const handleDeleteGoal = async () => {
@@ -53,7 +62,7 @@ const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
   return (
     <>
       <Card
-        className="gap-2 py-3 cursor-pointer"
+        className={`gap-2 py-3 cursor-pointer ${isOverdue ? "bg-destructive/10 border-destructive/50" : ""}`}
         onClick={(event) => {
           event.stopPropagation();
           openGoalMode("view");
@@ -125,7 +134,7 @@ const GoalCard = ({ goalId, title, dueDate, progress }: GoalCardProps) => {
           <Progress value={progress} className="w-full h-1" />
         </CardContent>
         <CardFooter className="px-3 flex items-center justify-between">
-          <p className="text-xs">
+          <p className={`text-xs ${isOverdue ? "text-destructive" : ""}`}>
             Due:{" "}
             {dueDate?.toLocaleDateString("en-us", {
               month: "short",

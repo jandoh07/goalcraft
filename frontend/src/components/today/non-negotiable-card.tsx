@@ -25,7 +25,7 @@ interface NonNegotiableCardProps {
 }
 
 export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
-  const [isExpanded, setIsExpanded] = useState(data.tasks.length > 0);
+  const [isExpanded, setIsExpanded] = useState<boolean | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
@@ -90,7 +90,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
 
   const toggleExpanded = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    setIsExpanded((prev) => !prev);
+    setIsExpanded((prev) => (prev === null ? true : !prev));
   };
 
   const handleNonNegotiableClick = () => {
@@ -108,10 +108,10 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
 
   return (
     <div
-      className={`px-2 py-3 rounded-lg cursor-pointer overflow-hidden transition-colors ${
+      className={`px-2 py-3 rounded-lg cursor-pointer overflow-hidden ${
         data.nonNegotiable.status === "paused"
-          ? "bg-sidebar/20"
-          : "bg-sidebar/30"
+          ? "bg-sidebar/20 hover:bg-sidebar/30"
+          : "bg-sidebar/30 hover:bg-sidebar/40"
       }`}
       onClick={handleNonNegotiableClick}
       role="button"
@@ -132,13 +132,17 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
           <button
             type="button"
             onClick={toggleExpanded}
-            aria-expanded={isExpanded}
-            aria-label={isExpanded ? "Collapse objective" : "Expand objective"}
+            aria-expanded={isExpanded || data.tasks.length > 0}
+            aria-label={
+              isExpanded || data.tasks.length > 0
+                ? "Collapse objective"
+                : "Expand objective"
+            }
             className="mr-2 rounded-sm transition-colors hover:bg-sidebar/60 cursor-pointer"
           >
             <ChevronRight
               size={20}
-              className={`transition-transform ${isExpanded ? "rotate-90" : "rotate-0"}`}
+              className={`transition-transform ${isExpanded || data.tasks.length > 0 ? "rotate-90" : "rotate-0"}`}
             />
           </button>
           <button
@@ -216,7 +220,7 @@ export function NonNegotiableCard({ data }: NonNegotiableCardProps) {
           </DropdownMenu>
         </div>
       </div>
-      {isExpanded && (
+      {(isExpanded || data.tasks.length > 0) && (
         <div
           className="md:pl-3 pt-3 space-y-3"
           onClick={(event) => event.stopPropagation()}

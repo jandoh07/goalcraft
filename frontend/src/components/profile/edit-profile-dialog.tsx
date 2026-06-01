@@ -45,12 +45,10 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
 
     setIsSubmitting(true);
     try {
-      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, {
         displayName: data.name,
       });
 
-      // Update Firestore user document
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         name: data.name,

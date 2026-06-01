@@ -178,6 +178,9 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
   }, [goal, goalId, user?.uid]);
 
   const displayGoal = goal ?? fetchedGoal;
+  const isOverDue = displayGoal?.dueDate
+    ? new Date() > displayGoal.dueDate
+    : false;
 
   const dueDateText = displayGoal?.dueDate
     ? displayGoal.dueDate.toLocaleDateString("en-us", {
@@ -219,7 +222,10 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-lg">{displayGoal.title}</p>
-          <Badge variant="secondary" className="mr-1">
+          <Badge
+            variant="secondary"
+            className={`mr-1 ${isOverDue ? "text-destructive" : ""}`}
+          >
             Due: {dueDateText}
           </Badge>
           <Badge variant="secondary">{displayGoal.progress}% complete</Badge>
@@ -270,9 +276,9 @@ const GoalView = ({ goal, goalId }: GoalViewProps) => {
                         onClick={() => handleToggleMilestone(milestone)}
                       >
                         {milestone.status === "completed" ? (
-                          <CircleCheck className="size-4 text-primary" />
+                          <CircleCheck className="size-5 text-primary" />
                         ) : (
-                          <Circle className="size-4 text-muted-foreground" />
+                          <Circle className="size-5 text-muted-foreground" />
                         )}
                       </Button>
                       <p className="truncate text-sm font-medium">

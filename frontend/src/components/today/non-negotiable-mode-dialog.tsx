@@ -233,7 +233,7 @@ export function NonNegotiableModeDialog({
             <div className="space-y-2">
               <p className="text-sm font-medium">Title</p>
               <Input
-                value={title}
+                value={title || selectedItem.nonNegotiable.title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Non-negotiable title"
                 autoFocus
@@ -244,7 +244,11 @@ export function NonNegotiableModeDialog({
               <p className="text-sm font-medium">Frequency</p>
               <NonNegotiableFrequencyPicker
                 key={selectedNonNegotiableId}
-                value={frequency}
+                value={
+                  frequency.length > 0
+                    ? frequency
+                    : selectedItem.nonNegotiable.frequency
+                }
                 onChange={setFrequency}
               />
             </div>
