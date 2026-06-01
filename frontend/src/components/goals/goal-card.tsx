@@ -28,7 +28,7 @@ interface GoalCardProps {
   title: string;
   dueDate?: Date;
   progress: number;
-  setActiveGoalId: (id: string) => void;
+  setActiveGoalId?: (id: string) => void;
 }
 
 const GoalCard = ({
@@ -51,7 +51,7 @@ const GoalCard = ({
     params.set("type", "goal");
     params.set("goalId", goalId);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    setActiveGoalId(goalId);
+    setActiveGoalId?.(goalId);
   };
 
   const handleDeleteGoal = async () => {
